@@ -121,98 +121,98 @@ parameter PALETTE_RAM_END_addr        = 16'h1FFC;
 
 
 // Main regs...
-reg [31:0] ID; 					// R   Device ID
-reg [31:0] REVISION; 			// R   Revision number
-reg [31:0] SOFTRESET; 			// RW  CORE & TA software reset
+reg [31:0] ID; 					// 16'h0000; R   Device ID
+reg [31:0] REVISION; 			// 16'h0004; R   Revision number
+reg [31:0] SOFTRESET; 			// 16'h0008; RW  CORE & TA software reset
 	
-reg [31:0] STARTRENDER; 		// RW  Drawing start
-reg [31:0] TEST_SELECT; 		// RW  Test - writing this register is prohibited.
+reg [31:0] STARTRENDER; 		// 16'h0014; RW  Drawing start
+reg [31:0] TEST_SELECT; 		// 16'h0018; RW  Test - writing this register is prohibited.
 
-reg [31:0] PARAM_BASE; 			// RW  Base address for ISP regs
+reg [31:0] PARAM_BASE; 			// 16'h0020; RW  Base address for ISP regs
 
-reg [31:0] REGION_BASE; 		// RW  Base address for Region Array
-reg [31:0] SPAN_SORT_CFG; 		// RW  Span Sorter control
+reg [31:0] REGION_BASE; 		// 16'h002C; RW  Base address for Region Array
+reg [31:0] SPAN_SORT_CFG; 		// 16'h0030; RW  Span Sorter control
 
-reg [31:0] VO_BORDER_COL; 		// RW  Border area color
-reg [31:0] FB_R_CTRL; 			// RW  Frame buffer read control
-reg [31:0] FB_W_CTRL; 			// RW  Frame buffer write control
-reg [31:0] FB_W_LINESTRIDE; 	// RW  Frame buffer line stride
-reg [31:0] FB_R_SOF1; 			// RW  Read start address for field - 1/strip - 1
-reg [31:0] FB_R_SOF2; 			// RW  Read start address for field - 2/strip - 2
+reg [31:0] VO_BORDER_COL; 		// 16'h0040; RW  Border area color
+reg [31:0] FB_R_CTRL; 			// 16'h0044; RW  Frame buffer read control
+reg [31:0] FB_W_CTRL; 			// 16'h0048; RW  Frame buffer write control
+reg [31:0] FB_W_LINESTRIDE; 	// 16'h004C; RW  Frame buffer line stride
+reg [31:0] FB_R_SOF1; 			// 16'h0050; RW  Read start address for field - 1/strip - 1
+reg [31:0] FB_R_SOF2; 			// 16'h0054; RW  Read start address for field - 2/strip - 2
 
-reg [31:0] FB_R_SIZE; 			// RW  Frame buffer XY size	
-reg [31:0] FB_W_SOF1; 			// RW  Write start address for field - 1/strip - 1
-reg [31:0] FB_W_SOF2; 			// RW  Write start address for field - 2/strip - 2
-reg [31:0] FB_X_CLIP; 			// RW  Pixel clip X coordinate
-reg [31:0] FB_Y_CLIP; 			// RW  Pixel clip Y coordinate
+reg [31:0] FB_R_SIZE; 			// 16'h005C; RW  Frame buffer XY size	
+reg [31:0] FB_W_SOF1; 			// 16'h0060; RW  Write start address for field - 1/strip - 1
+reg [31:0] FB_W_SOF2; 			// 16'h0064; RW  Write start address for field - 2/strip - 2
+reg [31:0] FB_X_CLIP; 			// 16'h0068; RW  Pixel clip X coordinate
+reg [31:0] FB_Y_CLIP; 			// 16'h006C; RW  Pixel clip Y coordinate
 
 
-reg [31:0] FPU_SHAD_SCALE; 		// RW  Intensity Volume mode
-reg [31:0] FPU_CULL_VAL; 		// RW  Comparison value for culling
-reg [31:0] FPU_PARAM_CFG = 32'h0027DF77; 		// RW  register read control
-reg [31:0] HALF_OFFSET; 		// RW  Pixel sampling control
-reg [31:0] FPU_PERP_VAL; 		// RW  Comparison value for perpendicular polygons
-reg [31:0] ISP_BACKGND_D; 		// RW  Background surface depth
-reg [31:0] ISP_BACKGND_T; 		// RW  Background surface tag
+reg [31:0] FPU_SHAD_SCALE; 		// 16'h0074; RW  Intensity Volume mode
+reg [31:0] FPU_CULL_VAL; 		// 16'h0078; RW  Comparison value for culling
+reg [31:0] FPU_PARAM_CFG = 32'h0027DF77; 		// 16'h007C; RW  register read control
+reg [31:0] HALF_OFFSET; 		// 16'h0080; RW  Pixel sampling control
+reg [31:0] FPU_PERP_VAL; 		// 16'h0084; RW  Comparison value for perpendicular polygons
+reg [31:0] ISP_BACKGND_D; 		// 16'h0088; RW  Background surface depth
+reg [31:0] ISP_BACKGND_T; 		// 16'h008C; RW  Background surface tag
 
-reg [31:0] ISP_FEED_CFG; 		// RW  Translucent polygon sort mode
+reg [31:0] ISP_FEED_CFG; 		// 16'h0098; RW  Translucent polygon sort mode
 
-reg [31:0] SDRAM_REFRESH; 		// RW  Texture memory refresh counter
-reg [31:0] SDRAM_ARB_CFG; 		// RW  Texture memory arbiter control
-reg [31:0] SDRAM_CFG; 			// RW  Texture memory control
+reg [31:0] SDRAM_REFRESH; 		// 16'h00A0; RW  Texture memory refresh counter
+reg [31:0] SDRAM_ARB_CFG; 		// 16'h00A4; RW  Texture memory arbiter control
+reg [31:0] SDRAM_CFG; 			// 16'h00A8; RW  Texture memory control
 
-reg [31:0] FOG_COL_RAM; 		// RW  Color for Look Up table Fog
-reg [31:0] FOG_COL_VERT; 		// RW  Color for vertex Fog
-reg [31:0] FOG_DENSITY; 		// RW  Fog scale value
-reg [31:0] FOG_CLAMP_MAX; 		// RW  Color clamping maximum value
-reg [31:0] FOG_CLAMP_MIN; 		// RW  Color clamping minimum value
-reg [31:0] SPG_TRIGGER_POS; 	// RW  External trigger signal HV counter value
-reg [31:0] SPG_HBLANK_INT; 		// RW  H-blank interrupt control	
-reg [31:0] SPG_VBLANK_INT; 		// RW  V-blank interrupt control	
-reg [31:0] SPG_CONTROL; 		// RW  Sync pulse generator control
-reg [31:0] SPG_HBLANK; 			// RW  H-blank control
-reg [31:0] SPG_LOAD; 			// RW  HV counter load value
-reg [31:0] SPG_VBLANK; 			// RW  V-blank control
-reg [31:0] SPG_WIDTH; 			// RW  Sync width control
-reg [31:0] TEXT_CONTROL; 		// RW  Texturing control
-reg [31:0] VO_CONTROL; 			// RW  Video output control
-reg [31:0] VO_STARTX; 			// RW  Video output start X position
-reg [31:0] VO_STARTY; 			// RW  Video output start Y position
-reg [31:0] SCALER_CTL; 			// RW  X & Y scaler control
-reg [31:0] PAL_RAM_CTRL; 		// RW  Palette RAM control
-reg [31:0] SPG_STATUS; 			// R   Sync pulse generator status
-reg [31:0] FB_BURSTCTRL; 		// RW  Frame buffer burst control
-reg [31:0] FB_C_SOF; 			// R   Current frame buffer start address
-reg [31:0] Y_COEFF; 			// RW  Y scaling coefficient
+reg [31:0] FOG_COL_RAM; 		// 16'h00B0; RW  Color for Look Up table Fog
+reg [31:0] FOG_COL_VERT; 		// 16'h00B4; RW  Color for vertex Fog
+reg [31:0] FOG_DENSITY; 		// 16'h00B8; RW  Fog scale value
+reg [31:0] FOG_CLAMP_MAX; 		// 16'h00BC; RW  Color clamping maximum value
+reg [31:0] FOG_CLAMP_MIN; 		// 16'h00C0; RW  Color clamping minimum value
+reg [31:0] SPG_TRIGGER_POS; 	// 16'h00C4; RW  External trigger signal HV counter value
+reg [31:0] SPG_HBLANK_INT; 		// 16'h00C8; RW  H-blank interrupt control	
+reg [31:0] SPG_VBLANK_INT; 		// 16'h00CC; RW  V-blank interrupt control	
+reg [31:0] SPG_CONTROL; 		// 16'h00D0; RW  Sync pulse generator control
+reg [31:0] SPG_HBLANK; 			// 16'h00D4; RW  H-blank control
+reg [31:0] SPG_LOAD; 			// 16'h00D8; RW  HV counter load value
+reg [31:0] SPG_VBLANK; 			// 16'h00DC; RW  V-blank control
+reg [31:0] SPG_WIDTH; 			// 16'h00E0; RW  Sync width control
+reg [31:0] TEXT_CONTROL; 		// 16'h00E4; RW  Texturing control
+reg [31:0] VO_CONTROL; 			// 16'h00E8; RW  Video output control
+reg [31:0] VO_STARTX; 			// 16'h00Ec; RW  Video output start X position
+reg [31:0] VO_STARTY; 			// 16'h00F0; RW  Video output start Y position
+reg [31:0] SCALER_CTL; 			// 16'h00F4; RW  X & Y scaler control
+reg [31:0] PAL_RAM_CTRL; 		// 16'h0108; RW  Palette RAM control
+reg [31:0] SPG_STATUS; 			// 16'h010C; R   Sync pulse generator status
+reg [31:0] FB_BURSTCTRL; 		// 16'h0110; RW  Frame buffer burst control
+reg [31:0] FB_C_SOF; 			// 16'h0114; R   Current frame buffer start address
+reg [31:0] Y_COEFF; 			// 16'h0118; RW  Y scaling coefficient
 
-reg [31:0] PT_ALPHA_REF; 		// RW  Alpha value for Punch Through polygon comparison
+reg [31:0] PT_ALPHA_REF; 		// 16'h011C; RW  Alpha value for Punch Through polygon comparison
 
 
 // TA REGS
-reg [31:0] TA_OL_BASE; 			// RW  Object list write start address
-reg [31:0] TA_ISP_BASE; 		// RW  ISP/TSP register write start address
-reg [31:0] TA_OL_LIMIT; 		// RW  Start address of next Object Pointer Block
-reg [31:0] TA_ISP_LIMIT; 		// RW  Current ISP/TSP register write address
-reg [31:0] TA_NEXT_OPB; 		// R   Global Tile clip control
-reg [31:0] TA_ISP_CURRENT; 		// R   Current ISP/TSP register write address
-reg [31:0] TA_GLOB_TILE_CLIP; 	// RW  Global Tile clip control
-reg [31:0] TA_ALLOC_CTRL; 		// RW  Object list control
-reg [31:0] TA_LIST_INIT; 		// RW  TA initialization
-reg [31:0] TA_YUV_TEX_BASE; 	// RW  YUV422 texture write start address
-reg [31:0] TA_YUV_TEX_CTRL; 	// RW  YUV converter control
-reg [31:0] TA_YUV_TEX_CNT; 		// R   YUV converter macro block counter value
+reg [31:0] TA_OL_BASE; 			// 16'h0124; RW  Object list write start address
+reg [31:0] TA_ISP_BASE; 		// 16'h0128; RW  ISP/TSP register write start address
+reg [31:0] TA_OL_LIMIT; 		// 16'h012C; RW  Start address of next Object Pointer Block
+reg [31:0] TA_ISP_LIMIT; 		// 16'h0130; RW  Current ISP/TSP register write address
+reg [31:0] TA_NEXT_OPB; 		// 16'h0134; R   Global Tile clip control
+reg [31:0] TA_ISP_CURRENT; 		// 16'h0138; R   Current ISP/TSP register write address
+reg [31:0] TA_GLOB_TILE_CLIP; 	// 16'h013C; RW  Global Tile clip control
+reg [31:0] TA_ALLOC_CTRL; 		// 16'h0140; RW  Object list control
+reg [31:0] TA_LIST_INIT; 		// 16'h0144; RW  TA initialization
+reg [31:0] TA_YUV_TEX_BASE; 	// 16'h0148; RW  YUV422 texture write start address
+reg [31:0] TA_YUV_TEX_CTRL; 	// 16'h014C; RW  YUV converter control
+reg [31:0] TA_YUV_TEX_CNT; 		// 16'h0150; R   YUV converter macro block counter value
 
-reg [31:0] TA_LIST_CONT; 		// RW  TA continuation processing
-reg [31:0] TA_NEXT_OPB_INIT; 	// RW  Additional OPB starting address
+reg [31:0] TA_LIST_CONT; 		// 16'h0160; RW  TA continuation processing
+reg [31:0] TA_NEXT_OPB_INIT; 	// 16'h0164; RW  Additional OPB starting address
 
-reg [31:0] FOG_TABLE_START; 	// RW  Look-up table Fog data
-reg [31:0] FOG_TABLE_END;
+reg [31:0] FOG_TABLE_START; 	// 16'h0200; RW  Look-up table Fog data
+reg [31:0] FOG_TABLE_END;		// 16'h03FC;
 
-reg [31:0] TA_OL_POINTERS_START; // R   TA object List Pointer data
-reg [31:0] TA_OL_POINTERS_END;
+reg [31:0] TA_OL_POINTERS_START; // 16'h0600; R   TA object List Pointer data
+reg [31:0] TA_OL_POINTERS_END;	 // 16'h0F5C;
 
-reg [31:0] PALETTE_RAM_START; 	// RW  Palette RAM
-reg [31:0] PALETTE_RAM_END;
+reg [31:0] PALETTE_RAM_START; 	// 16'h1000; RW  Palette RAM
+reg [31:0] PALETTE_RAM_END;		// 16'h1FFC;
 
 
 
