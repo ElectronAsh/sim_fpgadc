@@ -329,16 +329,16 @@ always @(*) begin
 
 	// Main regs
 	casez (pvr_addr)
-		ID_addr: pvr_dout[31:0] = ID; 							// R   Device ID
-		REVISION_addr: pvr_dout[31:0] =  REVISION; 				// R   Revision number
-		SOFTRESET_addr: pvr_dout[31:0] =  SOFTRESET; 			// RW  CORE & TA software reset
+		ID_addr: pvr_dout[31:0] = ID; 								// R   Device ID
+		REVISION_addr: pvr_dout[31:0] =  REVISION; 					// R   Revision number
+		SOFTRESET_addr: pvr_dout[31:0] =  SOFTRESET; 				// RW  CORE & TA software reset
 			
-		STARTRENDER_addr: pvr_dout[31:0] =  STARTRENDER; 		// RW  Drawing start
-		TEST_SELECT_addr: pvr_dout[31:0] =  TEST_SELECT; 		// RW  Test - writing this register is prohibited.
+		STARTRENDER_addr: pvr_dout[31:0] =  STARTRENDER; 			// RW  Drawing start
+		TEST_SELECT_addr: pvr_dout[31:0] =  TEST_SELECT; 			// RW  Test - writing this register is prohibited.
 
-		PARAM_BASE_addr: pvr_dout[31:0] =  PARAM_BASE; 			// RW  Base address for ISP regs
+		PARAM_BASE_addr: pvr_dout[31:0] =  PARAM_BASE; 				// RW  Base address for ISP regs
 
-		REGION_BASE_addr: pvr_dout[31:0] =  REGION_BASE; 		// RW  Base address for Region Array
+		REGION_BASE_addr: pvr_dout[31:0] =  REGION_BASE; 			// RW  Base address for Region Array
 		SPAN_SORT_CFG_addr: pvr_dout[31:0] =  SPAN_SORT_CFG; 		// RW  Span Sorter control
 
 		VO_BORDER_COL_addr: pvr_dout[31:0] =  VO_BORDER_COL; 		// RW  Border area color

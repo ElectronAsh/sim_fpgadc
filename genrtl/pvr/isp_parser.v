@@ -103,8 +103,9 @@ else begin
 		
 		1: begin
 			isp_vram_rd <= 1'b1;
-			isp_vram_addr <= 24'h0129f8;
+			//isp_vram_addr <= 24'h0129f8;
 			//isp_vram_addr <= 24'h0116D0;
+			isp_vram_addr <= 24'h00408c;
 			isp_state <= isp_state + 1;
 		end
 		
@@ -228,7 +229,7 @@ else begin
 			isp_state <= isp_state + 1;
 		end
 		
-		13: begin
+		17: begin
 			vert_d_x <= isp_vram_din;
 			
 			isp_vram_rd <= 1'b1;
@@ -236,7 +237,7 @@ else begin
 			isp_state <= isp_state + 1;
 		end
 		
-		14: begin
+		18: begin
 			vert_d_y <= isp_vram_din;
 			
 			isp_vram_rd <= 1'b1;
@@ -244,7 +245,7 @@ else begin
 			isp_state <= isp_state + 1;
 		end
 		
-		15: begin
+		19: begin
 			vert_d_z <= isp_vram_din;
 			
 			isp_vram_rd <= 1'b1;
@@ -252,7 +253,7 @@ else begin
 			isp_state <= isp_state + 1;
 		end
 		
-		16: begin
+		20: begin
 			vert_d_base_col_0 <= isp_vram_din;
 			
 			isp_vram_rd <= 1'b1;
@@ -260,10 +261,13 @@ else begin
 			isp_state <= isp_state + 1;
 		end
 		
-		17: begin
+		21: begin
+			if (isp_vram_din[31:24]==8'hC8) isp_state <= 8'd2;	// Found next ISP control word. TESTING !!
+			else isp_vram_addr <= isp_vram_addr + 24'h4;
+		
 			isp_entry_valid <= 1'b1;
 			//isp_state <= 8'd2;				// Done!
-			isp_state <= 8'd5;				// Grab X/Y/Z again, for Triangle STRIPS.
+			//isp_state <= 8'd5;				// Grab X/Y/Z again, for Triangle STRIPS.
 		end
 		
 		default: ;

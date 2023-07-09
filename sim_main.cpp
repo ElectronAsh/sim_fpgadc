@@ -668,15 +668,16 @@ int verilate() {
 		rgb[2] = 0xff;	// Blue.
 		uint32_t disp_addr;
 
-		top->rootp->simtop__DOT__pvr__DOT__vram_din = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
-		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
-		top->rootp->simtop__DOT__pvr__DOT__ol_vram_din = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
+		top->rootp->simtop__DOT__pvr__DOT__vram_din     = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
+		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
+		top->rootp->simtop__DOT__pvr__DOT__ol_vram_din  = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
 		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
 
+		/*
 		if (top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid) {
 			uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
 			uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
-			
+			// Draw a 32x32 block, to denote the current RA tile.
 			for (int y = y_start; y < (y_start+32); y++) {
 				for (int x = x_start; x < (x_start+32); x++) {
 					rgb[0] = 0xff; rgb[1] = 0x00; rgb[2] = 0x00;
@@ -685,6 +686,7 @@ int verilate() {
 				}
 			}
 		}
+		*/
 
 		/*
 		float x1 = (*(float*)&top->rootp->simtop__DOT__pvr__DOT__x1);
@@ -838,8 +840,7 @@ int verilate() {
 
 		//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
 
-		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state == 17) {
-			// Loop through pixels
+		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state == 20) {
 			for (int y = spany; y > 0; y -= 1)
 			{
 				uint32_t* cb_x = cb_y;
@@ -851,15 +852,19 @@ int verilate() {
 					float Xhs31 = C3 + DX31 * y_ps - DY31 * x_ps;
 					float Xhs41 = C4 + DX41 * y_ps - DY41 * x_ps;
 
-					bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 /*&& Xhs41 >= 0*/;
+					bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
 
 					if (inTriangle)
 					{
 						//float invW = Z.Ip(x_ps, y_ps);
 						//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
-						rgb[0] = 0x00; rgb[1] = 0xff; rgb[2] = 0x00;
-						disp_addr = ( (uint32_t)y_ps * 640) + (uint32_t)x_ps;
-						disp_ptr[disp_addr] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
+						uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+						rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
+						rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
+						rgb[2] = (vertex_a_colour&0x000000ff);
+						//rgb[0] = 0x00; rgb[1] = 0xff; rgb[2] = 0x00;
+						disp_addr = ((uint32_t)y_ps * 640) + (uint32_t)x_ps;
+						disp_ptr[ disp_addr&0x3fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 						//printf("inTriangle: %d  x_ps: %d  y_ps: %d\n", inTriangle, (uint32_t)x_ps, (uint32_t)y_ps);
 					}
 
