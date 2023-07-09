@@ -3347,6 +3347,7 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__2(Vsimtop___024root* vlSelf
             vlSelf->simtop__DOT__pvr__DOT__isp_vram_rd = 1U;
         } else if ((0x11U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state))) {
             vlSelf->simtop__DOT__pvr__DOT__isp_entry_valid = 1U;
+            __Vdly__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state = 5U;
         }
         if (((((((((0U == (IData)(vlSelf->simtop__DOT__pvr__DOT__calc_state)) 
                    | (1U == (IData)(vlSelf->simtop__DOT__pvr__DOT__calc_state))) 

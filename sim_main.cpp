@@ -740,8 +740,16 @@ int verilate() {
 
 		//X1: 430E1B08 142.105591  X2: 43F200B4 484.005493  X3: 430E1B08 142.105591  X4: 00000000 0.000000
 		//Y1: 43B2939F 357.153290  Y2: 4429ECCF 679.700134  Y3: 4429ECCF 679.700134  Y4: 00000000 0.000000
-		float x1 = 142.105591; float x2 = 484.005493; float x3 = 142.105591;
-		float y1 = 357.153290; float y2 = 679.700134; float y3 = 679.700134;
+		//float x1 = 142.105591; float x2 = 484.005493; float x3 = 142.105591;
+		//float y1 = 357.153290; float y2 = 679.700134; float y3 = 679.700134;
+
+		float x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
+		float x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
+		float x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
+		float y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
+		float y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
+		float y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
+
 
 		//printf("x1: %d  y1: %d\n", x1, y1);
 
@@ -830,38 +838,39 @@ int verilate() {
 
 		//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
 
-		// Loop through pixels
-		for (int y = spany; y > 0; y -= 1)
-		{
-			uint32_t* cb_x = cb_y;
-			float x_ps = minx_ps;
-			for (int x = spanx; x > 0; x -= 1)
+		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state == 17) {
+			// Loop through pixels
+			for (int y = spany; y > 0; y -= 1)
 			{
-				float Xhs12 = C1 + DX12 * y_ps - DY12 * x_ps;
-				float Xhs23 = C2 + DX23 * y_ps - DY23 * x_ps;
-				float Xhs31 = C3 + DX31 * y_ps - DY31 * x_ps;
-				float Xhs41 = C4 + DX41 * y_ps - DY41 * x_ps;
-
-				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 /*&& Xhs41 >= 0*/;
-
-				if (inTriangle)
+				uint32_t* cb_x = cb_y;
+				float x_ps = minx_ps;
+				for (int x = spanx; x > 0; x -= 1)
 				{
-					//float invW = Z.Ip(x_ps, y_ps);
-					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
-					rgb[0] = 0x00; rgb[1] = 0xff; rgb[2] = 0x00;
-					disp_addr = ( (uint32_t)y_ps * 640) + (uint32_t)x_ps;
-					disp_ptr[disp_addr] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-					//printf("inTriangle: %d  x_ps: %d  y_ps: %d\n", inTriangle, (uint32_t)x_ps, (uint32_t)y_ps);
+					float Xhs12 = C1 + DX12 * y_ps - DY12 * x_ps;
+					float Xhs23 = C2 + DX23 * y_ps - DY23 * x_ps;
+					float Xhs31 = C3 + DX31 * y_ps - DY31 * x_ps;
+					float Xhs41 = C4 + DX41 * y_ps - DY41 * x_ps;
+
+					bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 /*&& Xhs41 >= 0*/;
+
+					if (inTriangle)
+					{
+						//float invW = Z.Ip(x_ps, y_ps);
+						//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
+						rgb[0] = 0x00; rgb[1] = 0xff; rgb[2] = 0x00;
+						disp_addr = ( (uint32_t)y_ps * 640) + (uint32_t)x_ps;
+						disp_ptr[disp_addr] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
+						//printf("inTriangle: %d  x_ps: %d  y_ps: %d\n", inTriangle, (uint32_t)x_ps, (uint32_t)y_ps);
+					}
+
+					cb_x += 4;
+					x_ps = x_ps + 1;
 				}
-
-				cb_x += 4;
-				x_ps = x_ps + 1;
+			next_y:
+				cb_y += stride_bytes;
+				y_ps = y_ps + 1;
 			}
-		next_y:
-			cb_y += stride_bytes;
-			y_ps = y_ps + 1;
 		}
-
 
 		// x1: 350  x2: 323  x3: 351
 		// y1: 444  y2: 462  y3: 439
@@ -1100,7 +1109,8 @@ int main(int argc, char** argv, char** env) {
 	fread(rom_ptr, 1, rom_size, biosfile);
 
 	FILE* pvrfile;
-	pvrfile = fopen("pvr_regs", "rb");
+	//pvrfile = fopen("pvr_regs_logo", "rb");
+	pvrfile = fopen("pvr_regs_menu", "rb");
 	if (pvrfile != NULL) printf("\npvr_regs loaded OK.\n\n");
 	else { printf("\npvr_regs file not found!\n\n"); return 0; }
 	fseek(pvrfile, 0L, SEEK_END);
@@ -1109,7 +1119,8 @@ int main(int argc, char** argv, char** env) {
 	fread(pvr_ptr, 1, pvr_size, pvrfile);
 
 	FILE* vram0_file;
-	vram0_file = fopen("vram0.bin", "rb");
+	//vram0_file = fopen("vram0_logo.bin", "rb");
+	vram0_file = fopen("vram0_menu.bin", "rb");
 	if (vram0_file != NULL) printf("\nvram0 loaded OK.\n\n");
 	else { printf("\nvram0 file not found!\n\n"); return 0; }
 	fseek(vram0_file, 0L, SEEK_END);
@@ -1118,7 +1129,8 @@ int main(int argc, char** argv, char** env) {
 	fread(vram0_ptr, 1, vram0_size, vram0_file);
 
 	FILE* vram1_file;
-	vram1_file = fopen("vram1.bin", "rb");
+	//vram1_file = fopen("vram1_logo.bin", "rb");
+	vram1_file = fopen("vram1_menu.bin", "rb");
 	if (vram1_file != NULL) printf("\nvram1 loaded OK.\n\n");
 	else { printf("\nvram1 file not found!\n\n"); return 0; }
 	fseek(vram1_file, 0L, SEEK_END);
@@ -1437,28 +1449,22 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("                  ID: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ID); 				// R   Device ID
 		ImGui::Text("            REVISION: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__REVISION); 			// R   Revision number
 		ImGui::Text("           SOFTRESET: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__SOFTRESET); 			// RW  CORE & TA software reset
-
 		ImGui::Text("         STARTRENDER: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__STARTRENDER); 		// RW  Drawing start
 		ImGui::Text("              SELECT: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__TEST_SELECT); 		// RW  Test - writing this register is prohibited.
-
 		ImGui::Text("          PARAM_BASE: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__PARAM_BASE); 		// RW  Base address for ISP regs
-
 		ImGui::Text("         REGION_BASE: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__REGION_BASE); 		// RW  Base address for Region Array
 		ImGui::Text("       SPAN_SORT_CFG: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__SPAN_SORT_CFG); 		// RW  Span Sorter control
-
 		ImGui::Text("       VO_BORDER_COL: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__VO_BORDER_COL); 		// RW  Border area color
 		ImGui::Text("           FB_R_CTRL: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_R_CTRL); 			// RW  Frame buffer read control
 		ImGui::Text("           FB_W_CTRL: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_W_CTRL); 			// RW  Frame buffer write control
 		ImGui::Text("     FB_W_LINESTRIDE: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_W_LINESTRIDE); 	// RW  Frame buffer line stride
 		ImGui::Text("           FB_R_SOF1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_R_SOF1); 			// RW  Read start address for field - 1/strip - 1
 		ImGui::Text("           FB_R_SOF2: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_R_SOF2); 			// RW  Read start address for field - 2/strip - 2
-
 		ImGui::Text("           FB_R_SIZE: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_R_SIZE); 			// RW  Frame buffer XY size	
 		ImGui::Text("           FB_W_SOF1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_W_SOF1); 			// RW  Write start address for field - 1/strip - 1
 		ImGui::Text("           FB_W_SOF2: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_W_SOF2); 			// RW  Write start address for field - 2/strip - 2
 		ImGui::Text("           FB_X_CLIP: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_X_CLIP); 			// RW  Pixel clip X coordinate
 		ImGui::Text("           FB_Y_CLIP: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FB_Y_CLIP); 			// RW  Pixel clip Y coordinate
-
 
 		ImGui::Text("      FPU_SHAD_SCALE: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FPU_SHAD_SCALE); 	// RW  Intensity Volume mode
 		ImGui::Text("        FPU_CULL_VAL: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL); 		// RW  Comparison value for culling

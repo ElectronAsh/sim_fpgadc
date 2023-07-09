@@ -104,6 +104,7 @@ else begin
 		1: begin
 			isp_vram_rd <= 1'b1;
 			isp_vram_addr <= 24'h0129f8;
+			//isp_vram_addr <= 24'h0116D0;
 			isp_state <= isp_state + 1;
 		end
 		
@@ -261,7 +262,8 @@ else begin
 		
 		17: begin
 			isp_entry_valid <= 1'b1;
-			//isp_state <= 8'd0;				// Done!
+			//isp_state <= 8'd2;				// Done!
+			isp_state <= 8'd5;				// Grab X/Y/Z again, for Triangle STRIPS.
 		end
 		
 		default: ;
