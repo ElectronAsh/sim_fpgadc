@@ -1,0 +1,1 @@
+verilator --public --compiler msvc --converge-limit 2000 -Wno-PINMISSING -Wno-WIDTH -Wno-IMPLICIT -Wno-MODDUP -Wno-UNSIGNED -Wno-CASEINCOMPLETE -Wno-CASEX -Wno-SYMRSVDWORD -Wno-COMBDLY -Wno-INITIALDLY -Wno-BLKANDNBLK -Wno-LATCH -Wno-UNOPT -I. -Ish4 -Igenrtl -Igenrtl/cpu -Igenrtl/fpu -Igenrtl/pvr --top-module simtop -Mdir out --cc simtop.v --exe sim_main.cpp
