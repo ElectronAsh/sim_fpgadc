@@ -149,7 +149,7 @@ reg [31:0] FB_Y_CLIP; 			// 16'h006C; RW  Pixel clip Y coordinate
 
 reg [31:0] FPU_SHAD_SCALE; 		// 16'h0074; RW  Intensity Volume mode
 reg [31:0] FPU_CULL_VAL; 		// 16'h0078; RW  Comparison value for culling
-reg [31:0] FPU_PARAM_CFG = 32'h0027DF77; 		// 16'h007C; RW  register read control
+reg [31:0] FPU_PARAM_CFG = 32'h0027DF77; 	// 16'h007C; RW  register read control
 reg [31:0] HALF_OFFSET; 		// 16'h0080; RW  Pixel sampling control
 reg [31:0] FPU_PERP_VAL; 		// 16'h0084; RW  Comparison value for perpendicular polygons
 reg [31:0] ISP_BACKGND_D; 		// 16'h0088; RW  Background surface depth
@@ -176,7 +176,7 @@ reg [31:0] SPG_VBLANK; 			// 16'h00DC; RW  V-blank control
 reg [31:0] SPG_WIDTH; 			// 16'h00E0; RW  Sync width control
 reg [31:0] TEXT_CONTROL; 		// 16'h00E4; RW  Texturing control
 reg [31:0] VO_CONTROL; 			// 16'h00E8; RW  Video output control
-reg [31:0] VO_STARTX; 			// 16'h00Ec; RW  Video output start X position
+reg [31:0] VO_STARTX; 			// 16'h00EC; RW  Video output start X position
 reg [31:0] VO_STARTY; 			// 16'h00F0; RW  Video output start Y position
 reg [31:0] SCALER_CTL; 			// 16'h00F4; RW  X & Y scaler control
 reg [31:0] PAL_RAM_CTRL; 		// 16'h0108; RW  Palette RAM control
@@ -208,8 +208,8 @@ reg [31:0] TA_NEXT_OPB_INIT; 	// 16'h0164; RW  Additional OPB starting address
 reg [31:0] FOG_TABLE_START; 	// 16'h0200; RW  Look-up table Fog data
 reg [31:0] FOG_TABLE_END;		// 16'h03FC;
 
-reg [31:0] TA_OL_POINTERS_START; // 16'h0600; R   TA object List Pointer data
-reg [31:0] TA_OL_POINTERS_END;	 // 16'h0F5C;
+reg [31:0] TA_OL_POINTERS_START;// 16'h0600; R   TA object List Pointer data
+reg [31:0] TA_OL_POINTERS_END;	// 16'h0F5C;
 
 reg [31:0] PALETTE_RAM_START; 	// 16'h1000; RW  Palette RAM
 reg [31:0] PALETTE_RAM_END;		// 16'h1FFC;
@@ -218,105 +218,106 @@ reg [31:0] PALETTE_RAM_END;		// 16'h1FFC;
 
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
-
+	ID <= 32'h17FD11DB;
+	REVISION <= 32'h00000011;
 end
 else begin
 	// Handle PVR and TA reg Writes...
 	if (pvr_reg_cs && pvr_wr) begin
 		case (pvr_addr)
 			// Main regs...
-			ID_addr: ID <= pvr_din; 							// R   Device ID
-			//REVISION_addr: REVISION <= pvr_din; 				// R   Revision number
-			SOFTRESET_addr: SOFTRESET <= pvr_din; 				// RW  CORE & TA software reset
+			//ID_addr: ID <= pvr_din; 							// 16'h0000; R   Device ID
+			//REVISION_addr: REVISION <= pvr_din; 				// 16'h0004; R   Revision number
+			SOFTRESET_addr: SOFTRESET <= pvr_din; 				// 16'h0008; RW  CORE & TA software reset
 				
-			STARTRENDER_addr: STARTRENDER <= pvr_din; 			// RW  Drawing start
-			TEST_SELECT_addr: TEST_SELECT <= pvr_din; 			// RW  Test - writing this register is prohibited.
+			STARTRENDER_addr: STARTRENDER <= pvr_din; 			// 16'h0014; RW  Drawing start
+			TEST_SELECT_addr: TEST_SELECT <= pvr_din; 			// 16'h0018; RW  Test - writing this register is prohibited.
 
-			PARAM_BASE_addr: PARAM_BASE <= pvr_din; 			// RW  Base address for ISP regs
+			PARAM_BASE_addr: PARAM_BASE <= pvr_din; 			// 16'h0020; RW  Base address for ISP regs
 
-			REGION_BASE_addr: REGION_BASE <= pvr_din; 			// RW  Base address for Region Array
-			SPAN_SORT_CFG_addr: SPAN_SORT_CFG <= pvr_din; 		// RW  Span Sorter control
+			REGION_BASE_addr: REGION_BASE <= pvr_din; 			// 16'h002C; RW  Base address for Region Array
+			SPAN_SORT_CFG_addr: SPAN_SORT_CFG <= pvr_din; 		// 16'h0030; RW  Span Sorter control
 
-			VO_BORDER_COL_addr: VO_BORDER_COL <= pvr_din; 		// RW  Border area color
-			FB_R_CTRL_addr: FB_R_CTRL <= pvr_din; 				// RW  Frame buffer read control
-			FB_W_CTRL_addr: FB_W_CTRL <= pvr_din; 				// RW  Frame buffer write control
-			FB_W_LINESTRIDE_addr: FB_W_LINESTRIDE <= pvr_din; 	// RW  Frame buffer line stride
-			FB_R_SOF1_addr: FB_R_SOF1 <= pvr_din; 				// RW  Read start address for field - 1/strip - 1
-			FB_R_SOF2_addr: FB_R_SOF2 <= pvr_din; 				// RW  Read start address for field - 2/strip - 2
+			VO_BORDER_COL_addr: VO_BORDER_COL <= pvr_din; 		// 16'h0040; RW  Border area color
+			FB_R_CTRL_addr: FB_R_CTRL <= pvr_din; 				// 16'h0044; RW  Frame buffer read control
+			FB_W_CTRL_addr: FB_W_CTRL <= pvr_din; 				// 16'h0048; RW  Frame buffer write control
+			FB_W_LINESTRIDE_addr: FB_W_LINESTRIDE <= pvr_din; 	// 16'h004C; RW  Frame buffer line stride
+			FB_R_SOF1_addr: FB_R_SOF1 <= pvr_din; 				// 16'h0050; RW  Read start address for field - 1/strip - 1
+			FB_R_SOF2_addr: FB_R_SOF2 <= pvr_din; 				// 16'h0054; RW  Read start address for field - 2/strip - 2
 
-			FB_R_SIZE_addr: FB_R_SIZE <= pvr_din; 				// RW  Frame buffer XY size	
-			FB_W_SOF1_addr: FB_W_SOF1 <= pvr_din; 				// RW  Write start address for field - 1/strip - 1
-			FB_W_SOF2_addr: FB_W_SOF2 <= pvr_din; 				// RW  Write start address for field - 2/strip - 2
-			FB_X_CLIP_addr: FB_X_CLIP <= pvr_din; 				// RW  Pixel clip X coordinate
-			FB_Y_CLIP_addr: FB_Y_CLIP <= pvr_din; 				// RW  Pixel clip Y coordinate
+			FB_R_SIZE_addr: FB_R_SIZE <= pvr_din; 				// 16'h005C; RW  Frame buffer XY size	
+			FB_W_SOF1_addr: FB_W_SOF1 <= pvr_din; 				// 16'h0060; RW  Write start address for field - 1/strip - 1
+			FB_W_SOF2_addr: FB_W_SOF2 <= pvr_din; 				// 16'h0064; RW  Write start address for field - 2/strip - 2
+			FB_X_CLIP_addr: FB_X_CLIP <= pvr_din; 				// 16'h0068; RW  Pixel clip X coordinate
+			FB_Y_CLIP_addr: FB_Y_CLIP <= pvr_din; 				// 16'h006C; RW  Pixel clip Y coordinate
 
 
-			FPU_SHAD_SCALE_addr: FPU_SHAD_SCALE <= pvr_din; 	// RW  Intensity Volume mode
-			FPU_CULL_VAL_addr: FPU_CULL_VAL <= pvr_din; 		// RW  Comparison value for culling
-			FPU_PARAM_CFG_addr: FPU_PARAM_CFG <= pvr_din; 		// RW  Parameter read control
-			HALF_OFFSET_addr: HALF_OFFSET <= pvr_din; 			// RW  Pixel sampling control
-			FPU_PERP_VAL_addr: FPU_PERP_VAL <= pvr_din; 		// RW  Comparison value for perpendicular polygons
-			ISP_BACKGND_D_addr: ISP_BACKGND_D <= pvr_din; 		// RW  Background surface depth
-			ISP_BACKGND_T_addr: ISP_BACKGND_T <= pvr_din; 		// RW  Background surface tag
+			FPU_SHAD_SCALE_addr: FPU_SHAD_SCALE <= pvr_din; 	// 16'h0074; RW  Intensity Volume mode
+			FPU_CULL_VAL_addr: FPU_CULL_VAL <= pvr_din; 		// 16'h0078; RW  Comparison value for culling
+			FPU_PARAM_CFG_addr: FPU_PARAM_CFG <= pvr_din; 		// 16'h007C; RW  Parameter read control
+			HALF_OFFSET_addr: HALF_OFFSET <= pvr_din; 			// 16'h0080; RW  Pixel sampling control
+			FPU_PERP_VAL_addr: FPU_PERP_VAL <= pvr_din; 		// 16'h0084; RW  Comparison value for perpendicular polygons
+			ISP_BACKGND_D_addr: ISP_BACKGND_D <= pvr_din; 		// 16'h0088; RW  Background surface depth
+			ISP_BACKGND_T_addr: ISP_BACKGND_T <= pvr_din; 		// 16'h008C; RW  Background surface tag
 
-			ISP_FEED_CFG_addr: ISP_FEED_CFG <= pvr_din; 		// RW  Translucent polygon sort mode
+			ISP_FEED_CFG_addr: ISP_FEED_CFG <= pvr_din; 		// 16'h0098; RW  Translucent polygon sort mode
 
-			SDRAM_REFRESH_addr: SDRAM_REFRESH <= pvr_din; 		// RW  Texture memory refresh counter
-			SDRAM_ARB_CFG_addr: SDRAM_ARB_CFG <= pvr_din; 		// RW  Texture memory arbiter control
-			SDRAM_CFG_addr: SDRAM_CFG <= pvr_din; 				// RW  Texture memory control
+			SDRAM_REFRESH_addr: SDRAM_REFRESH <= pvr_din; 		// 16'h00A0; RW  Texture memory refresh counter
+			SDRAM_ARB_CFG_addr: SDRAM_ARB_CFG <= pvr_din; 		// 16'h00A4; RW  Texture memory arbiter control
+			SDRAM_CFG_addr: SDRAM_CFG <= pvr_din; 				// 16'h00A8; RW  Texture memory control
 
-			FOG_COL_RAM_addr: FOG_COL_RAM <= pvr_din; 			// RW  Color for Look Up table Fog
-			FOG_COL_VERT_addr: FOG_COL_VERT <= pvr_din; 		// RW  Color for vertex Fog
-			FOG_DENSITY_addr: FOG_DENSITY <= pvr_din; 			// RW  Fog scale value
-			FOG_CLAMP_MAX_addr: FOG_CLAMP_MAX <= pvr_din; 		// RW  Color clamping maximum value
-			FOG_CLAMP_MIN_addr: FOG_CLAMP_MIN <= pvr_din; 		// RW  Color clamping minimum value
-			SPG_TRIGGER_POS_addr: SPG_TRIGGER_POS <= pvr_din; 	// RW  External trigger signal HV counter value
-			SPG_HBLANK_INT_addr: SPG_HBLANK_INT <= pvr_din; 	// RW  H-blank interrupt control	
-			SPG_VBLANK_INT_addr: SPG_VBLANK_INT <= pvr_din; 	// RW  V-blank interrupt control	
-			SPG_CONTROL_addr: SPG_CONTROL <= pvr_din; 			// RW  Sync pulse generator control
-			SPG_HBLANK_addr: SPG_HBLANK <= pvr_din; 			// RW  H-blank control
-			SPG_LOAD_addr: SPG_LOAD <= pvr_din; 				// RW  HV counter load value
-			SPG_VBLANK_addr: SPG_VBLANK <= pvr_din; 			// RW  V-blank control
-			SPG_WIDTH_addr: SPG_WIDTH <= pvr_din; 				// RW  Sync width control
-			TEXT_CONTROL_addr: TEXT_CONTROL <= pvr_din; 		// RW  Texturing control
-			VO_CONTROL_addr: VO_CONTROL <= pvr_din; 			// RW  Video output control
-			VO_STARTX_addr: VO_STARTX <= pvr_din; 				// RW  Video output start X position
-			VO_STARTY_addr: VO_STARTY <= pvr_din; 				// RW  Video output start Y position
-			SCALER_CTL_addr: SCALER_CTL <= pvr_din; 			// RW  X & Y scaler control
-			PAL_RAM_CTRL_addr: PAL_RAM_CTRL <= pvr_din; 		// RW  Palette RAM control
-			SPG_STATUS_addr: SPG_STATUS <= pvr_din; 			// R   Sync pulse generator status
-			FB_BURSTCTRL_addr: FB_BURSTCTRL <= pvr_din; 		// RW  Frame buffer burst control
-			FB_C_SOF_addr: FB_C_SOF <= pvr_din; 				// R   Current frame buffer start address
-			Y_COEFF_addr: Y_COEFF <= pvr_din; 					// RW  Y scaling coefficient
+			FOG_COL_RAM_addr: FOG_COL_RAM <= pvr_din; 			// 16'h00B0; RW  Color for Look Up table Fog
+			FOG_COL_VERT_addr: FOG_COL_VERT <= pvr_din; 		// 16'h00B4; RW  Color for vertex Fog
+			FOG_DENSITY_addr: FOG_DENSITY <= pvr_din; 			// 16'h00B8; RW  Fog scale value
+			FOG_CLAMP_MAX_addr: FOG_CLAMP_MAX <= pvr_din; 		// 16'h00BC; RW  Color clamping maximum value
+			FOG_CLAMP_MIN_addr: FOG_CLAMP_MIN <= pvr_din; 		// 16'h00C0; RW  Color clamping minimum value
+			SPG_TRIGGER_POS_addr: SPG_TRIGGER_POS <= pvr_din; 	// 16'h00C4; RW  External trigger signal HV counter value
+			SPG_HBLANK_INT_addr: SPG_HBLANK_INT <= pvr_din; 	// 16'h00C8; RW  H-blank interrupt control	
+			SPG_VBLANK_INT_addr: SPG_VBLANK_INT <= pvr_din; 	// 16'h00CC; RW  V-blank interrupt control	
+			SPG_CONTROL_addr: SPG_CONTROL <= pvr_din; 			// 16'h00D0; RW  Sync pulse generator control
+			SPG_HBLANK_addr: SPG_HBLANK <= pvr_din; 			// 16'h00D4; RW  H-blank control
+			SPG_LOAD_addr: SPG_LOAD <= pvr_din; 				// 16'h00D8; RW  HV counter load value
+			SPG_VBLANK_addr: SPG_VBLANK <= pvr_din; 			// 16'h00DC; RW  V-blank control
+			SPG_WIDTH_addr: SPG_WIDTH <= pvr_din; 				// 16'h00E0; RW  Sync width control
+			TEXT_CONTROL_addr: TEXT_CONTROL <= pvr_din; 		// 16'h00E4; RW  Texturing control
+			VO_CONTROL_addr: VO_CONTROL <= pvr_din; 			// 16'h00E8; RW  Video output control
+			VO_STARTX_addr: VO_STARTX <= pvr_din; 				// 16'h00EC; RW  Video output start X position
+			VO_STARTY_addr: VO_STARTY <= pvr_din; 				// 16'h00F0; RW  Video output start Y position
+			SCALER_CTL_addr: SCALER_CTL <= pvr_din; 			// 16'h00F4; RW  X & Y scaler control
+			PAL_RAM_CTRL_addr: PAL_RAM_CTRL <= pvr_din; 		// 16'h0108; RW  Palette RAM control
+			SPG_STATUS_addr: SPG_STATUS <= pvr_din; 			// 16'h010C; R   Sync pulse generator status
+			FB_BURSTCTRL_addr: FB_BURSTCTRL <= pvr_din; 		// 16'h0110; RW  Frame buffer burst control
+			FB_C_SOF_addr: FB_C_SOF <= pvr_din; 				// 16'h0114; R   Current frame buffer start address
+			Y_COEFF_addr: Y_COEFF <= pvr_din; 					// 16'h0118; RW  Y scaling coefficient
 
-			PT_ALPHA_REF_addr: PT_ALPHA_REF <= pvr_din; 		// RW  Alpha value for Punch Through polygon comparison
+			PT_ALPHA_REF_addr: PT_ALPHA_REF <= pvr_din; 		// 16'h011C; RW  Alpha value for Punch Through polygon comparison
 
 
 			// TA REGS
-			TA_OL_BASE_addr: TA_OL_BASE <= pvr_din; 			// RW  Object list write start address
-			TA_ISP_BASE_addr: TA_ISP_BASE <= pvr_din; 			// RW  ISP/TSP Parameter write start address
-			TA_OL_LIMIT_addr: TA_OL_LIMIT <= pvr_din; 			// RW  Start address of next Object Pointer Block
-			TA_ISP_LIMIT_addr: TA_ISP_LIMIT <= pvr_din; 		// RW  Current ISP/TSP Parameter write address
-			TA_NEXT_OPB_addr: TA_NEXT_OPB <= pvr_din; 			// R   Global Tile clip control
-			TA_ISP_CURRENT_addr: TA_ISP_CURRENT <= pvr_din; 	// R   Current ISP/TSP Parameter write address
-			TA_GLOB_TILE_CLIP_addr: TA_GLOB_TILE_CLIP <= pvr_din; // RW  Global Tile clip control
-			TA_ALLOC_CTRL_addr: TA_ALLOC_CTRL <= pvr_din; 		// RW  Object list control
-			TA_LIST_INIT_addr: TA_LIST_INIT <= pvr_din; 		// RW  TA initialization
-			TA_YUV_TEX_BASE_addr: TA_YUV_TEX_BASE <= pvr_din; 	// RW  YUV422 texture write start address
-			TA_YUV_TEX_CTRL_addr: TA_YUV_TEX_CTRL <= pvr_din; 	// RW  YUV converter control
-			TA_YUV_TEX_CNT_addr: TA_YUV_TEX_CNT <= pvr_din; 	// R   YUV converter macro block counter value
+			TA_OL_BASE_addr: TA_OL_BASE <= pvr_din; 				// 16'h0124; RW  Object list write start address
+			TA_ISP_BASE_addr: TA_ISP_BASE <= pvr_din; 				// 16'h0128; RW  ISP/TSP Parameter write start address
+			TA_OL_LIMIT_addr: TA_OL_LIMIT <= pvr_din; 				// 16'h012C; RW  Start address of next Object Pointer Block
+			TA_ISP_LIMIT_addr: TA_ISP_LIMIT <= pvr_din; 			// 16'h0130; RW  Current ISP/TSP Parameter write address
+			TA_NEXT_OPB_addr: TA_NEXT_OPB <= pvr_din; 				// 16'h0134; R   Global Tile clip control
+			TA_ISP_CURRENT_addr: TA_ISP_CURRENT <= pvr_din; 		// 16'h0138; R   Current ISP/TSP Parameter write address
+			TA_GLOB_TILE_CLIP_addr: TA_GLOB_TILE_CLIP <= pvr_din;	// 16'h013C; RW  Global Tile clip control
+			TA_ALLOC_CTRL_addr: TA_ALLOC_CTRL <= pvr_din; 			// 16'h0140; RW  Object list control
+			TA_LIST_INIT_addr: TA_LIST_INIT <= pvr_din; 			// 16'h0144; RW  TA initialization
+			TA_YUV_TEX_BASE_addr: TA_YUV_TEX_BASE <= pvr_din; 		// 16'h0148; RW  YUV422 texture write start address
+			TA_YUV_TEX_CTRL_addr: TA_YUV_TEX_CTRL <= pvr_din; 		// 16'h014C; RW  YUV converter control
+			TA_YUV_TEX_CNT_addr: TA_YUV_TEX_CNT <= pvr_din; 		// 16'h0150; R   YUV converter macro block counter value
 
-			TA_LIST_CONT_addr: TA_LIST_CONT <= pvr_din; 		// RW  TA continuation processing
-			TA_NEXT_OPB_INIT_addr: TA_NEXT_OPB_INIT <= pvr_din; // RW  Additional OPB starting address
+			TA_LIST_CONT_addr: TA_LIST_CONT <= pvr_din; 			// 16'h0160; RW  TA continuation processing
+			TA_NEXT_OPB_INIT_addr: TA_NEXT_OPB_INIT <= pvr_din; 	// 16'h0164; RW  Additional OPB starting address
 
-			FOG_TABLE_START_addr: FOG_TABLE_START <= pvr_din; 	// RW  Look-up table Fog data
-			FOG_TABLE_END_addr: FOG_TABLE_END <= pvr_din;
+			FOG_TABLE_START_addr: FOG_TABLE_START <= pvr_din; 		// 16'h0200; RW  Look-up table Fog data
+			FOG_TABLE_END_addr: FOG_TABLE_END <= pvr_din;			// 16'h03FC;
 
-			TA_OL_POINTERS_START_addr: TA_OL_POINTERS_START <= pvr_din; // R   TA object List Pointer data
-			TA_OL_POINTERS_END_addr: TA_OL_POINTERS_END <= pvr_din;
+			TA_OL_POINTERS_START_addr: TA_OL_POINTERS_START <= pvr_din; // 16'h0600; R   TA object List Pointer data
+			TA_OL_POINTERS_END_addr: TA_OL_POINTERS_END <= pvr_din;		// 16'h0F5C;
 
-			PALETTE_RAM_START_addr: PALETTE_RAM_START <= pvr_din; // RW  Palette RAM
-			PALETTE_RAM_END_addr: PALETTE_RAM_END <= pvr_din;
+			PALETTE_RAM_START_addr: PALETTE_RAM_START <= pvr_din; 		// 16'h1000; RW  Palette RAM
+			PALETTE_RAM_END_addr: PALETTE_RAM_END <= pvr_din;			// 16'h1FFC;
 			default: ;
 		endcase
 	end
@@ -459,6 +460,9 @@ wire [31:0] ra_puncht;
 
 wire ra_entry_valid;
 
+wire [23:0] poly_addr;
+wire render_poly;
+
 ra_parser ra_parser_inst (
 	.clock( clock ),		// input  clock
 	.reset_n( reset_n ),	// input  reset_n
@@ -466,6 +470,7 @@ ra_parser ra_parser_inst (
 	.ra_trig( ra_trig ),	// input  ra_trig
 	
 	.FPU_PARAM_CFG( FPU_PARAM_CFG ),	// input [31:0]  FPU_PARAM_CFG
+	.REGION_BASE( REGION_BASE ),		// input [31:0]  REGION_BASE
 	
 	.ra_vram_rd( ra_vram_rd ),			// output  ra_vram_rd
 	.ra_vram_wr( ra_vram_wr ),			// output  ra_vram_wr
@@ -485,42 +490,10 @@ ra_parser ra_parser_inst (
 	.ra_trans_mod( ra_trans_mod ),		// output [31:0]  ra_trans_mod
 	.ra_puncht( ra_puncht ),			// output [31:0]  ra_puncht
 	
-	.ra_entry_valid( ra_entry_valid )	// output  ra_entry_valid
-);
-
-
-wire ol_vram_rd;
-wire ol_vram_wr;
-wire [23:0] ol_vram_addr;
-
-(*keep*)wire [31:0] ol_vram_din = vram_din;
-
-wire [31:0] ol_control;
-
-ol_parser ol_parser_inst (
-	.clock( clock ),		// input  clock
-	.reset_n( reset_n ),	// input  reset_n
+	.ra_entry_valid( ra_entry_valid ),	// output  ra_entry_valid
 	
-	.ra_cont_last( ra_cont_last ),		// input  ra_cont_last
-	.ra_cont_zclear( ra_cont_zclear ),	// input  ra_cont_zclear
-	.ra_cont_flush( ra_cont_flush ),	// input  ra_cont_flush
-	.ra_cont_tiley( ra_cont_tiley ),	// input [5:0]  ra_cont_tiley
-	.ra_cont_tilex( ra_cont_tilex ),	// input [5:0]  ra_cont_tilex
-
-	.ra_opaque( ra_opaque ),			// input [31:0]  ra_opaque
-	.ra_opaque_mod( ra_opaque_mod ),	// input [31:0]  ra_opaque_mod
-	.ra_trans( ra_trans ),				// input [31:0]  ra_trans
-	.ra_trans_mod( ra_trans_mod ),		// input [31:0]  ra_trans_mod
-	.ra_puncht( ra_puncht ),			// input [31:0]  ra_puncht
-	
-	.ra_entry_valid( ra_entry_valid ),	// input  ra_entry_valid
-	
-	.ol_vram_rd( ol_vram_rd ),			// output  ol_vram_rd
-	.ol_vram_wr( ol_vram_wr ),			// output  ol_vram_wr
-	.ol_vram_addr( ol_vram_addr ),		// output [23:0]  ol_vram_addr
-	.ol_vram_din( ol_vram_din ),		// input [31:0]   ol_vram_din
-	
-	.ol_control( ol_control )					// output [31:0]  ol_control
+	.poly_addr( poly_addr ),			// output [23:0]  poly_addr
+	.render_poly( render_poly )			// output  render_poly
 );
 
 
@@ -532,8 +505,8 @@ wire [23:0] isp_vram_addr;
 
 wire isp_entry_valid;
 
-//assign vram_addr = (ra_entry_valid) ? ol_vram_addr : ra_vram_addr;
-assign vram_addr = isp_vram_addr;
+assign vram_addr = ra_vram_addr;
+//assign vram_addr = isp_vram_addr;
 
 isp_parser isp_parser_inst (
 	.clock( clock ),			// input  clock

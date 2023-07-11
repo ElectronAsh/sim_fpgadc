@@ -114,15 +114,15 @@ else begin
 			//isp_vram_addr <= 24'h0129f8;
 			//isp_vram_addr <= 24'h0116D0;
 			isp_vram_addr <= 24'h00408c;	// Menu
-			//isp_vram_addr <= 24'h027520;	// Taxi
+			//isp_vram_addr <= 24'h000450;	// Taxi
 			//isp_vram_addr <= 24'h000000;	// Sanic
 			isp_vram_rd <= 1'b1;
-			strip_cnt <= 4'd1;
+			strip_cnt <= 4'd3;
 			isp_state <= 8'd1;
 		end
 		1:  isp_inst <= isp_vram_din;
 		2:  tsp_inst <= isp_vram_din;
-		3:  begin tex_cont <= isp_vram_din; 	/* if (!shadow)*/ isp_state <= 8'd6; end
+		3:  begin tex_cont <= isp_vram_din; /* if (!shadow)*/ isp_state <= 8'd6; end
 		
 		// if (shadow)...
 		4:  tsp2_inst <= isp_vram_din;
@@ -177,7 +177,7 @@ else begin
 			vert_c_base_col_0 <= isp_vram_din;
 			if (two_volume) isp_state <= 8'd32;
 			else if (offset) isp_state <= 8'd35;
-			else isp_state <= 8'd36;
+			else /*isp_state <= 8'd36;*/ isp_state <= 8'd46;	// TESTING. Skip Vert D.
 		end
 		
 		// if Two-volume...
@@ -186,7 +186,7 @@ else begin
 		34: begin vert_c_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd36; end
 		
 		// if Offset colour...
-		35: vert_c_off_col <= isp_vram_din;
+		35: begin vert_c_off_col <= isp_vram_din; isp_state <= 8'd46; end	// TESTING. Skip Vert D.
 		
 		36: vert_d_x <= isp_vram_din;
 		37: vert_d_y <= isp_vram_din;
@@ -210,14 +210,15 @@ else begin
 		
 		46: begin
 			//if (strip_cnt==4'd0) begin
-				if (isp_vram_din[31:24]==8'hC8 /*|| isp_vram_din[31:24]==8'hCA*/) begin
+				if (isp_vram_din[31:24]==8'hC8) begin	// Menu.
+				//if (isp_vram_din[31:16]==16'h9380) begin	// Taxi.
+				//if (isp_vram_din[31:16]==16'hCB80) begin	// Sanic.
 					isp_entry_valid <= 1'b1;
 					isp_inst <= isp_vram_din;
-					strip_cnt <= 4'd1;
+					strip_cnt <= 4'd3;
 					isp_state <= 8'd2;
 				end
-			/*
-			end
+			/*end
 			else begin
 				isp_entry_valid <= 1'b1;
 			
@@ -226,13 +227,15 @@ else begin
 				vert_a_x <= vert_b_x;
 				vert_a_y <= vert_b_y;
 				vert_a_z <= vert_b_z;
+				vert_a_base_col_1 <= vert_b_base_col_1;
 
 				vert_b_x <= vert_c_x;
 				vert_b_y <= vert_c_y;
 				vert_b_z <= vert_c_z;
+				vert_b_base_col_1 <= vert_c_base_col_1;
 				
 				vert_c_x <= isp_vram_din;
-				isp_state <= 8'd27;	// Grab (rest of) new vert C.
+				isp_state <= 8'd27;			// Grab (rest of) new vert C.
 			end
 			*/
 		end

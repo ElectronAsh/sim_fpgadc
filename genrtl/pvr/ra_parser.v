@@ -8,6 +8,7 @@ module ra_parser (
 	input ra_trig,
 	
 	input [31:0] FPU_PARAM_CFG,
+	input [31:0] REGION_BASE,
 	
 	output reg ra_vram_rd,
 	output reg ra_vram_wr,
@@ -27,7 +28,10 @@ module ra_parser (
 	output reg [31:0] ra_trans_mod,
 	output reg [31:0] ra_puncht,
 	
-	output reg ra_entry_valid
+	output reg ra_entry_valid,
+	
+	output reg [23:0] poly_addr,
+	output reg render_poly
 );
 
 
@@ -40,9 +44,24 @@ assign ra_cont_flush  = ra_control[28];
 assign ra_cont_tiley  = ra_control[13:8];
 assign ra_cont_tilex  = ra_control[7:2];
 
+
+// OL Word parsing...
+reg [2:0] type_cnt;
+
+reg [31:0] opb_word;
+wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.
+wire [3:0] num_prims = opb_word[28:25];	// For Triangle Array or Quad Array only.
+wire shadow = opb_word[24];				// For all three poly types.
+wire [2:0] skip = opb_word[23:21];		// For all three poly types.
+wire eol = opb_word[28];
+
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
 	ra_state <= 8'd0;
+	opb_word <= 32'h00000000;
+	type_cnt <= 3'd0;
+	poly_addr <= 24'h000000;
+	render_poly <= 1'b0;
 end
 else begin
 	ra_vram_rd <= 1'b0;
@@ -53,15 +72,16 @@ else begin
 	case (ra_state)
 		0: begin
 			if (ra_trig) begin
+				type_cnt <= 3'd0;
 				ra_state <= ra_state + 8'd1;
 			end
 		end
 		
 		1: begin
 			ra_vram_rd <= 1'b1;
-			//ra_vram_addr <= REGION_BASE[22:0];
-			//ra_vram_addr <= 23'h1667C0;
-			ra_vram_addr <= 23'h0D33C8;	// Taxi.
+			//ra_vram_addr <= REGION_BASE[22:0];		// Might need to mask this? This is the absolute addr, so VRAM starts at 0x04000000 etc.
+			ra_vram_addr <= 23'h1667C0;		// Menu.
+			//ra_vram_addr <= 23'h0D33C8;	// Taxi.
 			ra_state <= ra_state + 1;
 		end
 		
@@ -116,8 +136,64 @@ else begin
 		
 		8: begin
 			ra_entry_valid <= 1'b1;
-			//ra_state <= 8'd0;				// Done!
-			//ra_state <= 8'd2;				// TESTING !!
+			ra_state <= ra_state + 1;
+		end
+		
+		9: begin
+			case (type_cnt)
+				0: if (!ra_opaque[31])     begin ra_vram_addr <= ra_opaque[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				1: if (!ra_opaque_mod[31]) begin ra_vram_addr <= ra_opaque_mod[23:0]; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				2: if (!ra_trans[31])      begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				4: if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				5: ra_state <= 8'd13;	// All Types in this Object are done!
+				default: ;
+			endcase
+		end
+		
+		10: begin
+			opb_word <= ra_vram_din;
+			ra_vram_rd <= 1'b0;
+			type_cnt <= type_cnt + 3'd1;
+			/*if (object_done)*/ ra_state <= ra_state + 1;
+		end
+		
+		// Check for Pointer Block Link, or Primitive Type...
+		11: begin
+			if (opb_word[31:29]==3'b111) begin		// Pointer Block Link.
+				if (eol) begin
+					ra_state <= 8'd12;	// todo
+				end
+				else begin
+					ra_vram_addr <= {opb_word[23:2], 2'b00};
+					ra_vram_rd <= 1'b1;
+					ra_state <= 8'd10;
+				end
+			end
+			else if (opb_word[31:29]==3'b101) begin	// Quad Array.
+				poly_addr <= {opb_word[20:0], 2'b00};
+				render_poly <= 1'b1;
+				ra_state <= ra_state + 8'd1;
+			end
+			else if (opb_word[31:29]==3'b100) begin	// Triangle Array.
+				poly_addr <= {opb_word[20:0], 2'b00};
+				render_poly <= 1'b1;
+				ra_state <= ra_state + 8'd1;
+			end
+			else if (!opb_word[31]) begin			// Triangle Strip.
+				poly_addr <= {opb_word[20:0], 2'b00};
+				render_poly <= 1'b1;
+				ra_state <= ra_state + 8'd1;
+			end
+			//else // Undefined prim type!
+		end
+		
+		12: begin
+			// Todo: Wait for poly draw to finish, loop back to state 9 to check for more prim types.
+		end
+		
+		13: begin	// All Types in this Object are done!
+			
 		end
 		
 		default: ;

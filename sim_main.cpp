@@ -672,7 +672,6 @@ int verilate() {
 
 		top->rootp->simtop__DOT__pvr__DOT__vram_din     = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
 		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
-		top->rootp->simtop__DOT__pvr__DOT__ol_vram_din  = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
 		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
 
 		/*
@@ -871,7 +870,7 @@ int verilate() {
 						rgb[2] = (vertex_a_colour&0x000000ff);
 						//rgb[0] = 0x00; rgb[1] = 0xff; rgb[2] = 0x00;
 						disp_addr = ((uint32_t)y_ps * 640) + (uint32_t)x_ps;
-						disp_ptr[ disp_addr&0x3fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+						disp_ptr[ disp_addr&0x1fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 						//printf("inTriangle: %d  x_ps: %d  y_ps: %d\n", inTriangle, (uint32_t)x_ps, (uint32_t)y_ps);
 					}
 
@@ -1567,14 +1566,13 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("   ra_cont_tiley: %d", top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley);
 		ImGui::Text("   ra_cont_tilex: %d", top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex);
 		ImGui::Separator();
+		ImGui::Text("        type_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt);
 		ImGui::Text("       ra_opaque: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_opaque);
 		ImGui::Text("   ra_opaque_mod: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_opaque_mod);
 		ImGui::Text("        ra_trans: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans);
 		ImGui::Text("    ra_trans_mod: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans_mod);
 		ImGui::Text("       ra_puncht: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_puncht);
 		ImGui::Text("  ra_entry_valid: %d", top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid);
-		ImGui::Separator();
-		ImGui::Text("      ol_control: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ol_control);
 		ImGui::End();
 
 		ImGui::Begin(" ISP Parser");
