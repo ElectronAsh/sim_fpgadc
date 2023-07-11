@@ -32,7 +32,9 @@ module ra_parser (
 	output reg ra_entry_valid,
 	
 	output reg [23:0] poly_addr,
-	output reg render_poly
+	output reg render_poly,
+	
+	input poly_drawn
 );
 
 
@@ -45,6 +47,7 @@ wire [1:0]  o_opb = TA_ALLOC_CTRL[1:0];
 
 // Region Array read state machine...
 reg [7:0] ra_state;
+reg [24:0] next_region;
 
 assign ra_cont_last   = ra_control[31];
 assign ra_cont_zclear = ra_control[30];
@@ -66,6 +69,7 @@ wire eol = opb_word[28];
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
 	ra_state <= 8'd0;
+	next_region <= 24'h00000000;
 	opb_word <= 32'h00000000;
 	type_cnt <= 3'd0;
 	poly_addr <= 24'h000000;
@@ -141,6 +145,7 @@ else begin
 		end
 		
 		8: begin
+			next_region <= ra_vram_addr;
 			ra_entry_valid <= 1'b1;
 			type_cnt <= 3'd0;
 			ra_state <= ra_state + 1;
@@ -148,27 +153,30 @@ else begin
 		
 		9: begin
 			case (type_cnt)
-				0: if (!ra_opaque[31])     begin ra_vram_addr <= ra_opaque[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				1: if (!ra_opaque_mod[31]) begin ra_vram_addr <= ra_opaque_mod[23:0]; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				2: if (!ra_trans[31])      begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				4: if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				5: ra_state <= 8'd14;	// All Types in this Object are done!
+				0: if (!ra_opaque[31])     begin ra_vram_addr <= ra_opaque[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end else type_cnt <= type_cnt + 1;
+				1: if (!ra_opaque_mod[31]) begin ra_vram_addr <= ra_opaque_mod[23:0]; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end else type_cnt <= type_cnt + 1;
+				2: if (!ra_trans[31])      begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end else type_cnt <= type_cnt + 1;
+				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end else type_cnt <= type_cnt + 1;
+				4: if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end else type_cnt <= type_cnt + 1;
+				5: ra_state <= 8'd14;	// All prim TYPES in this Object are done!
 				default: ;
 			endcase
 		end
 		
 		10: begin
-			/*
 			case (type_cnt)
-				0: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(o_opb*4)  : ra_vram_addr+(o_opb*4);
-				1: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(om_opb*4) : ra_vram_addr+(om_opb*4);
-				2: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(t_opb*4)  : ra_vram_addr+(t_opb*4);
-				3: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(tm_opb*4) : ra_vram_addr+(tm_opb*4);
-				4: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(pt_opb*4) : ra_vram_addr+(pt_opb*4);
+				// o_opb,om_opb,t_opb,tm_opb,pt_opb gives the OPB size for each prim type...
+				// 0=No List, 1=8 Words, 2=16 Words, 3=32 Words...
+				//
+				// But I don't know if TA_ALLOC_CTRL is only for the TA to use during processing, not for CORE reading the OL?? ElectronAsh.
+				//
+				0: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<o_opb)*4 )  : ra_vram_addr+( (4<<o_opb)*4 );		// TODO: Shift won't work for o_opb==0.
+				1: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<om_opb)*4 ) : ra_vram_addr+( (4<<om_opb)*4 );
+				2: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<t_opb)*4 )  : ra_vram_addr+( (4<<t_opb)*4 );
+				3: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<tm_opb)*4 ) : ra_vram_addr+( (4<<tm_opb)*4 );
+				4: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<pt_opb)*4 ) : ra_vram_addr+( (4<<pt_opb)*4 );
 				default: ;
 			endcase
-			*/
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
@@ -210,11 +218,17 @@ else begin
 		end
 		
 		13: begin
-			// Todo: Wait for poly draw to finish, loop back to state 9 to check for more prim types.
+			if (poly_drawn) begin
+				ra_state <= 8'd9;	// Check next prim TYPE.
+			end
 		end
 		
-		14: begin	// All Types in this Object are done!
-			
+		14: begin	// All prim TYPES in this Object have been processed!
+			if (poly_drawn) begin
+				ra_vram_addr <= next_region;	// Check next region entry.
+				ra_vram_rd <= 1'b1;
+				ra_state <= 8'd2;
+			end
 		end
 		
 		default: ;

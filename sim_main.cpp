@@ -689,62 +689,10 @@ int verilate() {
 		}
 		*/
 
-		/*
-		float x1 = (*(float*)&top->rootp->simtop__DOT__pvr__DOT__x1);
-		float x2 = (*(float*)&top->rootp->simtop__DOT__pvr__DOT__x2);
-		float x3 = (*(float*)&top->rootp->simtop__DOT__pvr__DOT__x3);
-
-		float y1 = (*(float*)&top->rootp->simtop__DOT__pvr__DOT__y1);
-		float y2 = (*(float*)&top->rootp->simtop__DOT__pvr__DOT__y2);
-		float y3 = (*(float*)&top->rootp->simtop__DOT__pvr__DOT__y3);
-		*/
-
-
-		/*
-		uint32_t x1 = (uint32_t) (*(float*)&top->rootp->simtop__DOT__pvr__DOT__x1);
-		uint32_t x2 = (uint32_t) (*(float*)&top->rootp->simtop__DOT__pvr__DOT__x2);
-		uint32_t x3 = (uint32_t) (*(float*)&top->rootp->simtop__DOT__pvr__DOT__x3);
-
-		uint32_t y1 = (uint32_t) (*(float*)&top->rootp->simtop__DOT__pvr__DOT__y1);
-		uint32_t y2 = (uint32_t) (*(float*)&top->rootp->simtop__DOT__pvr__DOT__y2);
-		uint32_t y3 = (uint32_t) (*(float*)&top->rootp->simtop__DOT__pvr__DOT__y3);
-
-		rgb[0] = 0xff; rgb[1] = 0x00; rgb[2] = 0x00;
-		disp_addr = (y1 * 640) + x1;
-		disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-
-		rgb[0] = 0x00; rgb[1] = 0xff; rgb[2] = 0x00;
-		disp_addr = (y2 * 640) + x2;
-		disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-
-		rgb[0] = 0x00; rgb[1] = 0x00; rgb[2] = 0xff;
-		disp_addr = (y3 * 640) + x3;
-		disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		disp_addr++; disp_ptr[ disp_addr ] = 0xff << 24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];
-		*/
-
 		//X1: 43C994E8 403.163330  X2: 43C994E8 403.163330  X3: 43BC780C 376.937866  X4: 00000000 0.000000
 		//Y1: 43074970 135.286865  Y2: 4391829E 291.020447  Y3: 43074970 135.286865  Y4: 00000000 0.000000
 		//float x1 = 403.163330; float x2 = 403.163330; float x3 = 376.937866;
 		//float y1 = 135.286865; float y2 = 291.020447; float y3 = 135.286865;
-
-		//X1  43F200B4 484.005493  X2: 43D1D8CB 419.693695  X3: 430E1B08 142.105591  X4: 00000000 0.000000
-		//Y1: 43B2939F 357.153290  Y2: 439B9B5C 311.213745  Y3: 43B2939F 357.153290  Y4: 00000000 0.000000
-		//float x1 = 484.005493; float x2 = 419.693695; float x3 = 142.105591;
-		//float y1 = 357.153290; float y2 = 311.213745; float y3 = 357.153290;
-
-		//X1: 430E1B08 142.105591  X2: 43F200B4 484.005493  X3: 430E1B08 142.105591  X4: 00000000 0.000000
-		//Y1: 43B2939F 357.153290  Y2: 4429ECCF 679.700134  Y3: 4429ECCF 679.700134  Y4: 00000000 0.000000
-		//float x1 = 142.105591; float x2 = 484.005493; float x3 = 142.105591;
-		//float y1 = 357.153290; float y2 = 679.700134; float y3 = 679.700134;
 
 		float x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
 		float x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
@@ -753,13 +701,10 @@ int verilate() {
 		float y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
 		float y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
 
-
 		//printf("x1: %d  y1: %d\n", x1, y1);
-
 
 		float f_area = ((x1 - x3) * (y2 - y3) - (y1 - y3) * (x2 - x3));
 		bool sgn = (f_area > 0);
-
 
 		//printf("f_area: %08X %f\n\n", *(uint32_t*)&f_area, f_area);
 
@@ -846,7 +791,8 @@ int verilate() {
 		//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state == 20) {
-		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
 			for (int y = spany; y > 0; y -= 1)
 			{
 				uint32_t* cb_x = cb_y;
@@ -1557,6 +1503,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("        ra_state: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state);
 		ImGui::Text("       vram_addr: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__vram_addr);
 		ImGui::Text("        vram_din: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__vram_din);
+		ImGui::Text("     next_region: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region);
 		ImGui::Separator();
 		ImGui::Text("   FPU_PARAM_CFG: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FPU_PARAM_CFG);
 		ImGui::Text("      ra_control: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_control);

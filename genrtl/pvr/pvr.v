@@ -498,9 +498,13 @@ ra_parser ra_parser_inst (
 	.ra_entry_valid( ra_entry_valid ),	// output  ra_entry_valid
 	
 	.poly_addr( poly_addr ),			// output [23:0]  poly_addr
-	.render_poly( render_poly )			// output  render_poly
+	.render_poly( render_poly ),		// output  render_poly
+	
+	.poly_drawn( poly_drawn )			// input  poly_drawn
 );
 
+
+wire poly_drawn;
 
 wire isp_vram_rd;
 wire isp_vram_wr;
@@ -517,6 +521,7 @@ if (!reset_n) begin
 end
 else begin
 	if (render_poly) isp_switch <= 1'b1;
+	if (poly_drawn) isp_switch <= 1'b0;
 end
 
 assign vram_addr = (isp_switch) ? isp_vram_addr : ra_vram_addr;
@@ -534,7 +539,9 @@ isp_parser isp_parser_inst (
 	.isp_vram_addr( isp_vram_addr ),	// output [23:0]  isp_vram_addr
 	.isp_vram_din( isp_vram_din ),		// input  [31:0]  isp_vram_din
 	
-	.isp_entry_valid( isp_entry_valid )	// output  isp_entry_valid
+	.isp_entry_valid( isp_entry_valid ),// output  isp_entry_valid
+	
+	.poly_drawn( poly_drawn )
 );
 
 

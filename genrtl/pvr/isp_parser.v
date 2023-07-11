@@ -13,7 +13,9 @@ module isp_parser (
 	output reg [23:0] isp_vram_addr,
 	input [31:0] isp_vram_din,
 	
-	output reg isp_entry_valid
+	output reg isp_entry_valid,
+	
+	output reg poly_drawn
 );
 
 
@@ -99,12 +101,14 @@ if (!reset_n) begin
 	isp_vram_rd <= 1'b0;
 	isp_vram_wr <= 1'b0;
 	isp_entry_valid <= 1'b0;
+	poly_drawn <= 1'b0;
 end
 else begin
 	//isp_vram_rd <= 1'b0;
 	//isp_vram_wr <= 1'b0;
 	
 	isp_entry_valid <= 1'b0;
+	poly_drawn <= 1'b0;
 
 	if (isp_state > 0) begin
 		if (isp_state != 8'd46) isp_state <= isp_state + 8'd1;
@@ -219,7 +223,8 @@ else begin
 					isp_entry_valid <= 1'b1;
 					isp_inst <= isp_vram_din;
 					strip_cnt <= 4'd3;
-					isp_state <= 8'd2;
+					poly_drawn <= 1'b1;
+					isp_state <= 8'd0;
 				end
 			/*end
 			else begin
