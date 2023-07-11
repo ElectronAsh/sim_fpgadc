@@ -149,7 +149,7 @@ reg [31:0] FB_Y_CLIP; 			// 16'h006C; RW  Pixel clip Y coordinate
 
 reg [31:0] FPU_SHAD_SCALE; 		// 16'h0074; RW  Intensity Volume mode
 reg [31:0] FPU_CULL_VAL; 		// 16'h0078; RW  Comparison value for culling
-reg [31:0] FPU_PARAM_CFG = 32'h0027DF77; 	// 16'h007C; RW  register read control
+reg [31:0] FPU_PARAM_CFG; 		// 16'h007C; RW  register read control
 reg [31:0] HALF_OFFSET; 		// 16'h0080; RW  Pixel sampling control
 reg [31:0] FPU_PERP_VAL; 		// 16'h0084; RW  Comparison value for perpendicular polygons
 reg [31:0] ISP_BACKGND_D; 		// 16'h0088; RW  Background surface depth
@@ -469,8 +469,13 @@ ra_parser ra_parser_inst (
 	
 	.ra_trig( ra_trig ),	// input  ra_trig
 	
-	.FPU_PARAM_CFG( FPU_PARAM_CFG ),	// input [31:0]  FPU_PARAM_CFG
-	.REGION_BASE( REGION_BASE ),		// input [31:0]  REGION_BASE
+	//.FPU_PARAM_CFG( FPU_PARAM_CFG ),	// input [31:0]  FPU_PARAM_CFG
+	//.REGION_BASE( REGION_BASE ),		// input [31:0]  REGION_BASE
+	//.TA_ALLOC_CTRL( TA_ALLOC_CTRL ),	// input [31:0]  TA_ALLOC_CTRL
+	.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG
+	.REGION_BASE( 32'h01667C0 ),		// input [31:0]  REGION_BASE. Menu.
+	//.REGION_BASE( 32'h00D33C8 ),		// input [31:0]  REGION_BASE. Taxi.
+	.TA_ALLOC_CTRL( 32'h00100303 ),		// input [31:0]  TA_ALLOC_CTRL. Menu.
 	
 	.ra_vram_rd( ra_vram_rd ),			// output  ra_vram_rd
 	.ra_vram_wr( ra_vram_wr ),			// output  ra_vram_wr
@@ -505,12 +510,24 @@ wire [23:0] isp_vram_addr;
 
 wire isp_entry_valid;
 
-assign vram_addr = ra_vram_addr;
-//assign vram_addr = isp_vram_addr;
+reg isp_switch;
+always @(posedge clock or negedge reset_n)
+if (!reset_n) begin
+	isp_switch <= 1'b0;
+end
+else begin
+	if (render_poly) isp_switch <= 1'b1;
+end
+
+assign vram_addr = (isp_switch) ? isp_vram_addr : ra_vram_addr;
+
 
 isp_parser isp_parser_inst (
-	.clock( clock ),			// input  clock
-	.reset_n( reset_n ),		// input  reset_n
+	.clock( clock ),					// input  clock
+	.reset_n( reset_n ),				// input  reset_n
+	
+	.poly_addr( poly_addr ),			// input [23:0]  poly_addr
+	.render_poly( render_poly ),		// input  render_poly
 	
 	.isp_vram_rd( isp_vram_rd ),		// output  isp_vram_rd
 	.isp_vram_wr( isp_vram_wr ),		// output  isp_vram_wr

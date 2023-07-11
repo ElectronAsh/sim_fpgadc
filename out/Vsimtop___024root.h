@@ -786,6 +786,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_vram_rd;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_vram_wr;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_entry_valid;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_switch;
     CData/*1:0*/ simtop__DOT__pvr__DOT__fpu_op;
     CData/*0:0*/ simtop__DOT__pvr__DOT__trig_calcs;
     CData/*7:0*/ simtop__DOT__pvr__DOT__calc_state;
@@ -803,6 +804,12 @@ VL_MODULE(Vsimtop___024root) {
     CData/*5:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_tilex;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_entry_valid;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__render_poly;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_mode;
+    CData/*1:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__pt_opb;
+    CData/*1:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__tm_opb;
+    CData/*1:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__t_opb;
+    CData/*1:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb;
+    CData/*1:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__o_opb;
     CData/*7:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state;
     CData/*2:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt;
     CData/*5:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__strip_mask;
@@ -812,7 +819,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__eol;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__clock;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__reset_n;
-    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_trig;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_rd;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_wr;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid;
@@ -1442,6 +1449,7 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__area;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL;
     IData/*23:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_addr;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_din;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_control;
@@ -1452,6 +1460,7 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_puncht;
     IData/*23:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word;
+    IData/*23:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr;
     IData/*23:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst;

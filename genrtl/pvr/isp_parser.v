@@ -5,7 +5,9 @@ module isp_parser (
 	input clock,
 	input reset_n,
 	
-	input isp_trig,
+	input [23:0] poly_addr,
+	input render_poly,
+	
 	output reg isp_vram_rd,
 	output reg isp_vram_wr,
 	output reg [23:0] isp_vram_addr,
@@ -111,14 +113,15 @@ else begin
 
 	case (isp_state)
 		0: begin
-			//isp_vram_addr <= 24'h0129f8;
-			//isp_vram_addr <= 24'h0116D0;
-			isp_vram_addr <= 24'h00408c;	// Menu
-			//isp_vram_addr <= 24'h000450;	// Taxi
-			//isp_vram_addr <= 24'h000000;	// Sanic
-			isp_vram_rd <= 1'b1;
-			strip_cnt <= 4'd3;
-			isp_state <= 8'd1;
+			if (render_poly) begin
+				isp_vram_addr <= poly_addr;
+				//isp_vram_addr <= 24'h00408c;	// Menu
+				//isp_vram_addr <= 24'h000450;	// Taxi
+				//isp_vram_addr <= 24'h000000;	// Sanic
+				isp_vram_rd <= 1'b1;
+				strip_cnt <= 4'd3;
+				isp_state <= 8'd1;
+			end
 		end
 		1:  isp_inst <= isp_vram_din;
 		2:  tsp_inst <= isp_vram_din;

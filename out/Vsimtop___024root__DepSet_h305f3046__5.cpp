@@ -17,8 +17,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__4(Vsimtop___024root* vlSelf
                                                   << 0x17U) 
                                                  | (0x7fffffU 
                                                     & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa)));
-    vlSelf->simtop__DOT____Vcellinp__pvr__reset_n = 
-        (1U & (~ (IData)(vlSelf->simtop__DOT__rst_reg)));
     vlSelf->dm_req_addr = vlSelf->simtop__DOT__core__DOT__lsu__DOT__addr_gen;
     if (vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_valid) {
         if ((0x8000U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -708,6 +706,8 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__4(Vsimtop___024root* vlSelf
             }
         }
     }
+    vlSelf->simtop__DOT____Vcellinp__pvr__reset_n = 
+        (1U & (~ (IData)(vlSelf->simtop__DOT__rst_reg)));
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__O 
         = vlSelf->simtop__DOT__pvr__DOT__fpu_res;
     vlSelf->dm_req_wdata = ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__lsu__DOT__rwsize))

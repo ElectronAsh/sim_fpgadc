@@ -1573,6 +1573,8 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("    ra_trans_mod: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans_mod);
 		ImGui::Text("       ra_puncht: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_puncht);
 		ImGui::Text("  ra_entry_valid: %d", top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid);
+		ImGui::Text("       poly_addr: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__poly_addr);
+		ImGui::Text("     render_poly: %d", top->rootp->simtop__DOT__pvr__DOT__render_poly);
 		ImGui::End();
 
 		ImGui::Begin(" ISP Parser");

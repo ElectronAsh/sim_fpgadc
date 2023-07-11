@@ -9,6 +9,7 @@ module ra_parser (
 	
 	input [31:0] FPU_PARAM_CFG,
 	input [31:0] REGION_BASE,
+	input [31:0] TA_ALLOC_CTRL,
 	
 	output reg ra_vram_rd,
 	output reg ra_vram_wr,
@@ -34,6 +35,13 @@ module ra_parser (
 	output reg render_poly
 );
 
+
+wire opb_mode = TA_ALLOC_CTRL[20];
+wire [1:0] pt_opb = TA_ALLOC_CTRL[17:16];
+wire [1:0] tm_opb = TA_ALLOC_CTRL[13:12];
+wire [1:0]  t_opb = TA_ALLOC_CTRL[9:8];
+wire [1:0] om_opb = TA_ALLOC_CTRL[5:4];
+wire [1:0]  o_opb = TA_ALLOC_CTRL[1:0];
 
 // Region Array read state machine...
 reg [7:0] ra_state;
@@ -68,20 +76,18 @@ else begin
 	ra_vram_wr <= 1'b0;
 	
 	ra_entry_valid <= 1'b0;
+	render_poly <= 1'b0;
 
 	case (ra_state)
 		0: begin
 			if (ra_trig) begin
-				type_cnt <= 3'd0;
 				ra_state <= ra_state + 8'd1;
 			end
 		end
 		
 		1: begin
 			ra_vram_rd <= 1'b1;
-			//ra_vram_addr <= REGION_BASE[22:0];		// Might need to mask this? This is the absolute addr, so VRAM starts at 0x04000000 etc.
-			ra_vram_addr <= 23'h1667C0;		// Menu.
-			//ra_vram_addr <= 23'h0D33C8;	// Taxi.
+			ra_vram_addr <= REGION_BASE[22:0];		// Might need to mask this? This is the absolute addr, so VRAM starts at 0x04000000 etc.
 			ra_state <= ra_state + 1;
 		end
 		
@@ -136,6 +142,7 @@ else begin
 		
 		8: begin
 			ra_entry_valid <= 1'b1;
+			type_cnt <= 3'd0;
 			ra_state <= ra_state + 1;
 		end
 		
@@ -146,28 +153,42 @@ else begin
 				2: if (!ra_trans[31])      begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
 				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
 				4: if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				5: ra_state <= 8'd13;	// All Types in this Object are done!
+				5: ra_state <= 8'd14;	// All Types in this Object are done!
 				default: ;
 			endcase
 		end
 		
 		10: begin
-			opb_word <= ra_vram_din;
-			ra_vram_rd <= 1'b0;
+			/*
+			case (type_cnt)
+				0: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(o_opb*4)  : ra_vram_addr+(o_opb*4);
+				1: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(om_opb*4) : ra_vram_addr+(om_opb*4);
+				2: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(t_opb*4)  : ra_vram_addr+(t_opb*4);
+				3: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(tm_opb*4) : ra_vram_addr+(tm_opb*4);
+				4: ra_vram_addr <= (opb_mode) ? ra_vram_addr-(pt_opb*4) : ra_vram_addr+(pt_opb*4);
+				default: ;
+			endcase
+			*/
+			ra_vram_rd <= 1'b1;
+			ra_state <= ra_state + 1;
+		end
+		
+		11: begin
 			type_cnt <= type_cnt + 3'd1;
-			/*if (object_done)*/ ra_state <= ra_state + 1;
+			opb_word <= ra_vram_din;
+			ra_state <= ra_state + 1;
 		end
 		
 		// Check for Pointer Block Link, or Primitive Type...
-		11: begin
+		12: begin
 			if (opb_word[31:29]==3'b111) begin		// Pointer Block Link.
 				if (eol) begin
-					ra_state <= 8'd12;	// todo
+					ra_state <= 8'd13;	// todo
 				end
 				else begin
 					ra_vram_addr <= {opb_word[23:2], 2'b00};
 					ra_vram_rd <= 1'b1;
-					ra_state <= 8'd10;
+					ra_state <= 8'd11;
 				end
 			end
 			else if (opb_word[31:29]==3'b101) begin	// Quad Array.
@@ -188,11 +209,11 @@ else begin
 			//else // Undefined prim type!
 		end
 		
-		12: begin
+		13: begin
 			// Todo: Wait for poly draw to finish, loop back to state 9 to check for more prim types.
 		end
 		
-		13: begin	// All Types in this Object are done!
+		14: begin	// All Types in this Object are done!
 			
 		end
 		
