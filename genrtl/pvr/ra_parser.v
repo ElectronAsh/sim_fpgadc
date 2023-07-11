@@ -60,7 +60,8 @@ else begin
 		1: begin
 			ra_vram_rd <= 1'b1;
 			//ra_vram_addr <= REGION_BASE[22:0];
-			ra_vram_addr <= 23'h1667C0;
+			//ra_vram_addr <= 23'h1667C0;
+			ra_vram_addr <= 23'h0D33C8;	// Taxi.
 			ra_state <= ra_state + 1;
 		end
 		

@@ -54,7 +54,7 @@ else begin
 		
 		1: begin
 			ol_vram_rd <= 1'b1;
-			ol_vram_addr <= ra_opaque[23:0];	// TODO: Check MSB bit, which denotes this "type" of prim is unused in this tile.
+			ol_vram_addr <= ra_opaque[23:0];	// TODO: Check MSB bit, which denotes that this type of prim is UNUSED in this tile.
 			ol_state <= ol_state + 1;
 		end
 		

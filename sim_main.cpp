@@ -617,6 +617,8 @@ static float mmax(float a, float b, float c, float d)
 	return min(d, rv);
 }
 
+#define pvr_access(mod) top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__##mod;
+
 int verilate() {
 	if (!Verilated::gotFinish()) {
 		//while ( top->FL_ADDR < 0x0100 ) {		// Only run for a short time.
@@ -763,14 +765,18 @@ int verilate() {
 		//printf("f_area: %08X %f\n\n", *(uint32_t*)&f_area, f_area);
 
 		/*
+		uint8_t cullmode = pvr_access(culling_mode);
+
+		bool vertex_offset = 0;	// TESTING.
+
 		// cull
-		if (params->isp.CullMode != 0) {
+		if (cullmode != 0) {
 			float abs_area = fabsf(f_area);
 
-			if (abs_area < FPU_CULL_VAL) return;
+			if (abs_area < top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL) return;
 
-			if (params->isp.CullMode >= 2) {
-				u32 mode = vertex_offset ^ (params->isp.CullMode & 1);
+			if (cullmode >= 2) {
+				uint32_t mode = vertex_offset ^ (cullmode & 1);
 				if ((mode == 0 && f_area < 0) || (mode == 1 && f_area > 0)) return;
 			}
 		}
@@ -840,7 +846,8 @@ int verilate() {
 
 		//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
 
-		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state == 20) {
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state == 20) {
+		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 			for (int y = spany; y > 0; y -= 1)
 			{
 				uint32_t* cb_x = cb_y;
@@ -1116,6 +1123,8 @@ int main(int argc, char** argv, char** env) {
 	FILE* pvrfile;
 	//pvrfile = fopen("pvr_regs_logo", "rb");
 	pvrfile = fopen("pvr_regs_menu", "rb");
+	//pvrfile = fopen("pvr_regs_taxi", "rb");
+	//pvrfile = fopen("pvr_regs_sonic", "rb");
 	if (pvrfile != NULL) printf("\npvr_regs loaded OK.\n\n");
 	else { printf("\npvr_regs file not found!\n\n"); return 0; }
 	fseek(pvrfile, 0L, SEEK_END);
@@ -1126,6 +1135,8 @@ int main(int argc, char** argv, char** env) {
 	FILE* vram0_file;
 	//vram0_file = fopen("vram0_logo.bin", "rb");
 	vram0_file = fopen("vram0_menu.bin", "rb");
+	//vram0_file = fopen("vram0_taxi.bin", "rb");
+	//vram0_file = fopen("vram0_sonic.bin", "rb");
 	if (vram0_file != NULL) printf("\nvram0 loaded OK.\n\n");
 	else { printf("\nvram0 file not found!\n\n"); return 0; }
 	fseek(vram0_file, 0L, SEEK_END);
@@ -1136,6 +1147,8 @@ int main(int argc, char** argv, char** env) {
 	FILE* vram1_file;
 	//vram1_file = fopen("vram1_logo.bin", "rb");
 	vram1_file = fopen("vram1_menu.bin", "rb");
+	//vram1_file = fopen("vram1_taxi.bin", "rb");
+	//vram1_file = fopen("vram1_sonic.bin", "rb");
 	if (vram1_file != NULL) printf("\nvram1 loaded OK.\n\n");
 	else { printf("\nvram1 file not found!\n\n"); return 0; }
 	fseek(vram1_file, 0L, SEEK_END);
@@ -1566,6 +1579,9 @@ int main(int argc, char** argv, char** env) {
 
 		ImGui::Begin(" ISP Parser");
 		ImGui::Text("        isp_state: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state);
+		ImGui::Text("         isp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst);
+		ImGui::Text("         tsp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
+		ImGui::Text("         tex_cont: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont);
 		ImGui::Text("         vert_a_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
 		ImGui::Text("         vert_a_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y);
 		ImGui::Text("         vert_a_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z);

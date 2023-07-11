@@ -6,10 +6,10 @@
 
 #include "Vsimtop___024root.h"
 
-VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__3(Vsimtop___024root* vlSelf) {
+VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__4(Vsimtop___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vsimtop__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vsimtop___024root___sequent__TOP__3\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vsimtop___024root___sequent__TOP__4\n"); );
     // Body
     vlSelf->simtop__DOT__pvr__DOT__fpu_res = (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign) 
                                                << 0x1fU) 
@@ -898,10 +898,10 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__3(Vsimtop___024root* vlSelf
         = vlSelf->simtop__DOT__core__DOT__dm_req_wmask;
 }
 
-VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__4(Vsimtop___024root* vlSelf) {
+VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__5(Vsimtop___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vsimtop__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vsimtop___024root___sequent__TOP__4\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vsimtop___024root___sequent__TOP__5\n"); );
     // Body
     if ((1U & (~ (vlSelf->dm_req_addr >> 0xfU)))) {
         if ((1U & (~ (vlSelf->dm_req_addr >> 0xeU)))) {
@@ -5024,6 +5024,7 @@ void Vsimtop___024root___combo__TOP__0(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___sequent__TOP__1(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___sequent__TOP__2(Vsimtop___024root* vlSelf);
+void Vsimtop___024root___sequent__TOP__3(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___combo__TOP__1(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___combo__TOP__2(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___combo__TOP__3(Vsimtop___024root* vlSelf);
@@ -5047,6 +5048,7 @@ void Vsimtop___024root___eval(Vsimtop___024root* vlSelf) {
          | ((~ (IData)(vlSelf->__VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n)) 
             & (IData)(vlSelf->__Vclklast__TOP____VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n)))) {
         Vsimtop___024root___sequent__TOP__2(vlSelf);
+        Vsimtop___024root___sequent__TOP__3(vlSelf);
     }
     Vsimtop___024root___combo__TOP__1(vlSelf);
     Vsimtop___024root___combo__TOP__2(vlSelf);
@@ -5057,12 +5059,12 @@ void Vsimtop___024root___eval(Vsimtop___024root* vlSelf) {
     Vsimtop___024root___combo__TOP__7(vlSelf);
     Vsimtop___024root___combo__TOP__8(vlSelf);
     if (((IData)(vlSelf->clk) & (~ (IData)(vlSelf->__Vclklast__TOP__clk)))) {
-        Vsimtop___024root___sequent__TOP__3(vlSelf);
+        Vsimtop___024root___sequent__TOP__4(vlSelf);
     }
     if ((((IData)(vlSelf->clk) & (~ (IData)(vlSelf->__Vclklast__TOP__clk))) 
          | ((~ (IData)(vlSelf->__VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n)) 
             & (IData)(vlSelf->__Vclklast__TOP____VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n)))) {
-        Vsimtop___024root___sequent__TOP__4(vlSelf);
+        Vsimtop___024root___sequent__TOP__5(vlSelf);
     }
     Vsimtop___024root___combo__TOP__9(vlSelf);
     // Final

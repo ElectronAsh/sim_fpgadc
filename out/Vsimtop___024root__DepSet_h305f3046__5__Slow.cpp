@@ -3704,6 +3704,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__ol_parser_inst__DOT__ol_state = VL_RAND_RESET_I(8);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__clock = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__reset_n = VL_RAND_RESET_I(1);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_trig = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_rd = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_wr = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr = VL_RAND_RESET_I(24);
@@ -3722,6 +3723,8 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__volume_inst = VL_RAND_RESET_I(3);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp2_inst = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex2_cont = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z = VL_RAND_RESET_I(32);
@@ -3763,6 +3766,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_base_col_1 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_off_col = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state = VL_RAND_RESET_I(8);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt = VL_RAND_RESET_I(4);
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__clk = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__A = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__B = VL_RAND_RESET_I(32);
@@ -4054,6 +4058,8 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__mult__DOT__norm1__DOT__in_m = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__mult__DOT__norm1__DOT__out_e = VL_RAND_RESET_I(8);
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__mult__DOT__norm1__DOT__out_m = VL_RAND_RESET_Q(48);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state = VL_RAND_RESET_I(8);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_vram_addr = VL_RAND_RESET_I(24);
     vlSelf->__VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n = VL_RAND_RESET_I(1);
     vlSelf->__Vchglast__TOP__simtop__DOT____Vcellinp__pvr__reset_n = VL_RAND_RESET_I(1);
     vlSelf->__Vchglast__TOP__simtop__DOT__pvr__DOT__my_fpu_inst__DOT__A1__DOT__i_m = VL_RAND_RESET_I(25);
