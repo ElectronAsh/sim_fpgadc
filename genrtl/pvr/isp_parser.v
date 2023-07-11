@@ -84,6 +84,8 @@ reg [31:0] vert_d_base_col_0;
 reg [31:0] vert_d_base_col_1;
 reg [31:0] vert_d_off_col;
 
+wire two_volume = 1'b0;	// TODO.
+
 
 // Object List read state machine...
 reg [7:0] isp_state;
@@ -126,63 +128,95 @@ else begin
 		4:  tsp2_inst <= isp_vram_din;
 		5:  tex2_cont <= isp_vram_din;
 		
-		6:  vert_a_x <= isp_vram_din;			// if (strip), check each Mask bit, offset the addr to the next vertex, then jump back here.
+		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
-		8:  begin vert_a_z <= isp_vram_din;  if (!texture) isp_state <= 8'd11; end
+		8:  begin vert_a_z <= isp_vram_din;  if (!texture) isp_state <= 8'd11; end	// Skip UV if not Textured.
+		9:  begin vert_a_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd11; end	// Skip v0 if 16-bit UV. 
+		10: vert_a_v0 <= isp_vram_din;
+		11: begin
+			vert_a_base_col_0 <= isp_vram_din;
+			if (two_volume) isp_state <= 8'd12;
+			else if (offset) isp_state <= 8'd15;
+			else isp_state <= 8'd16;
+		end
 		
-		9:  begin vert_a_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd11; end
-		10: vert_a_v0 <= isp_vram_din;				// Skip if 16-bit UV.
-		11: begin vert_a_base_col_0 <= isp_vram_din; /*if (!two_volume)*/ if (!offset) isp_state <= 8'd16; end	// TODO. Next these conditionals.
+		// if Two-volume...
+		12: vert_a_u1 <= isp_vram_din;
+		13: vert_a_v1 <= isp_vram_din;
+		14: begin vert_a_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd16; end
 		
-		12: vert_a_u1 <= isp_vram_din;				// if Two-volume
-		13: vert_a_v1 <= isp_vram_din;				// if Two-volume
-		14: vert_a_base_col_1 <= isp_vram_din;		// if Two-volume.
-		15: vert_a_off_col <= isp_vram_din;			// if Offset colour.
+		// if Offset colour.
+		15: vert_a_off_col <= isp_vram_din;
 		
 		16: vert_b_x <= isp_vram_din;
 		17: vert_b_y <= isp_vram_din;
-		18: begin vert_b_z <= isp_vram_din;  if (!texture) isp_state <= 8'd21; end
-		19: begin vert_b_u0 <= isp_vram_din; 		 if (uv_16_bit) isp_state <= 8'd21; end
-		20: vert_b_v0 <= isp_vram_din;				// Skip if 16-bit UV.
-		21: begin vert_b_base_col_0 <= isp_vram_din; /*if (!two_volume)*/ if (!offset) isp_state <= 8'd26; end	// TODO. Next these conditionals.
+		18: begin vert_b_z <= isp_vram_din;  if (!texture) isp_state <= 8'd21; end	// Skip UV if not Textured.
+		19: begin vert_b_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd21; end	// Skip v0 if 16-bit UV. 
+		20: vert_b_v0 <= isp_vram_din;
+		21: begin
+			vert_b_base_col_0 <= isp_vram_din;
+			if (two_volume) isp_state <= 8'd22;
+			else if (offset) isp_state <= 8'd25;
+			else isp_state <= 8'd26;
+		end
 		
-		22: vert_b_u1 <= isp_vram_din;				// if Two-volume
-		23: vert_b_v1 <= isp_vram_din;				// if Two-volume
-		24: vert_b_base_col_1 <= isp_vram_din;		// if Two-volume.
+		// if Two-volume...
+		22: vert_b_u1 <= isp_vram_din;
+		23: vert_b_v1 <= isp_vram_din;
+		24: begin vert_b_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd26; end
+		
+		// if Offset colour...
 		25: vert_b_off_col <= isp_vram_din;			// if Offset colour.
 		
 		26: vert_c_x <= isp_vram_din;
 		27: vert_c_y <= isp_vram_din;
-		28: begin vert_c_z <= isp_vram_din;  if (!texture) isp_state <= 8'd31; end
-		29: begin vert_c_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd31; end
-		30: vert_c_v0 <= isp_vram_din;				// Skip if 16-bit UV.
-		31: begin vert_c_base_col_0 <= isp_vram_din; /*if (!two_volume)*/ /*if (!offset) isp_state <= 8'd36;*/ isp_state <= 46; end	// TODO. Next these conditionals.
-																												// TESTING !! Skipping Vert D.
-		32: vert_c_u1 <= isp_vram_din;				// if Two-volume
-		33: vert_c_v1 <= isp_vram_din;				// if Two-volume
-		34: vert_c_base_col_1 <= isp_vram_din;		// if Two-volume.
-		35: vert_c_off_col <= isp_vram_din;			// if Offset colour.	 
+		28: begin vert_c_z <= isp_vram_din;  if (!texture) isp_state <= 8'd31; end	// Skip UV if not Textured.
+		29: begin vert_c_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd31; end	// Skip v0 if 16-bit UV. 
+		30: vert_c_v0 <= isp_vram_din;
+		31: begin
+			vert_c_base_col_0 <= isp_vram_din;
+			if (two_volume) isp_state <= 8'd32;
+			else if (offset) isp_state <= 8'd35;
+			else isp_state <= 8'd36;
+		end
+		
+		// if Two-volume...
+		32: vert_c_u1 <= isp_vram_din;
+		33: vert_c_v1 <= isp_vram_din;
+		34: begin vert_c_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd36; end
+		
+		// if Offset colour...
+		35: vert_c_off_col <= isp_vram_din;
 		
 		36: vert_d_x <= isp_vram_din;
 		37: vert_d_y <= isp_vram_din;
 		38: begin vert_d_z <= isp_vram_din;  if (!texture) isp_state <= 8'd41; end
-		39: begin vert_d_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd41; end
-		40: vert_d_v0 <= isp_vram_din;				// Skip if 16-bit UV.
-		41: begin vert_d_base_col_0 <= isp_vram_din; /*if (!two_volume)*/ if (!offset) isp_state <= 8'd46; end	// TODO. Next these conditionals.
+		39: begin vert_d_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd41; end	// Skip v0 if 16-bit UV. 
+		40: vert_d_v0 <= isp_vram_din;
+		41: begin
+			vert_d_base_col_0 <= isp_vram_din;
+			if (two_volume) isp_state <= 8'd42;
+			else if (offset) isp_state <= 8'd45;
+			else isp_state <= 8'd46;
+		end
 		
-		42: vert_d_u1 <= isp_vram_din;				// if Two-volume
-		43: vert_d_v1 <= isp_vram_din;				// if Two-volume
-		44: vert_d_base_col_1 <= isp_vram_din;		// if Two-volume.
-		45: vert_d_off_col <= isp_vram_din;			// if Offset colour.
+		// if Two-volume...
+		42: vert_d_u1 <= isp_vram_din;
+		43: vert_d_v1 <= isp_vram_din;
+		44: begin vert_d_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd46; end
+		
+		// if Offset colour...
+		45: vert_d_off_col <= isp_vram_din;
 		
 		46: begin
-			if (strip_cnt==4'd0) begin
+			//if (strip_cnt==4'd0) begin
 				if (isp_vram_din[31:24]==8'hC8 /*|| isp_vram_din[31:24]==8'hCA*/) begin
 					isp_entry_valid <= 1'b1;
 					isp_inst <= isp_vram_din;
 					strip_cnt <= 4'd1;
 					isp_state <= 8'd2;
 				end
+			/*
 			end
 			else begin
 				isp_entry_valid <= 1'b1;
@@ -200,6 +234,7 @@ else begin
 				vert_c_x <= isp_vram_din;
 				isp_state <= 8'd27;	// Grab (rest of) new vert C.
 			end
+			*/
 		end
 		default: ;
 	endcase

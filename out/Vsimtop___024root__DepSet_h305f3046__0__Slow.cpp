@@ -48,6 +48,7 @@ VL_ATTR_COLD void Vsimtop___024root___initial__TOP__0(Vsimtop___024root* vlSelf)
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__C3 = 0x40000000U;
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__C1 = 0x4034b4b5U;
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__C2 = 0x3ff0f0f1U;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume = 0U;
     vlSelf->simtop__DOT__pvr__DOT__FPU_PARAM_CFG = 0x27df77U;
     __Vfunc_FLUSH_NAN__0__in = vlSelf->simtop__DOT__pvr__DOT__v1_x;
     __Vfunc_FLUSH_NAN__0__Vfuncout = ((IData)(((0x7f800000U 
