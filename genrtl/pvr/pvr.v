@@ -524,7 +524,8 @@ else begin
 	if (poly_drawn) isp_switch <= 1'b0;
 end
 
-assign vram_addr = (isp_switch) ? isp_vram_addr : ra_vram_addr;
+//assign vram_addr = (isp_switch) ? isp_vram_addr : ra_vram_addr;
+assign vram_addr = isp_vram_addr;
 
 
 isp_parser isp_parser_inst (

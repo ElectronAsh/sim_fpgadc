@@ -619,6 +619,245 @@ static float mmax(float a, float b, float c, float d)
 
 #define pvr_access(mod) top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__##mod;
 
+
+uint32_t disp_addr;
+
+void rasterize_triangle(float x1, float x2,float x3,float y1, float y2, float y3) {
+
+	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
+	bool sgn = (f_area > 0);
+
+	/*
+	uint8_t cullmode = pvr_access(culling_mode);
+
+	bool vertex_offset = 0;	// TESTING.
+
+	// cull
+	if (cullmode != 0) {
+		float abs_area = fabsf(f_area);
+
+		if (abs_area < top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL) return;
+
+		if (cullmode >= 2) {
+			uint32_t mode = vertex_offset ^ (cullmode & 1);
+			if ((mode == 0 && f_area < 0) || (mode == 1 && f_area > 0)) return;
+		}
+	}
+	*/
+
+	uint32_t area_left = 0;
+	uint32_t area_top = 0;
+	uint32_t area_right = 0;
+	uint32_t area_bottom = 0;
+
+	// Bounding rectangle
+	int minx = mmin(x1,x2,x3,area_left);
+	int miny = mmin(y1,y2,y3,area_top);
+
+	int spanx = mmax(x1+1,x2+1,x3+1,area_right-1)  - minx+1;
+	int spany = mmax(y1+1,y2+1,y3+1,area_bottom-1) - miny+1;
+
+	//Inside scissor area?
+	//if (spanx < 0 || spany < 0) return;
+
+	float x4 = 0;
+	float y4 = 0;
+	uint32_t v4 = 0;
+
+	const float DX12 = sgn ? (x2-x1) : (x1-x2);
+	const float DX23 = sgn ? (x3-x2) : (x2-x3);
+	//const float DX34 = sgn ? (x4-x3) : (x3-x4);
+	const float DX31 = sgn ? (x1-x3) : (x3-x1);
+	const float DX41 = v4 ? sgn ? (x1-x4) : (x4-x1) : 0;
+	//printf("float  DX12: %f   DX23: %f   DX31: %f\n", DX12, DX23, DX31);
+
+	const float DY12 = sgn ? (y2-y1) : (y1-y2);
+	const float DY23 = sgn ? (y3-y2) : (y2-y3);
+	//const float DY34 = sgn ? (y4-y3) : (y3-y4);
+	const float DY31 = sgn ? (y1-y3) : (y3-y1);
+	const float DY41 = v4 ? sgn ? (y1-y4) : (y4-y1) : 0;
+	//printf("float  DY12: %f  DY23: %f  DY31: %f\n", DY12, DY23, DY31);
+
+	// Half-edge constants
+	const float C1 = DY12 * x1 - DX12 * y1;
+	const float C2 = DY23 * x2 - DX23 * y2;
+	const float C3 = DY31 * x3 - DX31 * y3;
+	const float C4 = v4 ? DY41 * x4 - DX41 * y4 : 1;
+	printf("float C1: %f  float C2: %f  float C3: %f\n", C1, C2, C3);
+
+	//PlaneStepper3 Z;
+	//Z.Setup(v1, v2, v3, v1.z, v2.z, v3.z);
+
+	//float halfpixel = 0.5f;
+	int y_ps = miny/* + halfpixel*/;
+	int minx_ps = minx/* + halfpixel*/;
+
+	//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
+
+	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
+		for (int y = spany; y > 0; y -= 1)
+		{
+			int x_ps = minx_ps;
+
+			for (int x = spanx; x > 0; x -= 1)
+			{
+				float Xhs12 = C1 + (DX12 * y_ps) - (DY12 * x_ps);
+				float Xhs23 = C2 + (DX23 * y_ps) - (DY23 * x_ps);
+				float Xhs31 = C3 + (DX31 * y_ps) - (DY31 * x_ps);
+				float Xhs41 = C4 + (DX41 * y_ps) - (DY41 * x_ps);
+
+				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
+				//bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
+
+				if (inTriangle)
+				{
+					//float invW = Z.Ip(x_ps, y_ps);
+					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
+					uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+					rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
+					rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
+					rgb[2] = (vertex_a_colour&0x000000ff);
+					disp_addr = (y_ps * 640) + x_ps;
+					disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+				}
+				x_ps = x_ps + 1;
+			}
+
+			y_ps = y_ps + 1;
+		}
+	}
+}
+
+
+inline int32_t float_to_fixed(float d, uint32_t p)
+{
+	return int32_t(d * (1<<p));
+}
+
+inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
+	return (((int64_t)a) * b)>>PREC;
+}
+
+void rasterize_triangle_fixed(float x1,float x2,float x3,float y1,float y2,float y3) {
+
+	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
+	bool sgn = (f_area > 0);
+
+	/*
+	uint8_t cullmode = pvr_access(culling_mode);
+
+	bool vertex_offset = 0;	// TESTING.
+
+	// cull
+	if (cullmode != 0) {
+		float abs_area = fabsf(f_area);
+
+		if (abs_area < top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL) return;
+
+		if (cullmode >= 2) {
+			uint32_t mode = vertex_offset ^ (cullmode & 1);
+			if ((mode == 0 && f_area < 0) || (mode == 1 && f_area > 0)) return;
+		}
+	}
+	*/
+
+	uint32_t area_left = 0;
+	uint32_t area_top = 0;
+	uint32_t area_right = 0;
+	uint32_t area_bottom = 0;
+
+	// Bounding rectangle
+	int minx = mmin(x1, x2, x3, area_left);
+	int miny = mmin(y1, y2, y3, area_top);
+
+	int spanx = mmax(x1+1, x2+1, x3+1, area_right-1)  - minx+1;
+	int spany = mmax(y1+1, y2+1, y3+1, area_bottom-1) - miny+1;
+
+	// S15.16 fixed-point coordinates
+	const int FX1 = float_to_fixed(x1, 16);
+	const int FX2 = float_to_fixed(x2, 16);
+	const int FX3 = float_to_fixed(x3, 16);
+
+	const int FY1 = float_to_fixed(y1, 16);
+	const int FY2 = float_to_fixed(y2, 16);
+	const int FY3 = float_to_fixed(y3, 16);
+
+	// Fixed-point Deltas
+	const int FDX12 = sgn ? (FX2-FX1) : (FX1-FX2);
+	const int FDX23 = sgn ? (FX3-FX2) : (FX2-FX3);
+	const int FDX31 = sgn ? (FX1-FX3) : (FX3-FX1);
+	//printf("fixed FDX12: %f  FDX23: %f  FDX31: %f\n", ((float)FDX12/65536), ((float)FDX23/65536), ((float)FDX31/65536));
+
+	const int FDY12 = sgn ? (FY2-FY1) : (FY1-FY2);
+	const int FDY23 = sgn ? (FY3-FY2) : (FY2-FY3);
+	const int FDY31 = sgn ? (FY1-FY3) : (FY3-FY1);
+	//printf("fixed FDY12: %f  FDY23: %f  FDY31: %f\n", ((float)FDY12/65536), ((float)FDY23/65536), ((float)FDY31/65536));
+
+	// Bounding rectangle
+	//int minx = min(FX1,FX2,FX3)>>16;
+	//int maxx = max(FX1,FX2,FX3)>>16;
+	//int miny = min(FY1,FY2,FY3)>>16;
+	//int maxy = max(FY1,FY2,FY3)>>16;
+
+	// Half-edge constants
+	//int C1 = FDY12 * FX1 - FDX12 * FY1;
+	//int C2 = FDY23 * FX2 - FDX23 * FY2;
+	//int C3 = FDY31 * FX3 - FDX31 * FY3;
+
+	int FDY12_MULT = MUL_PREC(FDY12, FX1, 16); int FDX12_MULT = MUL_PREC(FDX12, FY1, 16);
+	int FDY23_MULT = MUL_PREC(FDY23, FX2, 16); int FDX23_MULT = MUL_PREC(FDX23, FY2, 16);
+	int FDY31_MULT = MUL_PREC(FDY31, FX3, 16); int FDX31_MULT = MUL_PREC(FDX31, FY3, 16);
+	//printf("fixed FDY12_MULT: %f  FDX12_MULT: %f\n\n", ((float)FDY12_MULT/65536), ((float)FDX12_MULT/65536) );
+
+	int C1 = FDY12_MULT - FDX12_MULT;
+	int C2 = FDY23_MULT - FDX23_MULT;
+	int C3 = FDY31_MULT - FDX31_MULT;
+	//printf("fixed C1: %f  fixed C2: %f  fixed C3: %f\n\n", ((float)C1/65536), ((float)C2/65536), ((float)C3/65536));
+
+	// Correct for fill convention
+	//if (DY12 < 0 || (DY12 == 0 && DX12 > 0)) C1++;
+	//if (DY23 < 0 || (DY23 == 0 && DX23 > 0)) C2++;
+	//if (DY31 < 0 || (DY31 == 0 && DX31 > 0)) C3++;
+	
+	int y_ps = miny/* + halfpixel*/;
+	int minx_ps = minx/* + halfpixel*/;
+
+	//printf("fixed C1: %d   \n", CY1/(1<<4)  );
+	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
+		for (int y = spany; y > 0; y -= 1)
+		{
+			int x_ps = minx_ps;
+
+			for (int x = spanx; x > 0; x -= 1)
+			{
+				int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<16, 16) - MUL_PREC(FDY12, x_ps<<16, 16);
+				int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<16, 16) - MUL_PREC(FDY23, x_ps<<16, 16);
+				int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<16, 16) - MUL_PREC(FDY31, x_ps<<16, 16);
+				//int Xhs41 = C4 + MUL_PREC(FDX4, y_ps<<16, 16) - MUL_PREC(FDY41, x_ps<<16, 16);
+
+				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 /*&& Xhs41 >= 0*/;
+
+				if (inTriangle)
+				{
+					//float invW = Z.Ip(x_ps, y_ps);
+					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
+					uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+					rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
+					rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
+					rgb[2] = (vertex_a_colour&0x000000ff);
+					disp_addr = (y_ps * 640) + x_ps;
+					disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+				}
+				x_ps = x_ps + 1;
+			}
+
+			y_ps = y_ps + 1;
+		}
+	}
+}
+
 int verilate() {
 	if (!Verilated::gotFinish()) {
 		//while ( top->FL_ADDR < 0x0100 ) {		// Only run for a short time.
@@ -668,7 +907,6 @@ int verilate() {
 		rgb[0] = 0xff;	// Red.
 		rgb[1] = 0xff;	// Green.
 		rgb[2] = 0xff;	// Blue.
-		uint32_t disp_addr;
 
 		top->rootp->simtop__DOT__pvr__DOT__vram_din     = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
 		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
@@ -691,9 +929,6 @@ int verilate() {
 
 		//X1: 43C994E8 403.163330  X2: 43C994E8 403.163330  X3: 43BC780C 376.937866  X4: 00000000 0.000000
 		//Y1: 43074970 135.286865  Y2: 4391829E 291.020447  Y3: 43074970 135.286865  Y4: 00000000 0.000000
-		//float x1 = 403.163330; float x2 = 403.163330; float x3 = 376.937866;
-		//float y1 = 135.286865; float y2 = 291.020447; float y3 = 135.286865;
-
 		float x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
 		float x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
 		float x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
@@ -701,249 +936,8 @@ int verilate() {
 		float y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
 		float y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
 
-		//printf("x1: %d  y1: %d\n", x1, y1);
-
-		float f_area = ((x1 - x3) * (y2 - y3) - (y1 - y3) * (x2 - x3));
-		bool sgn = (f_area > 0);
-
-		//printf("f_area: %08X %f\n\n", *(uint32_t*)&f_area, f_area);
-
-		/*
-		uint8_t cullmode = pvr_access(culling_mode);
-
-		bool vertex_offset = 0;	// TESTING.
-
-		// cull
-		if (cullmode != 0) {
-			float abs_area = fabsf(f_area);
-
-			if (abs_area < top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL) return;
-
-			if (cullmode >= 2) {
-				uint32_t mode = vertex_offset ^ (cullmode & 1);
-				if ((mode == 0 && f_area < 0) || (mode == 1 && f_area > 0)) return;
-			}
-		}
-		*/
-
-		uint32_t area_left = 0;
-		uint32_t area_top = 0;
-		uint32_t area_right = 0;
-		uint32_t area_bottom = 0;
-
-		// Bounding rectangle
-		int minx = mmin(x1, x2, x3, area_left);
-		int miny = mmin(y1, y2, y3, area_top);
-
-		int spanx = mmax(x1 + 1, x2 + 1, x3 + 1, area_right - 1) - minx + 1;
-		int spany = mmax(y1 + 1, y2 + 1, y3 + 1, area_bottom - 1) - miny + 1;
-
-		//printf("minx: %d  miny: %d  spanx: %d  spany: %d\n", minx, miny, spanx, spany);
-
-		//Inside scissor area?
-		//if (spanx < 0 || spany < 0) return;
-
-		float x4 = 0;
-		float y4 = 0;
-		uint32_t v4 = 0;
-
-		// Half-edge constants
-		const float x1x2_swap = sgn ? (x2 - x1) : (x1 - x2);
-		const float x2x3_swap = sgn ? (x3 - x2) : (x2 - x3);
-		const float x3x4_swap = sgn ? (x4 - x3) : (x3 - x4);
-		const float x3x1_swap = sgn ? (x1 - x3) : (x3 - x1);
-		const float x4x1_swap = sgn ? (x1 - x4) : (x4 - x1);
-
-		const float DX12 = x1x2_swap;
-		const float DX23 = x2x3_swap;
-		const float DX31 = x3x1_swap;
-		const float DX41 = v4 ? x4x1_swap : 0;
-
-		const float y1y2_swap = sgn ? (y2 - y1) : (y1 - y2);
-		const float y2y3_swap = sgn ? (y3 - y2) : (y2 - y3);
-		const float y3y4_swap = sgn ? (y4 - y3) : (y3 - y4);
-		const float y3y1_swap = sgn ? (y1 - y3) : (y3 - y1);
-		const float y4y1_swap = sgn ? (y4 - y1) : (y4 - y1);
-
-		const float DY12 = y1y2_swap;
-		const float DY23 = y2y3_swap;
-		const float DY31 = y3y1_swap;
-		const float DY41 = v4 ? y4y1_swap : 0;
-
-
-		const float C1 = DY12 * x1 - DX12 * y1;
-		const float C2 = DY23 * x2 - DX23 * y2;
-		const float C3 = DY31 * x3 - DX31 * y3;
-		const float C4 = v4 ? DY41 * x4 - DX41 * y4 : 1;
-
-		uint32_t stride_bytes = 640/4;
-
-		uint32_t* cb_y = (uint32_t*)disp_ptr;
-		cb_y += (miny - area_top) * stride_bytes + (minx - area_left) * 4;
-
-		//PlaneStepper3 Z;
-		//Z.Setup(v1, v2, v3, v1.z, v2.z, v3.z);
-
-		float halfpixel = 0.5f;
-		float y_ps = miny + halfpixel;
-		float minx_ps = minx + halfpixel;
-
-		//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
-
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state == 20) {
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
-		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
-			for (int y = spany; y > 0; y -= 1)
-			{
-				uint32_t* cb_x = cb_y;
-				float x_ps = minx_ps;
-				for (int x = spanx; x > 0; x -= 1)
-				{
-					float Xhs12 = C1 + DX12 * y_ps - DY12 * x_ps;
-					float Xhs23 = C2 + DX23 * y_ps - DY23 * x_ps;
-					float Xhs31 = C3 + DX31 * y_ps - DY31 * x_ps;
-					float Xhs41 = C4 + DX41 * y_ps - DY41 * x_ps;
-
-					bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
-
-					if (inTriangle)
-					{
-						//float invW = Z.Ip(x_ps, y_ps);
-						//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
-						uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
-						rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
-						rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
-						rgb[2] = (vertex_a_colour&0x000000ff);
-						//rgb[0] = 0x00; rgb[1] = 0xff; rgb[2] = 0x00;
-						disp_addr = ((uint32_t)y_ps * 640) + (uint32_t)x_ps;
-						disp_ptr[ disp_addr&0x1fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
-						//printf("inTriangle: %d  x_ps: %d  y_ps: %d\n", inTriangle, (uint32_t)x_ps, (uint32_t)y_ps);
-					}
-
-					cb_x += 4;
-					x_ps = x_ps + 1;
-				}
-			next_y:
-				cb_y += stride_bytes;
-				y_ps = y_ps + 1;
-			}
-		}
-
-		// x1: 350  x2: 323  x3: 351
-		// y1: 444  y2: 462  y3: 439
-
-		/*
-		// Write VGA output to a file. RAW RGB!
-		rgb[0] = top->VGA_R;
-		rgb[1] = top->VGA_G;
-		rgb[2] = top->VGA_B;
-		//fwrite(rgb, 1, 3, vgap);		// Write 24-bit values to the file.
-		uint32_t vga_addr = (line_count * 1024) + pix_count;
-		if (vga_addr <= vga_size) vga_ptr[vga_addr] = (rgb[0] << 24) | (rgb[1] << 16) | (rgb[2] << 8) | 0xCC;
-		*/
-
-
-		/*
-		if (top->rootp->sh4a__DOT__fb0_we) {
-			//rgb[0] = (top->rootp->sh4a__DOT__fb0_dout & 0x0F00) >> 4;	// [4:0] Red.
-			//rgb[1] = (top->rootp->sh4a__DOT__fb0_dout & 0x00F0) >> 0;	// [9:5] Green.
-			//rgb[2] = (top->rootp->sh4a__DOT__fb0_dout & 0x000F) << 4;	// [14:10] Blue.
-				
-			//rgb[0] = (top->rootp->sh4a__DOT__fb0_dout & 0x0008) << 4;	// [4:0] Red.
-			//rgb[1] = (top->rootp->sh4a__DOT__fb0_dout & 0x0001) << 7;	// [9:5] Green.
-			//rgb[2] = (top->rootp->sh4a__DOT__fb0_dout & 0x0006) << 5;	// [14:10] Blue.
-
-			// Format of fb0_dout, I think?...
-			//
-			//            -s------ --------  Shadow control
-			//            --pp---- --------  Sprite priority
-			//            ----cccc cccc----  Sprite color palette
-			//            -------- ----llll  4-bit pixel data
-
-			uint16_t col;
-			col = pal_ptr[ (top->rootp->sh4a__DOT__fb0_dout) & 0xfff ];	// Use FB dout as the palette LUT address.
-			//printf("fb0_dout: 0x%04X  col: 0x%04X\n", top->rootp->sh4a__DOT__fb0_dout, col);
-
-			// TODO: Shadow / Highlight not implemented yet!
-
-			//     byte 0    byte 1
-			//  sBGR BBBB GGGG RRRR
-			//  x000 4321 4321 4321
-			rgb[0] = ( ((col >> 12) & 0x01) | ((col << 1) & 0x1e) ) << 3;
-			rgb[1] = ( ((col >> 13) & 0x01) | ((col >> 3) & 0x1e) ) << 3;
-			rgb[2] = ( ((col >> 14) & 0x01) | ((col >> 7) & 0x1e) ) << 3;
-
-			//printf("x: %03d  y: %03d  gdata: 0x%08X \n", top->rootp->sh4a__DOT__x, top->rootp->sh4a__DOT__y, top->rootp->sh4a__DOT__gdata);
-
-			//rgb[0] = (top->rootp->sh4a__DOT__fb0_dout & 0x000F) << 4;
-			//rgb[1] = (top->rootp->sh4a__DOT__fb0_dout & 0x00F0);
-			//rgb[2] = (top->rootp->sh4a__DOT__fb0_dout & 0x0F00) >> 4;
-				
-			// TESTING !!
-			//rgb[0] = (top->rootp->sh4a__DOT__fb0_dout & 0x7C00) >> 7;	// [14:10] Red.
-			//rgb[1] = (top->rootp->sh4a__DOT__fb0_dout & 0x03E0) >> 2;	// [9:5] Green.
-			//rgb[2] = (top->rootp->sh4a__DOT__fb0_dout & 0x001F) << 3;	// [4:0] Blue.
-
-			disp_ptr[top->rootp->sh4a__DOT__fb0_addr] = 0xff<<24 | rgb[2] << 16 | rgb[1] << 8 | rgb[0];	// Our debugger framebuffer is in the 32-bit ABGR format.
-
-			//if ((frame_count & 1) == 0) {
-				fb0_ptr[top->rootp->sh4a__DOT__fb0_addr] = top->rootp->sh4a__DOT__fb0_dout;
-			//}
-		}
-		*/
-
-		/*
-		if (prev_hsync && !top->VGA_HS) {
-			//printf("Line Count: %d\n", line_count);
-			//printf("Pix count: %d\n", pix_count);
-			line_count++;
-			pix_count = 0;
-		}
-		prev_hsync = top->VGA_HS;
-			
-		if (prev_vsync && !top->VGA_VS) {
-			frame_count++;
-			line_count = 0;
-			printf("Frame: %06d  VSync! \n", frame_count);
-				
-			if (frame_count > 46) {
-				printf("Dumping framebuffer to vga_out.raw!\n");
-				char vga_filename[40];
-				sprintf(vga_filename, "vga_frame_%d.raw", frame_count);
-				vgap = fopen(vga_filename, "wb");
-				if (vgap != NULL) {
-					printf("\nOpened %s for writing OK.\n", vga_filename);
-				}
-				else {
-					printf("\nCould not open %s for writing!\n\n", vga_filename);
-					return 0;
-				};
-				fseek(vgap, 0L, SEEK_SET);
-			}
-				
-			for (int i = 0; i < (1600 * 521); i++) {	// Pixels per line * total lines.
-				rgb[0] = (fb0_ptr[i] & 0x001F) << 3;	// [4:0] Red.
-				rgb[1] = (fb0_ptr[i] & 0x03E0) >> 2;	// [9:5] Green.
-				rgb[2] = (fb0_ptr[i] & 0x7C00) >> 7;	// [14:10] Blue.
-
-				//rgb[0] = (vga_ptr[i] & 0xFF0000) >> 24;
-				//rgb[1] = (vga_ptr[i] & 0x00FF00) >> 16;
-				//rgb[2] = (vga_ptr[i] & 0x0000FF) >> 8;
-
-				//if (frame_count > =75) fwrite(rgb, 1, 3, vgap);	// Write pixels to the file.
-				if (frame_count >= 75) fwrite(rgb, 3, 1, vgap);	// Write pixels to the file.
-			}
-			if (frame_count > 46) fclose(vgap);
-
-			//printf("pc: %08X  addr: %08X  inst: %08X\n", top->pc << 2, top->interp_addr, top->inst);
-		}
-		prev_vsync = top->VGA_VS;
-
-		//if (top->VGA_we==1) printf("VGA_we is High!\n");
-
-		//if (top->SRAM_DQ > 0) printf("SRAM_DQ is High!!!\n");
-		//if (top->VGA_R > 0 || top->VGA_G > 0 || top->VGA_B > 0) printf("VGA is High!!!\n");
-		*/
+		//rasterize_triangle(x1, x2, x3, y1, y2, y3);
+		rasterize_triangle_fixed(x1, x2, x3, y1, y2, y3);
 
 		top->clk = 1;
 		top->eval();            // Evaluate model!
@@ -954,6 +948,7 @@ int verilate() {
 
 		return 1;
 	}
+
 
 	// Stop Verilating...
 	top->final();
@@ -1221,19 +1216,6 @@ int main(int argc, char** argv, char** env) {
 
 		ShowMyExampleAppConsole(&show_app_console);
 
-		//ImGui::Text("Verilator sim running... ROM_ADDR: 0x%05x", top->ROM_ADDR);               // Display some text (you can use a format strings too)
-																							   //ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-																							   //ImGui::Checkbox("Another Window", &show_another_window);
-
-		//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-		//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-																//if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-																//counter++;
-
-																//ImGui::SameLine();
-																//ImGui::Text("counter = %d", counter);
-		//ImGui::Text("samp_index = %d", samp_index);
 		//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		//ImGui::PlotLines("Lines", values, IM_ARRAYSIZE(values), values_offset, "sample", -1.0f, 1.0f, ImVec2(0, 80));
 		if (ImGui::Button("RESET")) {
@@ -1247,24 +1229,6 @@ int main(int argc, char** argv, char** env) {
 		}
 		ImGui::Text("main_time %d", main_time);
 		ImGui::Text("frame_count: %d  line_count: %d", frame_count, line_count);
-
-		/*
-		ImGui::Text("Addr:   0x%08X", top->mem_addr << 2);
-		
-		ImGui::Text("PC:     0x%08X", top->pc << 2);
-		if (top->system_top__DOT__simtop__DOT__core__DOT__PC__DOT__enable) {
-			ImGui::SameLine(150); ImGui::Text("<- WRITE 0x%08X", top->system_top__DOT__simtop__DOT__core__DOT__IF_PCIn);
-		}
-
-		if (top->system_top__DOT__simtop__DOT__core__DOT__PC__DOT__exe_pc_write) {
-			ImGui::SameLine(150); ImGui::Text("<- EXE_PC WRITE 0x%08X", top->system_top__DOT__simtop__DOT__core__DOT__exe_pc);
-		}
-	
-		ImGui::Text("Inst:   0x%08X", top->system_top__DOT__simtop__DOT__core__DOT__InstMem_In);
-		*/
-
-		//if (ImGui::Button("Reset!")) top->KEY = 0;
-		//else top->KEY = 1;
 
 		ImGui::Checkbox("RUN", &run_enable);
 

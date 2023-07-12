@@ -117,15 +117,15 @@ else begin
 
 	case (isp_state)
 		0: begin
-			if (render_poly) begin
-				isp_vram_addr <= poly_addr;
-				//isp_vram_addr <= 24'h00408c;	// Menu
+			//if (render_poly) begin
+				//isp_vram_addr <= poly_addr;
+				isp_vram_addr <= 24'h00408c;	// Menu
 				//isp_vram_addr <= 24'h000450;	// Taxi
 				//isp_vram_addr <= 24'h000000;	// Sanic
 				isp_vram_rd <= 1'b1;
 				strip_cnt <= 4'd3;
 				isp_state <= 8'd1;
-			end
+			//end
 		end
 		1:  isp_inst <= isp_vram_din;
 		2:  tsp_inst <= isp_vram_din;
@@ -224,7 +224,8 @@ else begin
 					isp_inst <= isp_vram_din;
 					strip_cnt <= 4'd3;
 					poly_drawn <= 1'b1;
-					isp_state <= 8'd0;
+					//isp_state <= 8'd0;
+					isp_state <= 8'd2;		 // TESTING !!
 				end
 			/*end
 			else begin

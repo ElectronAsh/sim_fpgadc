@@ -9866,10 +9866,10 @@ VL_INLINE_OPT void Vsimtop___024root___combo__TOP__8(Vsimtop___024root* vlSelf) 
                                                  & ((~ (IData)(vlSelf->simtop__DOT__core__DOT__e2_reg_lsu_sel)) 
                                                     | (IData)(vlSelf->simtop__DOT__core__DOT__e2_reg_lsu_alt_wen)));
     vlSelf->simtop__DOT__core__DOT__e1_flush = vlSelf->simtop__DOT__core__DOT__e2_lsu_nack;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din 
-        = vlSelf->simtop__DOT__pvr__DOT__isp_vram_din;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_din 
         = vlSelf->simtop__DOT__pvr__DOT__ra_vram_din;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din 
+        = vlSelf->simtop__DOT__pvr__DOT__isp_vram_din;
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__A1__DOT__out 
         = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_out;
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__M1__DOT__out 
