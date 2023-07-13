@@ -819,6 +819,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__shadow;
     CData/*2:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__skip;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__eol;
+    CData/*7:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__clock;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__reset_n;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly;
@@ -982,6 +983,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*7:0*/ simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__mult__DOT__norm1__DOT__out_e;
     CData/*7:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state;
     CData/*2:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt;
+    CData/*7:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes;
     CData/*0:0*/ __Vdly__simtop__DOT__pvr__DOT__poly_drawn;
     CData/*0:0*/ __VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n;
     CData/*0:0*/ __Vclklast__TOP__clk;

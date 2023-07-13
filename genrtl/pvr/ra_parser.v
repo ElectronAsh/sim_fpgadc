@@ -65,7 +65,9 @@ wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28],
 wire [3:0] num_prims = opb_word[28:25];	// For Triangle Array or Quad Array only.
 wire shadow = opb_word[24];				// For all three poly types.
 wire [2:0] skip = opb_word[23:21];		// For all three poly types.
-wire eol = opb_word[28];
+wire eol = opb_word[28];				// End Of List.
+
+reg [7:0] ol_jump_bytes;
 
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
@@ -153,57 +155,27 @@ else begin
 		end
 		
 		9: begin
-			if (type_cnt==4'd0) begin
-				if (!ra_opaque[31])     begin ra_vram_addr <= ra_opaque[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-			end
-			else if (type_cnt==4'd1) begin
-				if (!ra_opaque_mod[31]) begin ra_vram_addr <= ra_opaque_mod[23:0]; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-			end
-			else if (type_cnt==4'd2) begin
-				if (!ra_trans[31])      begin ra_vram_addr <= ra_trans[23:0];  		ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-			end
-			else if (type_cnt==4'd3) begin
-				if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-			end
-			else if (type_cnt==4'd4) begin
-				if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-			end
-			else ra_state <= 8'd14;
-			
 			type_cnt <= type_cnt + 1;	// Check through each Type.
-			/*
 			case (type_cnt)
 				// Point ra_vram_addr to an OBJECT address...
-				0: if (!ra_opaque[31])     begin ra_vram_addr <= ra_opaque[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				1: if (!ra_opaque_mod[31]) begin ra_vram_addr <= ra_opaque_mod[23:0]; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				2: if (!ra_trans[31])      begin ra_vram_addr <= ra_trans[23:0];      ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				4: if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				5: ra_state <= 8'd14;	// All prim TYPES in this Object are done!
+				// If the MSB bit is CLEARED, it means the type/entry is in use, otherwise we skip to the next type.
+				//
+				// o_opb,om_opb,t_opb,tm_opb,pt_opb gives the OPB size for each prim type...
+				// 0=No List, 1=8 Words, 2=16 Words, 3=32 Words.
+				// TODO: Shift won't work for o_opb==0 etc.
+				//
+				0: if (!ra_opaque[31])     begin ra_vram_addr <= ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				1: if (!ra_opaque_mod[31]) begin ra_vram_addr <= ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				2: if (!ra_trans[31])      begin ra_vram_addr <= ra_trans[23:0];      ol_jump_bytes <= (4<<t_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				4: if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ol_jump_bytes <= (4<<pt_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				5: ra_state <= 8'd15;	// All prim TYPES in this Object are done!
 				default: ;
 			endcase
-			*/
 		end
 		
 		10: begin
-			/*
-			case (type_cnt)
-				// o_opb,om_opb,t_opb,tm_opb,pt_opb gives the OPB size for each prim type...
-				// 0=No List, 1=8 Words, 2=16 Words, 3=32 Words...
-				//
-				// But I don't know if TA_ALLOC_CTRL is only for the TA to use during processing, not for CORE reading the OL?? ElectronAsh.
-				//
-				0: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<o_opb)*4 )  : ra_vram_addr+( (4<<o_opb)*4 );		// TODO: Shift won't work for o_opb==0.
-				1: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<om_opb)*4 ) : ra_vram_addr+( (4<<om_opb)*4 );
-				2: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<t_opb)*4 )  : ra_vram_addr+( (4<<t_opb)*4 );
-				3: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<tm_opb)*4 ) : ra_vram_addr+( (4<<tm_opb)*4 );
-				4: ra_vram_addr <= (opb_mode) ? ra_vram_addr-( (4<<pt_opb)*4 ) : ra_vram_addr+( (4<<pt_opb)*4 );
-				default: ;
-			endcase
-			*/
-			
-			if (opb_mode) ra_vram_addr <= ra_vram_addr - 24'd4;	// Decrement the OL pointer.
-			else ra_vram_addr <= ra_vram_addr + 24'd4;			// Increment the OL pointer.
+			ra_vram_addr <= (opb_mode) ? ra_vram_addr-ol_jump_bytes : ra_vram_addr+ol_jump_bytes;
 			
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
@@ -214,48 +186,62 @@ else begin
 			ra_state <= ra_state + 1;
 		end
 		
-		// Check for Pointer Block Link, or Primitive Type...
+		// Check for Object Pointer Block Link, or Primitive Type...
 		12: begin
-			if (opb_word[31:29]==3'b111) begin		// Pointer Block Link.
-				if (eol) begin
-					ra_state <= 8'd13;	// todo
+			if (!opb_word[31]) begin					// Triangle Strip.
+				poly_addr <= {opb_word[20:0], 2'b00};
+				render_poly <= 1'b1;
+				ra_state <= ra_state + 8'd1;
+			end
+			else if (opb_word[31:29]==3'b100) begin		// Triangle Array.
+				poly_addr <= {opb_word[20:0], 2'b00};
+				render_poly <= 1'b1;
+				ra_state <= ra_state + 8'd1;
+			end
+			else if (opb_word[31:29]==3'b101) begin		// Quad Array.
+				poly_addr <= {opb_word[20:0], 2'b00};
+				render_poly <= 1'b1;
+				ra_state <= ra_state + 8'd1;
+			end
+			else if (opb_word[31:29]==3'b111) begin		// Pointer Block Link.
+				if (eol) begin							// Is it the End of this OBJECT List?
+					//ra_vram_addr <= (opb_mode) ? ra_vram_addr-(ol_jump_bytes<<1) : ra_vram_addr+(ol_jump_bytes<<1);
+					ra_state <= 8'd14;					// If so, check the next primitive TYPE in the current Region Array block.
 				end
 				else begin
-					ra_vram_addr <= {opb_word[23:2], 2'b00};
+					ra_vram_addr <= {opb_word[23:2], 2'b00};	// Take the Link address jump.
 					ra_vram_rd <= 1'b1;
-					ra_state <= 8'd11;
+					ra_state <= 8'd11;							// Jump back to previous state, to grab the next OL entry word.
 				end
 			end
-			else if (opb_word[31:29]==3'b101) begin	// Quad Array.
-				poly_addr <= {opb_word[20:0], 2'b00};
-				render_poly <= 1'b1;
-				ra_state <= ra_state + 8'd1;
+			else begin
+				$display("Undefined Object prim type! (OL overrun?)\n");
+				//if (ra_cont_last)		// TODO - Check for End of Region Array!
+				ra_state <= 8'd16;
 			end
-			else if (opb_word[31:29]==3'b100) begin	// Triangle Array.
-				poly_addr <= {opb_word[20:0], 2'b00};
-				render_poly <= 1'b1;
-				ra_state <= ra_state + 8'd1;
-			end
-			else if (!opb_word[31]) begin			// Triangle Strip.
-				poly_addr <= {opb_word[20:0], 2'b00};
-				render_poly <= 1'b1;
-				ra_state <= ra_state + 8'd1;
-			end
-			else $display("Undefined prim type!\n");
 		end
 		
 		13: begin
-			if (opb_word[31:29]==3'b111 || poly_drawn) begin
-				ra_state <= 8'd9;	// Check next prim TYPE.
+			if (poly_drawn) begin
+				ra_vram_addr <= ra_vram_addr + 4;	// Go to next WORD in OL.
+				ra_state <= 11;
 			end
 		end
 		
-		14: begin	// All prim TYPES in this Object have been processed!
-			//if (poly_drawn) begin
-				ra_vram_addr <= next_region;	// Check next region entry.
-				ra_vram_rd <= 1'b1;
-				ra_state <= 8'd2;
-			//end
+		14: begin
+			if (opb_word[31:29]==3'b111 || poly_drawn) begin
+				ra_state <= 8'd9;	// Check next Object prim TYPE.
+			end
+		end
+		
+		15: begin	// All prim TYPES in this Object have been processed!
+			ra_vram_addr <= next_region;	// Check the next Region Array block.
+			ra_vram_rd <= 1'b1;
+			ra_state <= 8'd2;
+		end
+		
+		16: begin
+		
 		end
 		
 		default: ;
