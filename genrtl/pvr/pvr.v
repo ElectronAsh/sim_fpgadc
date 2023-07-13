@@ -460,6 +460,8 @@ wire [31:0] ra_puncht;
 
 wire ra_entry_valid;
 
+wire [31:0] opb_word;
+
 wire [23:0] poly_addr;
 wire render_poly;
 
@@ -473,8 +475,10 @@ ra_parser ra_parser_inst (
 	//.REGION_BASE( REGION_BASE ),		// input [31:0]  REGION_BASE
 	//.TA_ALLOC_CTRL( TA_ALLOC_CTRL ),	// input [31:0]  TA_ALLOC_CTRL
 	.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG
+	
 	.REGION_BASE( 32'h01667C0 ),		// input [31:0]  REGION_BASE. Menu.
 	//.REGION_BASE( 32'h00D33C8 ),		// input [31:0]  REGION_BASE. Taxi.
+	
 	.TA_ALLOC_CTRL( 32'h00100303 ),		// input [31:0]  TA_ALLOC_CTRL. Menu.
 	
 	.ra_vram_rd( ra_vram_rd ),			// output  ra_vram_rd
@@ -496,6 +500,8 @@ ra_parser ra_parser_inst (
 	.ra_puncht( ra_puncht ),			// output [31:0]  ra_puncht
 	
 	.ra_entry_valid( ra_entry_valid ),	// output  ra_entry_valid
+	
+	.opb_word( opb_word ),				// output [31:0]  opb_word
 	
 	.poly_addr( poly_addr ),			// output [23:0]  poly_addr
 	.render_poly( render_poly ),		// output  render_poly
@@ -524,13 +530,16 @@ else begin
 	if (poly_drawn) isp_switch <= 1'b0;
 end
 
-//assign vram_addr = (isp_switch) ? isp_vram_addr : ra_vram_addr;
-assign vram_addr = isp_vram_addr;
+assign vram_addr = (isp_switch) ? isp_vram_addr : ra_vram_addr;
+//assign vram_addr = isp_vram_addr;
+//assign vram_addr = ra_vram_addr;
 
 
 isp_parser isp_parser_inst (
 	.clock( clock ),					// input  clock
 	.reset_n( reset_n ),				// input  reset_n
+	
+	.opb_word( opb_word ),				// input [31:0]  opb_word
 	
 	.poly_addr( poly_addr ),			// input [23:0]  poly_addr
 	.render_poly( render_poly ),		// input  render_poly

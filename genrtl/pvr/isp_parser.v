@@ -5,6 +5,8 @@ module isp_parser (
 	input clock,
 	input reset_n,
 	
+	input [31:0] opb_word,
+	
 	input [23:0] poly_addr,
 	input render_poly,
 	
@@ -17,6 +19,13 @@ module isp_parser (
 	
 	output reg poly_drawn
 );
+
+// OL Word bit decodes...
+wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.
+wire [3:0] num_prims = opb_word[28:25];	// For Triangle Array or Quad Array only.
+wire shadow = opb_word[24];				// For all three poly types.
+wire [2:0] skip = opb_word[23:21];		// For all three poly types.
+wire eol = opb_word[28];
 
 
 reg [31:0] isp_inst;
@@ -111,25 +120,25 @@ else begin
 	poly_drawn <= 1'b0;
 
 	if (isp_state > 0) begin
-		if (isp_state != 8'd46) isp_state <= isp_state + 8'd1;
+		if (isp_state != 8'd47) isp_state <= isp_state + 8'd1;
 		isp_vram_addr <= isp_vram_addr + 4;
 	end
 
 	case (isp_state)
 		0: begin
-			//if (render_poly) begin
-				//isp_vram_addr <= poly_addr;
-				isp_vram_addr <= 24'h00408c;	// Menu
+			if (render_poly) begin
+				isp_vram_addr <= poly_addr;
+				//isp_vram_addr <= 24'h00408c;	// Menu
 				//isp_vram_addr <= 24'h000450;	// Taxi
-				//isp_vram_addr <= 24'h000000;	// Sanic
+				//isp_vram_addr <= 24'h000000;	// Sanic/logo.
 				isp_vram_rd <= 1'b1;
-				strip_cnt <= 4'd3;
+				strip_cnt <= 4'd0;
 				isp_state <= 8'd1;
-			//end
+			end
 		end
 		1:  isp_inst <= isp_vram_din;
 		2:  tsp_inst <= isp_vram_din;
-		3:  begin tex_cont <= isp_vram_din; /* if (!shadow)*/ isp_state <= 8'd6; end
+		3:  begin tex_cont <= isp_vram_din; /*if (!shadow)*/ isp_state <= 8'd6; end	// shadow seems to break things atm?
 		
 		// if (shadow)...
 		4:  tsp2_inst <= isp_vram_din;
@@ -216,17 +225,24 @@ else begin
 		45: vert_d_off_col <= isp_vram_din;
 		
 		46: begin
+			isp_entry_valid <= 1'b1;
+		end
+		
+		47: begin
 			//if (strip_cnt==4'd0) begin
-				if (isp_vram_din[31:24]==8'hC8) begin	// Menu.
+				//if (isp_vram_din[31:24]==8'hC8) begin	// Menu.
 				//if (isp_vram_din[31:16]==16'h9380) begin	// Taxi.
 				//if (isp_vram_din[31:16]==16'hCB80) begin	// Sanic.
-					isp_entry_valid <= 1'b1;
-					isp_inst <= isp_vram_din;
+					//isp_inst <= isp_vram_din;
 					strip_cnt <= 4'd3;
 					poly_drawn <= 1'b1;
-					//isp_state <= 8'd0;
-					isp_state <= 8'd2;		 // TESTING !!
-				end
+					isp_state <= 8'd0;
+					
+					//isp_vram_addr <= isp_vram_addr + ((3 + (skip * (shadow+1))) * 4);
+					//isp_state <= 8'd6;
+					
+					//isp_state <= 8'd2;		 // TESTING !!
+				//end
 			/*end
 			else begin
 				isp_entry_valid <= 1'b1;
