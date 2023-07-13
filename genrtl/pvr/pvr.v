@@ -443,7 +443,8 @@ wire ra_vram_rd;
 wire ra_vram_wr;
 wire [23:0] ra_vram_addr;
 
-wire [31:0] ra_vram_din = vram_din;
+wire [31:0] ra_vram_din;
+assign ra_vram_din = vram_din;
 
 wire [31:0] ra_control;
 wire ra_cont_last;
@@ -471,15 +472,20 @@ ra_parser ra_parser_inst (
 	
 	.ra_trig( ra_trig ),	// input  ra_trig
 	
-	//.FPU_PARAM_CFG( FPU_PARAM_CFG ),	// input [31:0]  FPU_PARAM_CFG
-	//.REGION_BASE( REGION_BASE ),		// input [31:0]  REGION_BASE
-	//.TA_ALLOC_CTRL( TA_ALLOC_CTRL ),	// input [31:0]  TA_ALLOC_CTRL
-	.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG
+	.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Menu.
+	.TA_ALLOC_CTRL( 32'h00100303 ),	// input [31:0]  TA_ALLOC_CTRL. Menu.
+	.REGION_BASE( 32'h001667C0 ),		// input [31:0]  REGION_BASE.   Menu.
+	.PARAM_BASE( 32'h00000000 ),		// input [31:0]  PARAM_BASE.    Menu
 	
-	.REGION_BASE( 32'h01667C0 ),		// input [31:0]  REGION_BASE. Menu.
-	//.REGION_BASE( 32'h00D33C8 ),		// input [31:0]  REGION_BASE. Taxi.
+	//.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG. Taxi.
+	//.TA_ALLOC_CTRL( 32'h00101313 ),		// input [31:0]  TA_ALLOC_CTRL. Taxi.
+	//.REGION_BASE( 32'h004D33C8 ),		// input [31:0]  REGION_BASE.   Taxi.
+	//.PARAM_BASE( 32'h00400000 ),		// input [31:0]  PARAM_BASE.    Taxi.
 	
-	.TA_ALLOC_CTRL( 32'h00100303 ),		// input [31:0]  TA_ALLOC_CTRL. Menu.
+	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Sonic.
+	//.TA_ALLOC_CTRL( 32'h00120303 ),	// input [31:0]  TA_ALLOC_CTRL. Sonic.
+	//.REGION_BASE( 32'h001303E0 ),		// input [31:0]  REGION_BASE.   Sonic.
+	//.PARAM_BASE( 32'h00400000 ),		// input [31:0]  PARAM_BASE.   Sonic??
 	
 	.ra_vram_rd( ra_vram_rd ),			// output  ra_vram_rd
 	.ra_vram_wr( ra_vram_wr ),			// output  ra_vram_wr
@@ -516,7 +522,8 @@ wire isp_vram_rd;
 wire isp_vram_wr;
 wire [23:0] isp_vram_addr;
 
-(*keep*)wire [31:0] isp_vram_din = vram_din;
+wire [31:0] isp_vram_din;
+assign isp_vram_din = vram_din;
 
 wire isp_entry_valid;
 

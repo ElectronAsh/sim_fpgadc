@@ -714,10 +714,12 @@ void rasterize_triangle_float(float x1, float x2,float x3,float y1, float y2, fl
 				{
 					//float invW = Z.Ip(x_ps, y_ps);
 					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
-					uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
-					rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
-					rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
-					rgb[2] = (vertex_a_colour&0x000000ff);
+					//uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+					//uint32_t vertex_b_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_base_col_0;
+					uint32_t vertex_c_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
+					rgb[0] = (vertex_c_colour&0x00ff0000)>>16;
+					rgb[1] = (vertex_c_colour&0x0000ff00)>>8;
+					rgb[2] = (vertex_c_colour&0x000000ff);
 					disp_addr = (y_ps * 640) + x_ps;
 					disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 				}
@@ -746,6 +748,9 @@ inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
 }
 
 void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4) {
+
+	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
+	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
@@ -922,24 +927,33 @@ int verilate() {
 		rgb[1] = 0xff;	// Green.
 		rgb[2] = 0xff;	// Blue.
 
-		top->rootp->simtop__DOT__pvr__DOT__vram_din     = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
-		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
-		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = vram0_ptr[ top->rootp->simtop__DOT__pvr__DOT__vram_addr>>2 ];
+		bool lower_vram = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x400000)==0;
 
-		/*
+		// vram_din doesn't seem to get routed to the other modules???
+		top->vram_din = (lower_vram) ? vram0_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ] :
+									   vram1_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ];
+
+		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = (lower_vram) ? vram0_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ] :
+																		 vram1_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ];
+
+		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = (lower_vram) ? vram0_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ] :
+																		 vram1_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ];
+
+
 		if (top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid) {
 			uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
 			uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
-			// Draw a 32x32 block, to denote the current RA tile.
+			// Draw a 32x32 square outline, to denote the current RA tile.
 			for (int y = y_start; y < (y_start+32); y++) {
 				for (int x = x_start; x < (x_start+32); x++) {
-					rgb[0] = 0xff; rgb[1] = 0x00; rgb[2] = 0x00;
-					disp_addr = (y * 640) + x;
-					disp_ptr[disp_addr] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+					if (x==x_start || x==x_start+31 || y==y_start || y==y_start+31) {
+						rgb[0] = 0xff; rgb[1] = 0x00; rgb[2] = 0x00;
+						disp_addr = (y * 640) + x;
+						disp_ptr[disp_addr] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+					}
 				}
 			}
 		}
-		*/
 
 		//X1: 43C994E8 403.163330  X2: 43C994E8 403.163330  X3: 43BC780C 376.937866  X4: 00000000 0.000000
 		//Y1: 43074970 135.286865  Y2: 4391829E 291.020447  Y3: 43074970 135.286865  Y4: 00000000 0.000000
@@ -1113,14 +1127,6 @@ int main(int argc, char** argv, char** env) {
 	fseek(vram1_file, 0L, SEEK_SET);
 	fread(vram1_ptr, 1, vram1_size, vram1_file);
 
-	// Wordswap!
-	/*
-	for (int i = 0; i < rom_size / 4; i++) {
-		uint32_t word = rom_ptr[i];
-		word = ((word&0xFFFF0000)>>16) | ((word & 0x0000FFFF)<<16);
-	}
-	*/
-
 	/*
 	vgap = fopen("vga_out.raw","wb");
 	if (vgap!=NULL) {
@@ -1239,7 +1245,8 @@ int main(int argc, char** argv, char** env) {
 			main_time = 0;
 			memset(fb0_ptr, 0x00, fb0_size);	// Clear the framebuffer.
 			// Clear the DISPLAY buffer...
-			uint32_t value = 0xff222222;
+			//uint32_t value = 0xff222222;
+			uint32_t value = 0xff000000;
 			for (uint32_t i = 0; i < disp_size / 2; i += 4) {
 				memcpy(((char*)disp_ptr) + i, &value, 4);
 			}
@@ -1277,14 +1284,18 @@ int main(int argc, char** argv, char** env) {
 
 		ImGui::Begin("VRAM0 dump Editor");
 		mem_edit_3.Cols = 4;
-		mem_edit_3.DrawContents(vram0_ptr, vram1_size, 0);
 		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
-		mem_edit_3.HighlightMin = top->rootp->simtop__DOT__pvr__DOT__vram_addr; mem_edit_3.HighlightMax = top->rootp->simtop__DOT__pvr__DOT__vram_addr+4;
+		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff);
+		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)+4;
+		mem_edit_3.DrawContents(vram0_ptr, vram0_size, 0);
 		ImGui::End();
 
 		ImGui::Begin("VRAM1 dump Editor");
 		mem_edit_4.Cols = 4;
-		mem_edit_4.DrawContents(vram1_ptr, vram0_size, 0);
+		mem_edit_4.HighlightColor = 0xFF888800;	// ABGR, probably
+		mem_edit_4.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff);
+		mem_edit_4.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)+4;
+		mem_edit_4.DrawContents(vram1_ptr, vram1_size, 0);
 		ImGui::End();
 
 		ImGui::Begin("BIOS Editor");

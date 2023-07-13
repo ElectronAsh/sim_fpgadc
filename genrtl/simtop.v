@@ -63,7 +63,7 @@ module simtop (
 	output wire vram_rd,
 	output wire vram_wr,
 	output wire [22:0] vram_addr,
-	input [31:0] vram_din,
+	input wire [31:0] vram_din,
 	output wire [31:0] vram_dout
 );
 
@@ -178,12 +178,6 @@ wire pvr_wr = dm_req_valid && dm_req_wen;
 
 wire [63:0] pvr_dout;
 
-//wire [22:0] vram_addr;
-//wire [31:0] vram_din;
-//wire vram_rd;
-//wire vram_wr;
-//wire [31:0] vram_dout;
-	
 pvr pvr (
 	.clock( clk ),			// input  clock
 	.reset_n( !rst_reg ),	// input  reset_n

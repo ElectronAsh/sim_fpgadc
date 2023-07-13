@@ -8,8 +8,9 @@ module ra_parser (
 	input ra_trig,
 	
 	input [31:0] FPU_PARAM_CFG,
-	input [31:0] REGION_BASE,
 	input [31:0] TA_ALLOC_CTRL,
+	input [31:0] REGION_BASE,
+	input [31:0] PARAM_BASE,
 	
 	output reg ra_vram_rd,
 	output reg ra_vram_wr,
@@ -48,7 +49,7 @@ wire [1:0]  o_opb = TA_ALLOC_CTRL[1:0];
 
 // Region Array read state machine...
 reg [7:0] ra_state;
-reg [24:0] next_region;
+reg [23:0] next_region;
 
 assign ra_cont_last   = ra_control[31];
 assign ra_cont_zclear = ra_control[30];
@@ -94,7 +95,7 @@ else begin
 		
 		1: begin
 			ra_vram_rd <= 1'b1;
-			ra_vram_addr <= REGION_BASE[22:0];		// Might need to mask this? This is the absolute addr, so VRAM starts at 0x04000000 etc.
+			ra_vram_addr <= REGION_BASE[22:0];	// Allowing the full 8MB VRAM address here.
 			ra_state <= ra_state + 1;
 		end
 		
@@ -164,19 +165,20 @@ else begin
 				// 0=No List, 1=8 Words, 2=16 Words, 3=32 Words.
 				// TODO: Shift won't work for o_opb==0 etc.
 				//
-				0: if (!ra_opaque[31])     begin ra_vram_addr <= ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				1: if (!ra_opaque_mod[31]) begin ra_vram_addr <= ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				2: if (!ra_trans[31])      begin ra_vram_addr <= ra_trans[23:0];      ol_jump_bytes <= (4<<t_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				4: if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ol_jump_bytes <= (4<<pt_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				0: if (!ra_opaque[31])     begin ra_vram_addr <= PARAM_BASE+ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				1: if (!ra_opaque_mod[31]) begin ra_vram_addr <= PARAM_BASE+ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				2: if (!ra_trans[31])      begin ra_vram_addr <= PARAM_BASE+ra_trans[23:0];      ol_jump_bytes <= (4<<t_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= PARAM_BASE+ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				4: if (!ra_puncht[31])     begin ra_vram_addr <= PARAM_BASE+ra_puncht[23:0];     ol_jump_bytes <= (4<<pt_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
 				5: ra_state <= 8'd15;	// All prim TYPES in this Object are done!
 				default: ;
 			endcase
 		end
 		
 		10: begin
-			ra_vram_addr <= (opb_mode) ? ra_vram_addr-ol_jump_bytes : ra_vram_addr+ol_jump_bytes;
-			
+			//ra_vram_addr <= (opb_mode) ? ra_vram_addr-ol_jump_bytes : ra_vram_addr+ol_jump_bytes;
+			ra_vram_addr <= (opb_mode) ? ra_vram_addr-ol_jump_bytes : ra_vram_addr+4;
+			//if (opb_mode) ra_vram_addr <= ra_vram_addr-ol_jump_bytes;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
@@ -189,23 +191,22 @@ else begin
 		// Check for Object Pointer Block Link, or Primitive Type...
 		12: begin
 			if (!opb_word[31]) begin					// Triangle Strip.
-				poly_addr <= {opb_word[20:0], 2'b00};
+				poly_addr <= {opb_word[20:0], 2'b00};	// May need to add PARAM_BASE?
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b100) begin		// Triangle Array.
-				poly_addr <= {opb_word[20:0], 2'b00};
+				poly_addr <= {opb_word[20:0], 2'b00};	// May need to add PARAM_BASE?
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b101) begin		// Quad Array.
-				poly_addr <= {opb_word[20:0], 2'b00};
+				poly_addr <= {opb_word[20:0], 2'b00};	// May need to add PARAM_BASE?
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b111) begin		// Pointer Block Link.
 				if (eol) begin							// Is it the End of this OBJECT List?
-					//ra_vram_addr <= (opb_mode) ? ra_vram_addr-(ol_jump_bytes<<1) : ra_vram_addr+(ol_jump_bytes<<1);
 					ra_state <= 8'd14;					// If so, check the next primitive TYPE in the current Region Array block.
 				end
 				else begin

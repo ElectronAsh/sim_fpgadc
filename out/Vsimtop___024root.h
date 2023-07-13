@@ -1460,8 +1460,9 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__y1y3_mul_x2x3;
     IData/*31:0*/ simtop__DOT__pvr__DOT__area;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE;
     IData/*23:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_addr;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_din;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_control;
@@ -1472,7 +1473,7 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_puncht;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word;
     IData/*23:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr;
-    IData/*24:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region;
+    IData/*23:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__opb_word;
     IData/*23:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr;
     IData/*23:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr;
@@ -1648,7 +1649,7 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_trans;
     IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_trans_mod;
     IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_puncht;
-    IData/*24:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region;
+    IData/*23:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region;
     IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__opb_word;
     IData/*24:0*/ __Vchglast__TOP__simtop__DOT__pvr__DOT__my_fpu_inst__DOT__A1__DOT__i_m;
     IData/*24:0*/ __Vchglast__TOP__simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S0_N0__DOT__i_m;

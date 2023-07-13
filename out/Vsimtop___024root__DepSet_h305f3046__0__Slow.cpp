@@ -31,8 +31,9 @@ VL_ATTR_COLD void Vsimtop___024root___initial__TOP__0(Vsimtop___024root* vlSelf)
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__const_zero_expand__DOT__i = 0U;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__const_one_expand__DOT__i = 0x3f800000U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG = 0x27df77U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = 0x1667c0U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = 0x100303U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = 0x1667c0U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE = 0U;
     vlSelf->simtop__DOT__pvr__DOT__v1_x = 0x43af5f3bU;
     vlSelf->simtop__DOT__pvr__DOT__v2_x = 0x43a1a798U;
     vlSelf->simtop__DOT__pvr__DOT__v3_x = 0x43afb9b7U;

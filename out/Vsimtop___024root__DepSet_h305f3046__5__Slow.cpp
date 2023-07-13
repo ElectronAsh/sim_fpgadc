@@ -3664,8 +3664,9 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__reset_n = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trig = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_rd = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_wr = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_addr = VL_RAND_RESET_I(24);
@@ -3693,7 +3694,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb = VL_RAND_RESET_I(2);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__o_opb = VL_RAND_RESET_I(2);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state = VL_RAND_RESET_I(8);
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region = VL_RAND_RESET_I(25);
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region = VL_RAND_RESET_I(24);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt = VL_RAND_RESET_I(3);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__strip_mask = VL_RAND_RESET_I(6);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__num_prims = VL_RAND_RESET_I(4);
@@ -4073,7 +4074,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_trans = VL_RAND_RESET_I(32);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_trans_mod = VL_RAND_RESET_I(32);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_puncht = VL_RAND_RESET_I(32);
-    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region = VL_RAND_RESET_I(25);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region = VL_RAND_RESET_I(24);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt = VL_RAND_RESET_I(3);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes = VL_RAND_RESET_I(8);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__opb_word = VL_RAND_RESET_I(32);
