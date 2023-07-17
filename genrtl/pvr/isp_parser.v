@@ -102,7 +102,7 @@ wire two_volume = 1'b0;	// TODO.
 
 // Object List read state machine...
 reg [7:0] isp_state;
-reg [3:0] strip_cnt;
+reg [2:0] strip_cnt;
 
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
@@ -131,8 +131,8 @@ else begin
 				//isp_vram_addr <= 24'h00408c;	// Menu
 				//isp_vram_addr <= 24'h000450;	// Taxi
 				//isp_vram_addr <= 24'h000000;	// Sanic/logo.
-				if (!opb_word[31]) strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5];	// TriangleStrips ONLY.
-				else strip_cnt <= 4'd0;
+				if (!opb_word[31]) strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5] + 1;	// TriangleStrips ONLY.
+				else strip_cnt <= 3'd0;
 				
 				isp_vram_rd <= 1'b1;
 				isp_state <= 8'd1;
@@ -231,7 +231,7 @@ else begin
 		end
 		
 		47: begin
-			if (strip_cnt==4'd0) begin		// (if TriangleStrip is done), or other type finished...
+			if (strip_cnt==3'd0) begin		// (if TriangleStrip is done), or other type finished...
 				//if (isp_vram_din[31:24]==8'hC8) begin	// Menu.
 				//if (isp_vram_din[31:16]==16'h9380) begin	// Taxi.
 				//if (isp_vram_din[31:16]==16'hCB80) begin	// Sanic.
@@ -246,13 +246,13 @@ else begin
 				//end
 			end
 			else begin	// TriangleStrip...
-				strip_cnt <= strip_cnt - 4'd1;
-
-				isp_vram_addr <= isp_vram_addr - 48;	// Jump back to grab verts B,C,New...
-				isp_state <= 8'd5;
+				strip_cnt <= strip_cnt - 3'd1;
+				isp_vram_addr <= isp_vram_addr - ((9 + (((texture*4)-uv_16_bit) + offset + (two_volume*3))) * 4);	// Jump back, to grab B,C,New.
+				
+				isp_state <= 8'd6;
 			end
 		end
-		
+
 		default: ;
 	endcase
 end

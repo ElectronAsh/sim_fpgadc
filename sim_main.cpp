@@ -710,13 +710,12 @@ if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 
 			if (inTriangle) {
 				//float invW = Z.Ip(x_ps, y_ps);
+				// 
 				//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
-				//uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
-				//uint32_t vertex_b_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_base_col_0;
-				uint32_t vertex_c_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
-				rgb[0] = (vertex_c_colour&0x00ff0000)>>16;
-				rgb[1] = (vertex_c_colour&0x0000ff00)>>8;
-				rgb[2] = (vertex_c_colour&0x000000ff);
+				uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+				rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
+				rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
+				rgb[2] = (vertex_a_colour&0x000000ff);
 				disp_addr = (y_ps * 640) + x_ps;
 				disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			}
@@ -747,7 +746,7 @@ inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
 void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4, float z1) {
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
-	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
+	if (x1<10 || x2<10 || x3<10 || y1<10 || y2<10 || y3<10) return;
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
@@ -1544,6 +1543,7 @@ int main(int argc, char** argv, char** env) {
 
 		ImGui::Begin(" ISP Parser");
 		ImGui::Text("        isp_state: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state);
+		ImGui::Text("        strip_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt);
 		ImGui::Text("         isp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst);
 		ImGui::Text("         tsp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
 		ImGui::Text("         tex_cont: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont);
