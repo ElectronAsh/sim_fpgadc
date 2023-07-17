@@ -228,11 +228,8 @@ uint32_t *rom_ptr = (uint32_t *) malloc(rom_size);
 unsigned int pvr_size = 1024;				// 1024 words (32-bit wide).
 uint32_t* pvr_ptr = (uint32_t*)malloc(pvr_size);
 
-unsigned int vram0_size = 1024 * 1024 * 4;	// 4MB words (32-bit wide).
-uint32_t* vram0_ptr = (uint32_t*)malloc(vram0_size);
-
-unsigned int vram1_size = 1024 * 1024 * 4;	// 4MB words (32-bit wide).
-uint32_t* vram1_ptr = (uint32_t*)malloc(vram1_size);
+unsigned int vram_size = 1024 * 1024 * 8;	// 8MB words (32-bit wide).
+uint32_t* vram_ptr = (uint32_t*)malloc(vram_size);
 
 unsigned int z_size = 1024 * 1024 * 4;		// 4MB. (32-bit wide).
 uint32_t *z_ptr = (uint32_t *)malloc(z_size);
@@ -746,7 +743,8 @@ inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
 void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4, float z1) {
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
-	if (x1<10 || x2<10 || x3<10 || y1<10 || y2<10 || y3<10) return;
+	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
+	//if (x1<10 || x2<10 || x3<10 || y1<10 || y2<10 || y3<10) return;	// Hide some spikey bits.
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
@@ -937,17 +935,10 @@ int verilate() {
 		rgb[1] = 0xff;	// Green.
 		rgb[2] = 0xff;	// Blue.
 
-		bool lower_vram = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x400000)==0;
-
 		// vram_din doesn't seem to get routed to the other modules???
-		top->vram_din = (lower_vram) ? vram0_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ] :
-									   vram1_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ];
-
-		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = (lower_vram) ? vram0_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ] :
-																		 vram1_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ];
-
-		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = (lower_vram) ? vram0_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ] :
-																		 vram1_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ];
+		top->vram_din = vram_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)>>2 ];
+		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = vram_ptr[(top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)>>2];
+		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = vram_ptr[(top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)>>2];
 
 		/*
 		if (top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid) {
@@ -1011,7 +1002,6 @@ static MemoryEditor mem_edit_1;
 static MemoryEditor mem_edit_2;
 static MemoryEditor mem_edit_3;
 static MemoryEditor mem_edit_4;
-static MemoryEditor mem_edit_5;
 
 int main(int argc, char** argv, char** env) {
 
@@ -1111,36 +1101,24 @@ int main(int argc, char** argv, char** env) {
 	pvrfile = fopen("pvr_regs_menu", "rb");
 	//pvrfile = fopen("pvr_regs_taxi", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");
-	if (pvrfile != NULL) printf("\npvr_regs loaded OK.\n\n");
-	else { printf("\npvr_regs file not found!\n\n"); return 0; }
+	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
+	else { printf("\npvr_regs dump file not found!\n\n"); return 0; }
 	fseek(pvrfile, 0L, SEEK_END);
 	file_size = ftell(pvrfile);
 	fseek(pvrfile, 0L, SEEK_SET);
 	fread(pvr_ptr, 1, pvr_size, pvrfile);
 
-	FILE* vram0_file;
-	//vram0_file = fopen("vram0_logo.bin", "rb");
-	vram0_file = fopen("vram0_menu.bin", "rb");
-	//vram0_file = fopen("vram0_taxi.bin", "rb");
-	//vram0_file = fopen("vram0_sonic.bin", "rb");
-	if (vram0_file != NULL) printf("\nvram0 loaded OK.\n\n");
-	else { printf("\nvram0 file not found!\n\n"); return 0; }
-	fseek(vram0_file, 0L, SEEK_END);
-	file_size = ftell(vram0_file);
-	fseek(vram0_file, 0L, SEEK_SET);
-	fread(vram0_ptr, 1, vram0_size, vram0_file);
-
-	FILE* vram1_file;
-	//vram1_file = fopen("vram1_logo.bin", "rb");
-	vram1_file = fopen("vram1_menu.bin", "rb");
-	//vram1_file = fopen("vram1_taxi.bin", "rb");
-	//vram1_file = fopen("vram1_sonic.bin", "rb");
-	if (vram1_file != NULL) printf("\nvram1 loaded OK.\n\n");
-	else { printf("\nvram1 file not found!\n\n"); return 0; }
-	fseek(vram1_file, 0L, SEEK_END);
-	file_size = ftell(vram1_file);
-	fseek(vram1_file, 0L, SEEK_SET);
-	fread(vram1_ptr, 1, vram1_size, vram1_file);
+	FILE* vram_file;
+	//vram_file = fopen("vram_logo.bin", "rb");
+	vram_file = fopen("vram_menu.bin", "rb");
+	//vram_file = fopen("vram_taxi.bin", "rb");
+	//vram_file = fopen("vram_sonic.bin", "rb");
+	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
+	else { printf("\nvram.bin dump file not found!\n\n"); return 0; }
+	fseek(vram_file, 0L, SEEK_END);
+	file_size = ftell(vram_file);
+	fseek(vram_file, 0L, SEEK_SET);
+	fread(vram_ptr, 1, vram_size, vram_file);
 
 	/*
 	vgap = fopen("vga_out.raw","wb");
@@ -1297,20 +1275,12 @@ int main(int argc, char** argv, char** env) {
 		mem_edit_2.DrawContents(pvr_ptr, pvr_size, 0);
 		ImGui::End();
 
-		ImGui::Begin("VRAM0 dump Editor");
+		ImGui::Begin("VRAM dump Editor");
 		mem_edit_3.Cols = 4;
 		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
-		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff);
-		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)+4;
-		mem_edit_3.DrawContents(vram0_ptr, vram0_size, 0);
-		ImGui::End();
-
-		ImGui::Begin("VRAM1 dump Editor");
-		mem_edit_4.Cols = 4;
-		mem_edit_4.HighlightColor = 0xFF888800;	// ABGR, probably
-		mem_edit_4.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff);
-		mem_edit_4.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)+4;
-		mem_edit_4.DrawContents(vram1_ptr, vram1_size, 0);
+		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
+		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		mem_edit_3.DrawContents(vram_ptr, vram_size, 0);
 		ImGui::End();
 
 		ImGui::Begin("BIOS Editor");
@@ -1318,7 +1288,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Checkbox("Follow Writes", &follow_writes);
 		if (follow_writes) write_address = top->sd_addr << 2;
 		*/
-		mem_edit_5.DrawContents(rom_ptr, rom_size, 0);
+		mem_edit_4.DrawContents(rom_ptr, rom_size, 0);
 		ImGui::End();
 		
 		ImGui::Begin("SH4 Regfile0");

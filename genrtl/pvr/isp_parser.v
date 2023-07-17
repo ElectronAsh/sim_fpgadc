@@ -131,7 +131,7 @@ else begin
 				//isp_vram_addr <= 24'h00408c;	// Menu
 				//isp_vram_addr <= 24'h000450;	// Taxi
 				//isp_vram_addr <= 24'h000000;	// Sanic/logo.
-				if (!opb_word[31]) strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5] + 1;	// TriangleStrips ONLY.
+				if (!opb_word[31]) strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) + 1;	// TriangleStrips ONLY.
 				else strip_cnt <= 3'd0;
 				
 				isp_vram_rd <= 1'b1;
@@ -140,7 +140,7 @@ else begin
 		end
 		1:  isp_inst <= isp_vram_din;
 		2:  tsp_inst <= isp_vram_din;
-		3:  begin tex_cont <= isp_vram_din; /*if (!shadow)*/ isp_state <= 8'd6; end	// shadow seems to break things atm?
+		3:  begin tex_cont <= isp_vram_din; if (!shadow) isp_state <= 8'd6; end	// shadow seems to break things atm?
 		
 		// if (shadow)...
 		4:  tsp2_inst <= isp_vram_din;
@@ -247,9 +247,9 @@ else begin
 			end
 			else begin	// TriangleStrip...
 				strip_cnt <= strip_cnt - 3'd1;
-				isp_vram_addr <= isp_vram_addr - ((9 + (((texture*4)-uv_16_bit) + offset + (two_volume*3))) * 4);	// Jump back, to grab B,C,New.
+				isp_vram_addr <= isp_vram_addr - ((9 + (((texture*4)-uv_16_bit) + (offset*2) + (shadow*2) * (two_volume*3))) * 4);	// Jump back, to grab B,C,New.
 				
-				isp_state <= 8'd6;
+				if (shadow) isp_state <= 8'd4; else isp_state <= 8'd6;
 			end
 		end
 

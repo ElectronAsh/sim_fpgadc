@@ -3409,7 +3409,9 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__2(Vsimtop___024root* vlSelf
                 vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst 
                     = vlSelf->simtop__DOT__pvr__DOT__isp_vram_din;
             } else if ((3U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state))) {
-                __Vdly__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state = 6U;
+                if ((1U & (~ (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow)))) {
+                    __Vdly__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state = 6U;
+                }
                 vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont 
                     = vlSelf->simtop__DOT__pvr__DOT__isp_vram_din;
             } else if ((4U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state))) {
@@ -3651,11 +3653,16 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__2(Vsimtop___024root* vlSelf
                                         + (((((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) 
                                               << 2U) 
                                              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit)) 
-                                            + (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__offset)) 
+                                            + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__offset) 
+                                               << 1U)) 
                                            + ((IData)(3U) 
-                                              * (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume)))) 
+                                              * (((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow) 
+                                                  << 1U) 
+                                                 * (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume))))) 
                                        << 2U)));
-                __Vdly__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state = 6U;
+                __Vdly__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state 
+                    = ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow)
+                        ? 4U : 6U);
             }
         }
         if (((IData)(vlSelf->simtop__DOT__pvr_reg_cs) 
