@@ -120,7 +120,7 @@ else begin
 	poly_drawn <= 1'b0;
 
 	if (isp_state > 0) begin
-		if (isp_state != 8'd47) isp_state <= isp_state + 8'd1;
+		if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47) isp_state <= isp_state + 8'd1;
 		isp_vram_addr <= isp_vram_addr + 4;
 	end
 
@@ -131,8 +131,10 @@ else begin
 				//isp_vram_addr <= 24'h00408c;	// Menu
 				//isp_vram_addr <= 24'h000450;	// Taxi
 				//isp_vram_addr <= 24'h000000;	// Sanic/logo.
+				if (!opb_word[31]) strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5];	// TriangleStrips ONLY.
+				else strip_cnt <= 4'd0;
+				
 				isp_vram_rd <= 1'b1;
-				strip_cnt <= 4'd0;
 				isp_state <= 8'd1;
 			end
 		end
@@ -229,12 +231,11 @@ else begin
 		end
 		
 		47: begin
-			//if (strip_cnt==4'd0) begin
+			if (strip_cnt==4'd0) begin		// (if TriangleStrip is done), or other type finished...
 				//if (isp_vram_din[31:24]==8'hC8) begin	// Menu.
 				//if (isp_vram_din[31:16]==16'h9380) begin	// Taxi.
 				//if (isp_vram_din[31:16]==16'hCB80) begin	// Sanic.
 					//isp_inst <= isp_vram_din;
-					strip_cnt <= 4'd3;
 					poly_drawn <= 1'b1;
 					isp_state <= 8'd0;
 					
@@ -243,27 +244,15 @@ else begin
 					
 					//isp_state <= 8'd2;		 // TESTING !!
 				//end
-			/*end
-			else begin
-				isp_entry_valid <= 1'b1;
-			
-				strip_cnt <= strip_cnt - 4'd1;
-				
-				vert_a_x <= vert_b_x;
-				vert_a_y <= vert_b_y;
-				vert_a_z <= vert_b_z;
-				vert_a_base_col_1 <= vert_b_base_col_1;
-
-				vert_b_x <= vert_c_x;
-				vert_b_y <= vert_c_y;
-				vert_b_z <= vert_c_z;
-				vert_b_base_col_1 <= vert_c_base_col_1;
-				
-				vert_c_x <= isp_vram_din;
-				isp_state <= 8'd27;			// Grab (rest of) new vert C.
 			end
-			*/
+			else begin	// TriangleStrip...
+				strip_cnt <= strip_cnt - 4'd1;
+
+				isp_vram_addr <= isp_vram_addr - 48;	// Jump back to grab verts B,C,New...
+				isp_state <= 8'd5;
+			end
 		end
+		
 		default: ;
 	endcase
 end

@@ -234,11 +234,8 @@ uint32_t* vram0_ptr = (uint32_t*)malloc(vram0_size);
 unsigned int vram1_size = 1024 * 1024 * 4;	// 4MB words (32-bit wide).
 uint32_t* vram1_ptr = (uint32_t*)malloc(vram1_size);
 
-unsigned int fb0_size = 1024 * 256;			// 256KB. (16-bit wide).
-uint16_t *fb0_ptr = (uint16_t *)malloc(fb0_size);
-
-unsigned int fb1_size = 1024 * 256;			// 256KB. (16-bit wide).
-uint16_t *fb1_ptr = (uint16_t *)malloc(fb1_size);
+unsigned int z_size = 1024 * 1024 * 4;		// 4MB. (32-bit wide).
+uint32_t *z_ptr = (uint32_t *)malloc(z_size);
 
 unsigned int ram_size = 1024 * 1024 * 16;	// 16MB. (64-bit wide).
 uint64_t *ram_ptr = (uint64_t *) malloc(ram_size);
@@ -650,85 +647,85 @@ void rasterize_triangle_float(float x1, float x2,float x3,float y1, float y2, fl
 	uint32_t area_right = 0;
 	uint32_t area_bottom = 0;
 
-	// Bounding rectangle
-	int minx = mmin(x1,x2,x3,area_left);
-	int miny = mmin(y1,y2,y3,area_top);
+// Bounding rectangle
+int minx = mmin(x1, x2, x3, area_left);
+int miny = mmin(y1, y2, y3, area_top);
 
-	int spanx = mmax(x1+1,x2+1,x3+1,area_right-1)  - minx+1;
-	int spany = mmax(y1+1,y2+1,y3+1,area_bottom-1) - miny+1;
+int spanx = mmax(x1+1, x2+1, x3+1, area_right-1)  - minx+1;
+int spany = mmax(y1+1, y2+1, y3+1, area_bottom-1) - miny+1;
 
-	//Inside scissor area?
-	//if (spanx < 0 || spany < 0) return;
+//Inside scissor area?
+//if (spanx < 0 || spany < 0) return;
 
-	float x4 = 0;
-	float y4 = 0;
-	uint32_t v4 = 0;
+float x4 = 0;
+float y4 = 0;
+uint32_t v4 = 0;
 
-	const float DX12 = sgn ? (x2-x1) : (x1-x2);
-	const float DX23 = sgn ? (x3-x2) : (x2-x3);
-	//const float DX34 = sgn ? (x4-x3) : (x3-x4);
-	const float DX31 = sgn ? (x1-x3) : (x3-x1);
-	const float DX41 = v4 ? sgn ? (x1-x4) : (x4-x1) : 0;
-	//printf("float  DX12: %f   DX23: %f   DX31: %f\n", DX12, DX23, DX31);
+const float DX12 = sgn ? (x2-x1) : (x1-x2);
+const float DX23 = sgn ? (x3-x2) : (x2-x3);
+//const float DX34 = sgn ? (x4-x3) : (x3-x4);
+const float DX31 = sgn ? (x1-x3) : (x3-x1);
+const float DX41 = v4 ? sgn ? (x1-x4) : (x4-x1) : 0;
+//printf("float  DX12: %f   DX23: %f   DX31: %f\n", DX12, DX23, DX31);
 
-	const float DY12 = sgn ? (y2-y1) : (y1-y2);
-	const float DY23 = sgn ? (y3-y2) : (y2-y3);
-	//const float DY34 = sgn ? (y4-y3) : (y3-y4);
-	const float DY31 = sgn ? (y1-y3) : (y3-y1);
-	const float DY41 = v4 ? sgn ? (y1-y4) : (y4-y1) : 0;
-	//printf("float  DY12: %f  DY23: %f  DY31: %f\n", DY12, DY23, DY31);
+const float DY12 = sgn ? (y2-y1) : (y1-y2);
+const float DY23 = sgn ? (y3-y2) : (y2-y3);
+//const float DY34 = sgn ? (y4-y3) : (y3-y4);
+const float DY31 = sgn ? (y1-y3) : (y3-y1);
+const float DY41 = v4 ? sgn ? (y1-y4) : (y4-y1) : 0;
+//printf("float  DY12: %f  DY23: %f  DY31: %f\n", DY12, DY23, DY31);
 
-	// Half-edge constants
-	const float C1 = DY12 * x1 - DX12 * y1;
-	const float C2 = DY23 * x2 - DX23 * y2;
-	const float C3 = DY31 * x3 - DX31 * y3;
-	const float C4 = v4 ? DY41 * x4 - DX41 * y4 : 1;
-	printf("float C1: %f  float C2: %f  float C3: %f\n", C1, C2, C3);
+// Half-edge constants
+const float C1 = DY12 * x1 - DX12 * y1;
+const float C2 = DY23 * x2 - DX23 * y2;
+const float C3 = DY31 * x3 - DX31 * y3;
+const float C4 = v4 ? DY41 * x4 - DX41 * y4 : 1;
+printf("float C1: %f  float C2: %f  float C3: %f\n", C1, C2, C3);
 
-	//PlaneStepper3 Z;
-	//Z.Setup(v1, v2, v3, v1.z, v2.z, v3.z);
+//PlaneStepper3 Z;
+//Z.Setup(v1, v2, v3, v1.z, v2.z, v3.z);
 
-	//float halfpixel = 0.5f;
-	int y_ps = miny/* + halfpixel*/;
-	int minx_ps = minx/* + halfpixel*/;
+//float halfpixel = 0.5f;
+int y_ps = miny/* + halfpixel*/;
+int minx_ps = minx/* + halfpixel*/;
 
-	//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
+//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
 
-	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
-		for (int y = spany; y > 0; y -= 1)
-		{
-			int x_ps = minx_ps;
+if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+	//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
+	uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
+	uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
 
-			for (int x = spanx; x > 0; x -= 1)
-			{
-				float Xhs12 = C1 + (DX12 * y_ps) - (DY12 * x_ps);
-				float Xhs23 = C2 + (DX23 * y_ps) - (DY23 * x_ps);
-				float Xhs31 = C3 + (DX31 * y_ps) - (DY31 * x_ps);
-				float Xhs41 = C4 + (DX41 * y_ps) - (DY41 * x_ps);
+	for (int y = y_start+32; y > y_start; y--) {
+		int x_ps = minx_ps;
 
-				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
-				//bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
+		for (int x = x_start+32; x > x_start; x--) {
+			float Xhs12 = C1 + (DX12 * y_ps) - (DY12 * x_ps);
+			float Xhs23 = C2 + (DX23 * y_ps) - (DY23 * x_ps);
+			float Xhs31 = C3 + (DX31 * y_ps) - (DY31 * x_ps);
+			float Xhs41 = C4 + (DX41 * y_ps) - (DY41 * x_ps);
 
-				if (inTriangle)
-				{
-					//float invW = Z.Ip(x_ps, y_ps);
-					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
-					//uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
-					//uint32_t vertex_b_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_base_col_0;
-					uint32_t vertex_c_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
-					rgb[0] = (vertex_c_colour&0x00ff0000)>>16;
-					rgb[1] = (vertex_c_colour&0x0000ff00)>>8;
-					rgb[2] = (vertex_c_colour&0x000000ff);
-					disp_addr = (y_ps * 640) + x_ps;
-					disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
-				}
-				x_ps = x_ps + 1;
+			bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
+			//bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
+
+			if (inTriangle) {
+				//float invW = Z.Ip(x_ps, y_ps);
+				//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
+				//uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+				//uint32_t vertex_b_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_base_col_0;
+				uint32_t vertex_c_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
+				rgb[0] = (vertex_c_colour&0x00ff0000)>>16;
+				rgb[1] = (vertex_c_colour&0x0000ff00)>>8;
+				rgb[2] = (vertex_c_colour&0x000000ff);
+				disp_addr = (y_ps * 640) + x_ps;
+				disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			}
-
-			y_ps = y_ps + 1;
+			x_ps = x_ps + 1;
 		}
+
+		y_ps = y_ps + 1;
 	}
+}
 }
 
 #define FRAC_BITS 12
@@ -747,7 +744,7 @@ inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
 	return (((int64_t)a) * b)>>PREC;
 }
 
-void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4) {
+void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4, float z1) {
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
@@ -795,6 +792,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	const int FY2 = float_to_fixed(y2, FRAC_BITS);
 	const int FY3 = float_to_fixed(y3, FRAC_BITS);
 	const int FY4 = float_to_fixed(y4, FRAC_BITS);
+	
+	const int FZ1 = float_to_fixed(z1, FRAC_BITS);
 
 	// Fixed-point Deltas
 	const int FDX12 = sgn ? (FX2-FX1) : (FX1-FX2);
@@ -844,13 +843,18 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 
 	//printf("fixed C1: %d   \n", CY1/(1<<4)  );
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
+		uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
+
+		bool new_poly = 1;
+
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
-		for (int y = spany; y > 0; y -= 1)
-		{
+		for (int y = spany; y > 0; y--) {
+		//for (uint32_t y = (y_start+32); y > y_start; y--) {
 			int x_ps = minx_ps;
 
-			for (int x = spanx; x > 0; x -= 1)
-			{
+			for (int x = spanx; x > 0; x--) {
+			//for (uint32_t x = (x_start+32); x > x_start; x--) {
 				int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 				int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 				int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
@@ -858,16 +862,23 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 
 				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
 
-				if (inTriangle)
-				{
+				if (inTriangle) {
 					//float invW = Z.Ip(x_ps, y_ps);
 					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
+
 					uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
-					rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
-					rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
-					rgb[2] = (vertex_a_colour&0x000000ff);
-					disp_addr = (y_ps * 640) + x_ps;
-					disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+
+					//uint32_t z_r = uint32_t( z1*(1<<24) );
+					//if ( z_ptr[disp_addr&(0x3fffff>>2)] < z_r) {	// Z-Compare of previous pixel/poly.
+						//z_ptr[ disp_addr&(0x3fffff>>2) ] = z_r;
+						if ( (vertex_a_colour&0x00ffffff)!=0x00ffffff ) {	// Hide the white background polys on the Menu for now.
+							rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
+							rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
+							rgb[2] = (vertex_a_colour&0x000000ff);
+							disp_addr = (y_ps * 640) + x_ps;
+							disp_ptr[ disp_addr&(0x3fffff>>2) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+						}
+					//}
 				}
 				x_ps = x_ps + 1;
 			}
@@ -939,7 +950,7 @@ int verilate() {
 		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = (lower_vram) ? vram0_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ] :
 																		 vram1_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x3fffff)>>2 ];
 
-
+		/*
 		if (top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid) {
 			uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
 			uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
@@ -954,6 +965,7 @@ int verilate() {
 				}
 			}
 		}
+		*/
 
 		//X1: 43C994E8 403.163330  X2: 43C994E8 403.163330  X3: 43BC780C 376.937866  X4: 00000000 0.000000
 		//Y1: 43074970 135.286865  Y2: 4391829E 291.020447  Y3: 43074970 135.286865  Y4: 00000000 0.000000
@@ -967,8 +979,13 @@ int verilate() {
 		float y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
 		float y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
 
+		float z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
+		float z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
+		float z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
+		float z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
+
 		//rasterize_triangle_float(x1, x2, x3, y1, y2, y3);
-		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4);
+		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1);
 
 		top->clk = 1;
 		top->eval();            // Evaluate model!
@@ -1048,7 +1065,6 @@ int main(int argc, char** argv, char** env) {
 
 	Verilated::commandArgs(argc, argv);
 	
-	memset(fb0_ptr, 0x00, fb0_size);
 
 	//uint32_t value = 0xff222222;
 	uint32_t value = 0xff000000;
@@ -1056,7 +1072,7 @@ int main(int argc, char** argv, char** env) {
 		memcpy(((char*)disp_ptr) + i, &value, 4);
 	}
 
-	memset(vga_ptr,  0xAA, vga_size);
+	memset(z_ptr, 0x00000000, z_size);
 
 	memset(ram_ptr, 0x00, ram_size);
 	
@@ -1243,7 +1259,7 @@ int main(int argc, char** argv, char** env) {
 		//ImGui::PlotLines("Lines", values, IM_ARRAYSIZE(values), values_offset, "sample", -1.0f, 1.0f, ImVec2(0, 80));
 		if (ImGui::Button("RESET")) {
 			main_time = 0;
-			memset(fb0_ptr, 0x00, fb0_size);	// Clear the framebuffer.
+			memset(z_ptr, 0x00000000, z_size);	// Clear the Z-buffer.
 			// Clear the DISPLAY buffer...
 			//uint32_t value = 0xff222222;
 			uint32_t value = 0xff000000;
