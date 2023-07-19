@@ -845,6 +845,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt;
+    CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_words;
     CData/*0:0*/ simtop__DOT__pvr__DOT__my_fpu_inst__DOT__clk;
     CData/*1:0*/ simtop__DOT__pvr__DOT__my_fpu_inst__DOT__op;
     CData/*7:0*/ simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_exponent;

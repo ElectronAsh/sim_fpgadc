@@ -232,7 +232,7 @@ unsigned int vram_size = 1024 * 1024 * 8;	// 8MB words (32-bit wide).
 uint32_t* vram_ptr = (uint32_t*)malloc(vram_size);
 
 unsigned int z_size = 1024 * 1024 * 4;		// 4MB. (32-bit wide).
-uint32_t *z_ptr = (uint32_t *)malloc(z_size);
+uint32_t *z_ptr = (uint32_t *)malloc(z_size*4);
 
 unsigned int ram_size = 1024 * 1024 * 16;	// 16MB. (64-bit wide).
 uint64_t *ram_ptr = (uint64_t *) malloc(ram_size);
@@ -644,85 +644,87 @@ void rasterize_triangle_float(float x1, float x2,float x3,float y1, float y2, fl
 	uint32_t area_right = 0;
 	uint32_t area_bottom = 0;
 
-// Bounding rectangle
-int minx = mmin(x1, x2, x3, area_left);
-int miny = mmin(y1, y2, y3, area_top);
+	// Bounding rectangle
+	int minx = mmin(x1, x2, x3, area_left);
+	int miny = mmin(y1, y2, y3, area_top);
 
-int spanx = mmax(x1+1, x2+1, x3+1, area_right-1)  - minx+1;
-int spany = mmax(y1+1, y2+1, y3+1, area_bottom-1) - miny+1;
+	int spanx = mmax(x1+1, x2+1, x3+1, area_right-1)  - minx+1;
+	int spany = mmax(y1+1, y2+1, y3+1, area_bottom-1) - miny+1;
 
-//Inside scissor area?
-//if (spanx < 0 || spany < 0) return;
+	//Inside scissor area?
+	//if (spanx < 0 || spany < 0) return;
 
-float x4 = 0;
-float y4 = 0;
-uint32_t v4 = 0;
+	float x4 = 0;
+	float y4 = 0;
+	uint32_t v4 = 0;
 
-const float DX12 = sgn ? (x2-x1) : (x1-x2);
-const float DX23 = sgn ? (x3-x2) : (x2-x3);
-//const float DX34 = sgn ? (x4-x3) : (x3-x4);
-const float DX31 = sgn ? (x1-x3) : (x3-x1);
-const float DX41 = v4 ? sgn ? (x1-x4) : (x4-x1) : 0;
-//printf("float  DX12: %f   DX23: %f   DX31: %f\n", DX12, DX23, DX31);
+	const float DX12 = sgn ? (x2-x1) : (x1-x2);
+	const float DX23 = sgn ? (x3-x2) : (x2-x3);
+	//const float DX34 = sgn ? (x4-x3) : (x3-x4);
+	const float DX31 = sgn ? (x1-x3) : (x3-x1);
+	const float DX41 = v4 ? sgn ? (x1-x4) : (x4-x1) : 0;
+	//printf("float  DX12: %f   DX23: %f   DX31: %f\n", DX12, DX23, DX31);
 
-const float DY12 = sgn ? (y2-y1) : (y1-y2);
-const float DY23 = sgn ? (y3-y2) : (y2-y3);
-//const float DY34 = sgn ? (y4-y3) : (y3-y4);
-const float DY31 = sgn ? (y1-y3) : (y3-y1);
-const float DY41 = v4 ? sgn ? (y1-y4) : (y4-y1) : 0;
-//printf("float  DY12: %f  DY23: %f  DY31: %f\n", DY12, DY23, DY31);
+	const float DY12 = sgn ? (y2-y1) : (y1-y2);
+	const float DY23 = sgn ? (y3-y2) : (y2-y3);
+	//const float DY34 = sgn ? (y4-y3) : (y3-y4);
+	const float DY31 = sgn ? (y1-y3) : (y3-y1);
+	const float DY41 = v4 ? sgn ? (y1-y4) : (y4-y1) : 0;
+	//printf("float  DY12: %f  DY23: %f  DY31: %f\n", DY12, DY23, DY31);
 
-// Half-edge constants
-const float C1 = DY12 * x1 - DX12 * y1;
-const float C2 = DY23 * x2 - DX23 * y2;
-const float C3 = DY31 * x3 - DX31 * y3;
-const float C4 = v4 ? DY41 * x4 - DX41 * y4 : 1;
-printf("float C1: %f  float C2: %f  float C3: %f\n", C1, C2, C3);
+	// Half-edge constants
+	const float C1 = DY12 * x1 - DX12 * y1;
+	const float C2 = DY23 * x2 - DX23 * y2;
+	const float C3 = DY31 * x3 - DX31 * y3;
+	const float C4 = v4 ? DY41 * x4 - DX41 * y4 : 1;
+	printf("float C1: %f  float C2: %f  float C3: %f\n", C1, C2, C3);
 
-//PlaneStepper3 Z;
-//Z.Setup(v1, v2, v3, v1.z, v2.z, v3.z);
+	//PlaneStepper3 Z;
+	//Z.Setup(v1, v2, v3, v1.z, v2.z, v3.z);
 
-//float halfpixel = 0.5f;
-int y_ps = miny/* + halfpixel*/;
-int minx_ps = minx/* + halfpixel*/;
+	//float halfpixel = 0.5f;
+	int y_ps = miny/* + halfpixel*/;
+	int minx_ps = minx/* + halfpixel*/;
 
-//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
+	//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
 
-if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
-	//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
-	uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
-	uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
+	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
+		uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
+		uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
 
-	for (int y = y_start+32; y > y_start; y--) {
-		int x_ps = minx_ps;
+		for (int y = y_start+32; y > y_start; y--) {
+			int x_ps = minx_ps;
 
-		for (int x = x_start+32; x > x_start; x--) {
-			float Xhs12 = C1 + (DX12 * y_ps) - (DY12 * x_ps);
-			float Xhs23 = C2 + (DX23 * y_ps) - (DY23 * x_ps);
-			float Xhs31 = C3 + (DX31 * y_ps) - (DY31 * x_ps);
-			float Xhs41 = C4 + (DX41 * y_ps) - (DY41 * x_ps);
+			for (int x = x_start+32; x > x_start; x--) {
+				float Xhs12 = C1 + (DX12 * y_ps) - (DY12 * x_ps);
+				float Xhs23 = C2 + (DX23 * y_ps) - (DY23 * x_ps);
+				float Xhs31 = C3 + (DX31 * y_ps) - (DY31 * x_ps);
+				float Xhs41 = C4 + (DX41 * y_ps) - (DY41 * x_ps);
 
-			bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
-			//bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
+				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
+				//bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
 
-			if (inTriangle) {
-				//float invW = Z.Ip(x_ps, y_ps);
-				// 
-				//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
-				uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
-				rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
-				rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
-				rgb[2] = (vertex_a_colour&0x000000ff);
-				disp_addr = (y_ps * 640) + x_ps;
-				disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+				if (inTriangle) {
+					//float invW = Z.Ip(x_ps, y_ps);
+					// 
+					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
+					uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+					rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
+					rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
+					rgb[2] = (vertex_a_colour&0x000000ff);
+					disp_addr = (y_ps * 640) + x_ps;
+					disp_ptr[disp_addr&0x1fffff] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+				}
+				x_ps = x_ps + 1;
 			}
-			x_ps = x_ps + 1;
-		}
 
-		y_ps = y_ps + 1;
+			y_ps = y_ps + 1;
+		}
 	}
 }
-}
+
+bool ra_running = 0;
 
 #define FRAC_BITS 12
 
@@ -740,17 +742,17 @@ inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
 	return (((int64_t)a) * b)>>PREC;
 }
 
-void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4, float z1) {
+void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4, float z1, float z2, float z3) {
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
-	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
-	//if (x1<10 || x2<10 || x3<10 || y1<10 || y2<10 || y3<10) return;	// Hide some spikey bits.
+	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
+	if (x1<5 || x2<5 || x3<5 || y1<5 || y2<5 || y3<5) return;	// Hide some spikey bits.
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
 
 	/*
-	uint8_t cullmode = pvr_access(culling_mode);
+	uint8_t cullmode = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode;
 
 	bool vertex_offset = 0;	// TESTING.
 
@@ -834,7 +836,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
 	if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
 	
-	//int halfpixel = 1<<(FRAC_BITS-1);
+	int halfpixel = 1<<(FRAC_BITS-1);
 	int y_ps = miny /*+ halfpixel*/;
 	int minx_ps = minx /*+ halfpixel*/;
 
@@ -842,8 +844,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 		uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
 		uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
-
-		bool new_poly = 1;
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
 		for (int y = spany; y > 0; y--) {
@@ -859,23 +859,31 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 
 				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
 
+				// Pause the sim when the Region Array "last entry" bit is set!
+				if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_last) run_enable = 0;
+
 				if (inTriangle) {
 					//float invW = Z.Ip(x_ps, y_ps);
 					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
 
-					uint32_t vertex_a_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+					// Flat shading uses the colour from the third vertex. (DC System Bible PDF, page 204).
+					uint32_t vertex_c_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
 
-					//uint32_t z_r = uint32_t( z1*(1<<24) );
-					//if ( z_ptr[disp_addr&(0x3fffff>>2)] < z_r) {	// Z-Compare of previous pixel/poly.
-						//z_ptr[ disp_addr&(0x3fffff>>2) ] = z_r;
-						if ( (vertex_a_colour&0x00ffffff)!=0x00ffffff ) {	// Hide the white background polys on the Menu for now.
-							rgb[0] = (vertex_a_colour&0x00ff0000)>>16;
-							rgb[1] = (vertex_a_colour&0x0000ff00)>>8;
-							rgb[2] = (vertex_a_colour&0x000000ff);
-							disp_addr = (y_ps * 640) + x_ps;
+					disp_addr = (y_ps * 640) + x_ps;
+
+					uint32_t z1_r = float_to_fixed(z1, 30);			// Convert Z from float to fixed-point.
+					uint32_t z2_r = float_to_fixed(z2, 30);			// Convert Z from float to fixed-point.
+					uint32_t z3_r = float_to_fixed(z3, 30);			// Convert Z from float to fixed-point.
+
+					if ( z_ptr[disp_addr&(0x3fffff>>2)] < z3_r) {	// Z-Compare of previous pixel/poly.
+						z_ptr[ disp_addr&(0x3fffff>>2) ] = z3_r;
+						if ( (vertex_c_colour&0x00ffffff)!=0x00ffffff ) {	// Hide the white background polys on the Menu for now.
+							rgb[0] = (vertex_c_colour&0x00ff0000)>>16;
+							rgb[1] = (vertex_c_colour&0x0000ff00)>>8;
+							rgb[2] = (vertex_c_colour&0x000000ff);
 							disp_ptr[ disp_addr&(0x3fffff>>2) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 						}
-					//}
+					}
 				}
 				x_ps = x_ps + 1;
 			}
@@ -887,13 +895,16 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 
 int verilate() {
 	if (!Verilated::gotFinish()) {
-		//while ( top->FL_ADDR < 0x0100 ) {		// Only run for a short time.
 		if (main_time < 4) {
 			top->rst = 1;   	// Assert reset (active HIGH)
 		}
 		if (main_time == 10) {	// Do == here, so we can still reset it in the main loop.
 			top->rst = 0;		// Deassert reset./
 		}
+
+		top->rootp->simtop__DOT__pvr__DOT__ra_trig = 0;
+		if (!ra_running) top->rootp->simtop__DOT__pvr__DOT__ra_trig = 1;
+		if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state>0) ra_running = 1;
 
 		pix_count++;
 
@@ -975,7 +986,7 @@ int verilate() {
 		float z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
 
 		//rasterize_triangle_float(x1, x2, x3, y1, y2, y3);
-		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1);
+		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3);
 
 		top->clk = 1;
 		top->eval();            // Evaluate model!
@@ -1061,7 +1072,10 @@ int main(int argc, char** argv, char** env) {
 		memcpy(((char*)disp_ptr) + i, &value, 4);
 	}
 
-	memset(z_ptr, 0x00000000, z_size);
+	for (uint32_t i = 0; i < z_size; i++) {
+		z_ptr[ i ] = 0;
+	}
+
 
 	memset(ram_ptr, 0x00, ram_size);
 	
@@ -1098,9 +1112,11 @@ int main(int argc, char** argv, char** env) {
 
 	FILE* pvrfile;
 	//pvrfile = fopen("pvr_regs_logo", "rb");
-	pvrfile = fopen("pvr_regs_menu", "rb");
-	//pvrfile = fopen("pvr_regs_taxi", "rb");
+	//pvrfile = fopen("pvr_regs_menu", "rb");
+	//pvrfile = fopen("pvr_regs_menu2", "rb");
+	pvrfile = fopen("pvr_regs_taxi", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");
+	//pvrfile = fopen("pvr_regs_mem", "rb");
 	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
 	else { printf("\npvr_regs dump file not found!\n\n"); return 0; }
 	fseek(pvrfile, 0L, SEEK_END);
@@ -1110,9 +1126,11 @@ int main(int argc, char** argv, char** env) {
 
 	FILE* vram_file;
 	//vram_file = fopen("vram_logo.bin", "rb");
-	vram_file = fopen("vram_menu.bin", "rb");
-	//vram_file = fopen("vram_taxi.bin", "rb");
+	//vram_file = fopen("vram_menu.bin", "rb");
+	//vram_file = fopen("vram_menu2.bin", "rb");
+	vram_file = fopen("vram_taxi.bin", "rb");
 	//vram_file = fopen("vram_sonic.bin", "rb");
+	//vram_file = fopen("vram_mem.bin", "rb");
 	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
 	else { printf("\nvram.bin dump file not found!\n\n"); return 0; }
 	fseek(vram_file, 0L, SEEK_END);
@@ -1236,7 +1254,13 @@ int main(int argc, char** argv, char** env) {
 		//ImGui::PlotLines("Lines", values, IM_ARRAYSIZE(values), values_offset, "sample", -1.0f, 1.0f, ImVec2(0, 80));
 		if (ImGui::Button("RESET")) {
 			main_time = 0;
-			memset(z_ptr, 0x00000000, z_size);	// Clear the Z-buffer.
+			ra_running = 0;
+
+			// Clear the Z-buffer.
+			for (uint32_t i = 0; i < z_size; i++) {
+				z_ptr[i] = 0;
+			}
+			
 			// Clear the DISPLAY buffer...
 			//uint32_t value = 0xff222222;
 			uint32_t value = 0xff000000;
@@ -1476,14 +1500,13 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("     PALETTE_RAM_END: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__PALETTE_RAM_END);
 		ImGui::End();
 
-		top->rootp->simtop__DOT__pvr__DOT__ra_trig = 1;
-
 		ImGui::Begin(" RA Parser");
 		ImGui::Text("        ra_state: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state);
 		ImGui::Text("       vram_addr: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__vram_addr);
 		ImGui::Text("        vram_din: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__vram_din);
 		ImGui::Text("     next_region: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region);
 		ImGui::Text("   ol_jump_bytes: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes);
+		ImGui::Text("        opb_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word);
 		ImGui::Separator();
 		ImGui::Text("   FPU_PARAM_CFG: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FPU_PARAM_CFG);
 		ImGui::Text("      ra_control: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_control);

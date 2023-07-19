@@ -3776,6 +3776,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state = VL_RAND_RESET_I(8);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt = VL_RAND_RESET_I(3);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_words = VL_RAND_RESET_I(8);
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__clk = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__A = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__B = VL_RAND_RESET_I(32);

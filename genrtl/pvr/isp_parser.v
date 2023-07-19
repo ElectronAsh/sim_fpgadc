@@ -128,23 +128,21 @@ else begin
 		0: begin
 			if (render_poly) begin
 				isp_vram_addr <= poly_addr;
-				//isp_vram_addr <= 24'h00408c;	// Menu
-				//isp_vram_addr <= 24'h000450;	// Taxi
-				//isp_vram_addr <= 24'h000000;	// Sanic/logo.
-				if (!opb_word[31]) strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) + 1;	// TriangleStrips ONLY.
-				else strip_cnt <= 3'd0;
+				
+				if (!opb_word[31]) strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) + 1;	// TriangleStrips.
+				else strip_cnt <= 3'd0;	// Triangle Arrays or Quads.
 				
 				isp_vram_rd <= 1'b1;
 				isp_state <= 8'd1;
 			end
 		end
 		1:  isp_inst <= isp_vram_din;
-		2:  tsp_inst <= isp_vram_din;
-		3:  begin tex_cont <= isp_vram_din; if (!shadow) isp_state <= 8'd6; end	// shadow seems to break things atm?
+		2:  begin if (shadow) tsp2_inst <= isp_vram_din; else tsp_inst <= isp_vram_din; end
+		3:  begin if (shadow) tex2_cont <= isp_vram_din; else tex_cont <= isp_vram_din; isp_state <= 8'd6; end
 		
 		// if (shadow)...
-		4:  tsp2_inst <= isp_vram_din;
-		5:  tex2_cont <= isp_vram_din;
+		//4:  tsp2_inst <= isp_vram_din;
+		//5:  tex2_cont <= isp_vram_din;
 		
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
@@ -226,35 +224,23 @@ else begin
 		// if Offset colour...
 		45: vert_d_off_col <= isp_vram_din;
 		
-		46: begin
-			isp_entry_valid <= 1'b1;
-		end
-		
 		47: begin
+			isp_entry_valid <= 1'b1;
 			if (strip_cnt==3'd0) begin		// (if TriangleStrip is done), or other type finished...
-				//if (isp_vram_din[31:24]==8'hC8) begin	// Menu.
-				//if (isp_vram_din[31:16]==16'h9380) begin	// Taxi.
-				//if (isp_vram_din[31:16]==16'hCB80) begin	// Sanic.
-					//isp_inst <= isp_vram_din;
-					poly_drawn <= 1'b1;
-					isp_state <= 8'd0;
-					
-					//isp_vram_addr <= isp_vram_addr + ((3 + (skip * (shadow+1))) * 4);
-					//isp_state <= 8'd6;
-					
-					//isp_state <= 8'd2;		 // TESTING !!
-				//end
+				poly_drawn <= 1'b1;
+				isp_state <= 8'd0;
 			end
 			else begin	// TriangleStrip...
 				strip_cnt <= strip_cnt - 3'd1;
-				isp_vram_addr <= isp_vram_addr - ((9 + (((texture*4)-uv_16_bit) + (offset*2) + (shadow*2) * (two_volume*3))) * 4);	// Jump back, to grab B,C,New.
-				
-				if (shadow) isp_state <= 8'd4; else isp_state <= 8'd6;
+				isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New. (plus one extra word, due to the isp_vram_addr++ thing).
+				isp_state <= 8'd6;
 			end
 		end
 
 		default: ;
 	endcase
 end
+
+wire [7:0] vert_words = (two_volume&&shadow) ? ((skip*2)+3) : (skip+3);
 
 endmodule

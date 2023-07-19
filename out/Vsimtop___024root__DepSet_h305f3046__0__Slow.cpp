@@ -31,9 +31,9 @@ VL_ATTR_COLD void Vsimtop___024root___initial__TOP__0(Vsimtop___024root* vlSelf)
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__const_zero_expand__DOT__i = 0U;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__const_one_expand__DOT__i = 0x3f800000U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG = 0x27df77U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = 0x100303U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = 0x1667c0U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE = 0U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = 0x101313U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = 0x4d33c8U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE = 0x400000U;
     vlSelf->simtop__DOT__pvr__DOT__v1_x = 0x43af5f3bU;
     vlSelf->simtop__DOT__pvr__DOT__v2_x = 0x43a1a798U;
     vlSelf->simtop__DOT__pvr__DOT__v3_x = 0x43afb9b7U;
@@ -55,9 +55,9 @@ VL_ATTR_COLD void Vsimtop___024root___initial__TOP__0(Vsimtop___024root* vlSelf)
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume = 0U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_mode = 1U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__pt_opb = 0U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__tm_opb = 0U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__tm_opb = 1U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__t_opb = 3U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb = 0U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb = 1U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__o_opb = 3U;
     __Vfunc_FLUSH_NAN__0__in = vlSelf->simtop__DOT__pvr__DOT__v1_x;
     __Vfunc_FLUSH_NAN__0__Vfuncout = ((IData)(((0x7f800000U 
@@ -2038,12 +2038,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__num_prims 
         = (0xfU & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                    >> 0x19U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow 
-        = (1U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
-                 >> 0x18U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__skip 
-        = (7U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
-                 >> 0x15U));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__eol 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                  >> 0x1cU));
@@ -2090,6 +2084,12 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__core__DOT__e1_lsu_fpul_wen = 0U;
     vlSelf->simtop__DOT__core__DOT__dm_req_flush = 0U;
     vlSelf->simtop__DOT__core__DOT__dm_req_prefetch = 0U;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow 
+        = (1U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
+                 >> 0x18U));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__skip 
+        = (7U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
+                 >> 0x15U));
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_mantissa 
         = (0x800000U | (0x7fffffU & vlSelf->simtop__DOT__pvr__DOT__fpu_a));
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_mantissa 
@@ -4867,6 +4867,12 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
     }
     vlSelf->simtop__DOT__core__DOT__lsu__DOT__dm_req_prefetch 
         = vlSelf->simtop__DOT__core__DOT__dm_req_prefetch;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_words 
+        = (0xffU & (((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume) 
+                     & (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow))
+                     ? ((IData)(3U) + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__skip) 
+                                       << 1U)) : ((IData)(3U) 
+                                                  + (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__skip))));
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_inf 
         = (0xffU == (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_exponent));
     vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_nan 

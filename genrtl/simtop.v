@@ -126,7 +126,7 @@ wire [28:0] req_addr = dm_req_addr[28:0];
 
 /*
 // Typo in Dreamcast_Hardware_Specification_Outline.pdf says "CS1", but this is "CS0" on the SH4..
-wire sh4_cs0 = req_addr>=29'h00000000 && req_addr<=29'h02000000;	// BIOS,Flash,System,Maple,GD-ROM,G1,G2,PVR/TA,Modem,AICA etc.
+wire sh4_cs0 = req_addr>=29'h00000000 && req_addr<=29'h01ffffff;	// BIOS,Flash,System,Maple,GD-ROM,G1,G2,PVR/TA,Modem,AICA etc.
 wire sh4_cs1 = req_addr>=29'h04000000 && req_addr<=29'h057fffff;	// PVR VRAM.
 wire sh4_cs2 = req_addr>=29'h08000000 && req_addr<=29'h0bffffff;	// Unassigned.
 wire sh4_cs3 = req_addr>=29'h0c000000 && req_addr<=29'h0c7fffff;	// Work SDRAM.

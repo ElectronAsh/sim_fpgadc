@@ -176,9 +176,7 @@ else begin
 		end
 		
 		10: begin
-			//ra_vram_addr <= (opb_mode) ? ra_vram_addr-ol_jump_bytes : ra_vram_addr+ol_jump_bytes;
 			ra_vram_addr <= (opb_mode) ? ra_vram_addr-ol_jump_bytes : ra_vram_addr+4;
-			//if (opb_mode) ra_vram_addr <= ra_vram_addr-ol_jump_bytes;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
@@ -191,17 +189,17 @@ else begin
 		// Check for Object Pointer Block Link, or Primitive Type...
 		12: begin
 			if (!opb_word[31]) begin					// Triangle Strip.
-				poly_addr <= {opb_word[20:0], 2'b00};	// May need to add PARAM_BASE?
+				poly_addr <= {opb_word[20:0], 2'b00};	// Don't think we need to add PARAM_BASE?
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b100) begin		// Triangle Array.
-				poly_addr <= {opb_word[20:0], 2'b00};	// May need to add PARAM_BASE?
+				poly_addr <= {opb_word[20:0], 2'b00};	// Don't think we need to add PARAM_BASE?
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b101) begin		// Quad Array.
-				poly_addr <= {opb_word[20:0], 2'b00};	// May need to add PARAM_BASE?
+				poly_addr <= {opb_word[20:0], 2'b00};	// Don't think we need to add PARAM_BASE?
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
@@ -217,20 +215,21 @@ else begin
 			end
 			else begin
 				$display("Undefined Object prim type! (OL overrun?)\n");
-				//if (ra_cont_last)		// TODO - Check for End of Region Array!
-				ra_state <= 8'd16;
+				ra_state <= 8'd0;
 			end
 		end
 		
 		13: begin
-			if (poly_drawn) begin
+			if (ra_cont_last) ra_state <= 8'd0;
+			else if (poly_drawn) begin
 				ra_vram_addr <= ra_vram_addr + 4;	// Go to next WORD in OL.
 				ra_state <= 11;
 			end
 		end
 		
 		14: begin
-			if (opb_word[31:29]==3'b111 || poly_drawn) begin
+			if (ra_cont_last) ra_state <= 8'd0;
+			else if (opb_word[31:29]==3'b111 || poly_drawn) begin
 				ra_state <= 8'd9;	// Check next Object prim TYPE.
 			end
 		end
@@ -239,10 +238,6 @@ else begin
 			ra_vram_addr <= next_region;	// Check the next Region Array block.
 			ra_vram_rd <= 1'b1;
 			ra_state <= 8'd2;
-		end
-		
-		16: begin
-		
 		end
 		
 		default: ;
