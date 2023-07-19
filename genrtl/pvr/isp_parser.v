@@ -137,8 +137,8 @@ else begin
 			end
 		end
 		1:  isp_inst <= isp_vram_din;
-		2:  begin if (shadow) tsp2_inst <= isp_vram_din; else tsp_inst <= isp_vram_din; end
-		3:  begin if (shadow) tex2_cont <= isp_vram_din; else tex_cont <= isp_vram_din; isp_state <= 8'd6; end
+		2:  begin /*if (shadow) tsp2_inst <= isp_vram_din; else*/ tsp_inst <= isp_vram_din; end
+		3:  begin /*if (shadow) tex2_cont <= isp_vram_din; else*/ tex_cont <= isp_vram_din; isp_state <= 8'd6; end
 		
 		// if (shadow)...
 		//4:  tsp2_inst <= isp_vram_din;
@@ -224,8 +224,9 @@ else begin
 		// if Offset colour...
 		45: vert_d_off_col <= isp_vram_din;
 		
+		46: isp_entry_valid <= 1'b1;
+		
 		47: begin
-			isp_entry_valid <= 1'b1;
 			if (strip_cnt==3'd0) begin		// (if TriangleStrip is done), or other type finished...
 				poly_drawn <= 1'b1;
 				isp_state <= 8'd0;

@@ -781,7 +781,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	int spanx = mmax(x1+1, x2+1, x3+1, area_right-1)  - minx+1;
 	int spany = mmax(y1+1, y2+1, y3+1, area_bottom-1) - miny+1;
 
-	// S15.16 fixed-point coordinates
+	// Convert to Fixed-point coords.
 	const int FX1 = float_to_fixed(x1, FRAC_BITS);
 	const int FX2 = float_to_fixed(x2, FRAC_BITS);
 	const int FX3 = float_to_fixed(x3, FRAC_BITS);
@@ -867,7 +867,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
 
 					// Flat shading uses the colour from the third vertex. (DC System Bible PDF, page 204).
-					uint32_t vertex_c_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0;
+					uint32_t vertex_c_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
 
 					disp_addr = (y_ps * 640) + x_ps;
 
@@ -876,8 +876,12 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 					uint32_t z3_r = float_to_fixed(z3, 30);			// Convert Z from float to fixed-point.
 
 					if ( z_ptr[disp_addr&(0x3fffff>>2)] < z3_r) {	// Z-Compare of previous pixel/poly.
-						z_ptr[ disp_addr&(0x3fffff>>2) ] = z3_r;
-						if ( (vertex_c_colour&0x00ffffff)!=0x00ffffff ) {	// Hide the white background polys on the Menu for now.
+
+						// Overwrite value in Z-buffer if the new value is greater/closer.
+						if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ disp_addr&(0x3fffff>>2) ] = z3_r;
+
+						//if ( (vertex_c_colour&0x00ffffff)!=0x00ffffff ) {	// Hide the white background polys on the Menu for now.
+						if ( (vertex_c_colour&0x00ffffff) != 0x00CBCBFF ) {	// Hide the grey/purple smoke texture(s) in Crazy Taxi.
 							rgb[0] = (vertex_c_colour&0x00ff0000)>>16;
 							rgb[1] = (vertex_c_colour&0x0000ff00)>>8;
 							rgb[2] = (vertex_c_colour&0x000000ff);
@@ -1115,6 +1119,8 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_menu", "rb");
 	//pvrfile = fopen("pvr_regs_menu2", "rb");
 	pvrfile = fopen("pvr_regs_taxi", "rb");
+	//pvrfile = fopen("pvr_regs_taxi2", "rb");
+	//pvrfile = fopen("pvr_regs_taxi3", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");
 	//pvrfile = fopen("pvr_regs_mem", "rb");
 	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
@@ -1129,6 +1135,8 @@ int main(int argc, char** argv, char** env) {
 	//vram_file = fopen("vram_menu.bin", "rb");
 	//vram_file = fopen("vram_menu2.bin", "rb");
 	vram_file = fopen("vram_taxi.bin", "rb");
+	//vram_file = fopen("vram_taxi2.bin", "rb");
+	//vram_file = fopen("vram_taxi3.bin", "rb");
 	//vram_file = fopen("vram_sonic.bin", "rb");
 	//vram_file = fopen("vram_mem.bin", "rb");
 	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
@@ -1156,7 +1164,7 @@ int main(int argc, char** argv, char** env) {
 
 
 	// Build texture atlas
-	int width  = 640 * 4;
+	int width  = 640;
 	int height = 480;
 
 	// Upload texture to graphics system
@@ -1176,7 +1184,7 @@ int main(int argc, char** argv, char** env) {
 	D3D11_SUBRESOURCE_DATA subResource;
 	subResource.pSysMem = disp_ptr;
 	//subResource.pSysMem = vga_ptr;
-	subResource.SysMemPitch = desc.Width;
+	subResource.SysMemPitch = desc.Width * 4;
 	subResource.SysMemSlicePitch = 0;
 	g_pd3dDevice->CreateTexture2D(&desc, &subResource, &pTexture);
 
@@ -1589,7 +1597,7 @@ int main(int argc, char** argv, char** env) {
 		// Update the texture for disp_ptr!
 		// D3D11_USAGE_DEFAULT MUST be set in the texture description (somewhere above) for this to work.
 		// (D3D11_USAGE_DYNAMIC is for use with map / unmap.) ElectronAsh.
-		g_pd3dDeviceContext->UpdateSubresource(pTexture, 0, NULL, disp_ptr, width, 0);
+		g_pd3dDeviceContext->UpdateSubresource(pTexture, 0, NULL, disp_ptr, width*4, 0);
 
 		// Rendering
 		ImGui::Render();

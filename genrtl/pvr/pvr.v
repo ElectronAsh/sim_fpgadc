@@ -480,7 +480,7 @@ ra_parser ra_parser_inst (
 	//.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG. Menu2.
 	//.TA_ALLOC_CTRL( 32'h00100303 ),		// input [31:0]  TA_ALLOC_CTRL. Menu2.
 	//.REGION_BASE( 32'h001667C0 ),		// input [31:0]  REGION_BASE.   Menu2.
-	//.PARAM_BASE( 32'h00000000 ),		// input [31:0]  PARAM_BASE.    Men2u
+	//.PARAM_BASE( 32'h00000000 ),		// input [31:0]  PARAM_BASE.    Menu2
 	
 	.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Taxi.
 	.TA_ALLOC_CTRL( 32'h00101313 ),	// input [31:0]  TA_ALLOC_CTRL. Taxi.
