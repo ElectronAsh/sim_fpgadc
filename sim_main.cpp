@@ -234,6 +234,9 @@ uint32_t* vram_ptr = (uint32_t*)malloc(vram_size);
 unsigned int z_size = 1024 * 1024 * 4;		// 4MB. (32-bit wide).
 uint32_t *z_ptr = (uint32_t *)malloc(z_size*4);
 
+unsigned int tag_size = 1024 * 1024 * 4;		// 4MB. (32-bit wide).
+uint32_t* tag_ptr = (uint32_t*)malloc(tag_size*4);
+
 unsigned int ram_size = 1024 * 1024 * 16;	// 16MB. (64-bit wide).
 uint64_t *ram_ptr = (uint64_t *) malloc(ram_size);
 
@@ -742,6 +745,65 @@ inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
 	return (((int64_t)a) * b)>>PREC;
 }
 
+/*
+	Surface equation solver
+*/
+struct PlaneStepper3
+{
+	float ddx, ddy;
+	float c;
+
+	void Setup(float x1, float x2, float x3, float y1, float y2, float y3, float z1, float z2, float z3)
+	{
+		float Aa = ((z3 - z1) * (y2 - y1) - (z2 - z1) * (y3 - y1));
+		float Ba = ((x3 - x1) * (z2 - z1) - (x2 - x1) * (z3 - z1));
+
+		float C  = ((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1));
+
+		ddx = -Aa / C;
+		ddy = -Ba / C;
+
+		c = (z1 - ddx * x1 - ddy * y1);
+	}
+
+	__forceinline float Ip(float x, float y) const { return x * ddx + y * ddy + c; }
+
+	__forceinline float Ip(float x, float y, float W) const { return Ip(x, y) * W; }
+};
+
+
+union mem128i {
+	uint8_t m128i_u8[16];
+	int8_t m128i_i8[16];
+	int16_t m128i_i16[8];
+	int32_t m128i_i32[4];
+	uint32_t m128i_u32[4];
+};
+
+// Clamp and flip a texture coordinate
+template<bool pp_Clamp, bool pp_Flip>
+static int ClampFlip(int coord, int size) {
+	if (pp_Clamp) { // clamp
+		if (coord < 0) {
+			coord = 0;
+		}
+		else if (coord >= size) {
+			coord = size-1;
+		}
+	}
+	else if (pp_Flip) { // flip
+		coord &= size*2-1;
+		if (coord & size) {
+			coord ^= size*2-1;
+		}
+	}
+	else { //wrap
+		coord &= size-1;
+	}
+
+	return coord;
+}
+
 void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4, float z1, float z2, float z3) {
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
@@ -836,21 +898,41 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
 	if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
 	
+	PlaneStepper3 Z;
+	PlaneStepper3 U;
+	PlaneStepper3 V;
+	Z.Setup(x1, x2, x3, y1, y2, y3, z1, z2, z3);
+
 	int halfpixel = 1<<(FRAC_BITS-1);
 	int y_ps = miny /*+ halfpixel*/;
 	int minx_ps = minx /*+ halfpixel*/;
+
+	//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
 
 	//printf("fixed C1: %d   \n", CY1/(1<<4)  );
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 		uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
 		uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
 
+		// Convert UV coords to fixed-point, with 8 bits of fraction. (only using Vert A for now).
+		int ui = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, 12);
+		int vi = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0, 12);
+
+		// Texture size valies are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
+		uint32_t tex_u_size = 1<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size+3);
+		uint32_t tex_v_size = 1<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size+3);
+
+		bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
+		bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
+		bool pp_ClampU = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
+		bool pp_ClampV = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
+
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
-		for (int y = spany; y > 0; y--) {
+		for (int y = 0; y < spany; y++) {
 		//for (uint32_t y = (y_start+32); y > y_start; y--) {
 			int x_ps = minx_ps;
 
-			for (int x = spanx; x > 0; x--) {
+			for (int x = 0; x < spanx; x++) {
 			//for (uint32_t x = (x_start+32); x > x_start; x--) {
 				int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 				int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
@@ -858,6 +940,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 				int Xhs41 = C4 + MUL_PREC(FDX41, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY41, x_ps<<FRAC_BITS, FRAC_BITS);
 
 				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
+
+				uint32_t old_pixel = 0;
+				uint8_t alpha = 0;
 
 				// Pause the sim when the Region Array "last entry" bit is set!
 				if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_last) run_enable = 0;
@@ -867,7 +952,46 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
 
 					// Flat shading uses the colour from the third vertex. (DC System Bible PDF, page 204).
-					uint32_t vertex_c_colour = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
+					uint32_t vertex_c_col = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
+					
+					if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
+						//printf("tex_u_size: %d  tex_v_size: %d\n", tex_u_size, tex_v_size);
+						//auto offset = ClampFlip<pp_ClampU, pp_FlipU>(ui>>8, tex_u_size) + ClampFlip<pp_ClampV, pp_FlipV>(vi>>8, tex_v_size) * tex_u_size;
+						//mem128i px = ((mem128i*)vram_ptr)[offset];
+						//uint32_t offset = (ui>>12) + ((vi>>12) * tex_u_size);
+						uint32_t offset = x + ((vi>>12) * tex_u_size);
+						
+						// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
+						// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
+						// 
+						// An example tex_cont value for the "Play" texture on the Menu is 0x140C8E00.
+						// The lower 21 bits masked would give 0xC8E00. Shifted left by TWO bits gives the VRAM BYTE address.
+						uint32_t texel_addr = ( (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont&0x1fffff)<<2) & 0xffffff;
+
+						uint32_t texel_full = vram_ptr[ ( (texel_addr + offset)>>2 ) & 0x3fffff ];	// 32-bit WORD addr. Masked to 16MB.
+						uint16_t texel_word = (offset&1) ? texel_full>>16 : texel_full&0xffff;
+						// Example texel words from the "Play" texture...
+						// texel_word: 0xFCCC
+						// texel_word: 0xF333
+						// So those textures are 4BPP, ARGB.
+						//old_pixel = disp_ptr[ disp_addr&(0x3fffff>>2) ];	// Read previous pixel value from the display buffer.
+						//alpha  = ((texel_word>>8) & 0xf0);	// 4-bit Alpha.
+						//if (alpha==0xF0) {
+							rgb[0] = ((texel_word>>4) & 0xf0);	// Blue.
+							rgb[1] = ((texel_word>>0) & 0xf0);	// Green.
+							rgb[2] = ((texel_word<<4) & 0xf0);	// Red.
+						/*}
+						else {
+							rgb[0] = (old_pixel&0x00ff0000)>>16;
+							rgb[1] = (old_pixel&0x0000ff00)>>8;
+							rgb[2] = (old_pixel&0x000000ff);
+						}*/
+					}
+					else {
+						rgb[0] = (vertex_c_col&0x00ff0000)>>16;
+						rgb[1] = (vertex_c_col&0x0000ff00)>>8;
+						rgb[2] = (vertex_c_col&0x000000ff);
+					}
 
 					disp_addr = (y_ps * 640) + x_ps;
 
@@ -875,24 +999,21 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 					uint32_t z2_r = float_to_fixed(z2, 30);			// Convert Z from float to fixed-point.
 					uint32_t z3_r = float_to_fixed(z3, 30);			// Convert Z from float to fixed-point.
 
-					if ( z_ptr[disp_addr&(0x3fffff>>2)] < z3_r) {	// Z-Compare of previous pixel/poly.
-
+					if ( z_ptr[disp_addr&(0x3fffff>>2)] < z3_r ) {	// Z-Compare of previous pixel/poly.
 						// Overwrite value in Z-buffer if the new value is greater/closer.
 						if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ disp_addr&(0x3fffff>>2) ] = z3_r;
-
-						//if ( (vertex_c_colour&0x00ffffff)!=0x00ffffff ) {	// Hide the white background polys on the Menu for now.
-						if ( (vertex_c_colour&0x00ffffff) != 0x00CBCBFF ) {	// Hide the grey/purple smoke texture(s) in Crazy Taxi.
-							rgb[0] = (vertex_c_colour&0x00ff0000)>>16;
-							rgb[1] = (vertex_c_colour&0x0000ff00)>>8;
-							rgb[2] = (vertex_c_colour&0x000000ff);
+						tag_ptr[ disp_addr&(0x3fffff>>2) ] = top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr;
+						//if ( (vertex_c_col&0x00ffffff) != 0x00CBCBFF ) {	// Hide the grey/purple smoke texture(s) in Crazy Taxi.
 							disp_ptr[ disp_addr&(0x3fffff>>2) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
-						}
+							//disp_ptr[ disp_addr&(0x3fffff>>2) ] = 0xff<<24 | tag_ptr[ disp_addr&(0x3fffff>>2) ]&0x00ffffff;
+						//}
 					}
 				}
 				x_ps = x_ps + 1;
+				ui = ui + (1<<12);
 			}
-
 			y_ps = y_ps + 1;
+			vi = vi + (1<<12);
 		}
 	}
 }
@@ -915,16 +1036,13 @@ int verilate() {
 		//top->rootp->boot_vector = 0xA0000000;
 		top->rootp->boot_vector = 0x00000000;
 
-
 		// Instruction memory...
 		uint32_t im_addr = 0x00000000;
 		if ( top->im_req_valid ) im_addr = top->im_req_addr;
-			
-		bios_word = rom_ptr[ (im_addr&0x1fffff)>>2 ];
-		if ( (im_addr&0x1fffff)>=0x00000000 && (im_addr&0x1fffff)<=0x03FFFFFF) top->im_resp_rdata = bios_word;
-		//if ( top->rootp->simtop__DOT__bios_cs ) top->im_resp_rdata = bios_word;
-		top->im_resp_valid = 1;
 
+		uint32_t dm_addr = 0x00000000;
+		if ( top->dm_req_valid ) dm_addr = top->dm_req_addr;
+		
 		// Data memory...
 		uint64_t old_dm_data = ram_ptr[ (top->dm_req_addr&0xffffff)>>3 ];
 
@@ -941,9 +1059,12 @@ int verilate() {
 			ram_ptr[ (top->dm_req_addr & 0xffffff)>>3 ] = old_dm_data;
 		}
 
-		top->rootp->dm_resp_rdata = ram_ptr[ (top->rootp->dm_req_addr&0xffffff)>>3 ];									// SDRAM Data.
-		if (top->rootp->simtop__DOT__sdram_cs) top->im_resp_rdata = ram_ptr[(top->rootp->dm_req_addr & 0xffffff) >> 3];	// SDRAM Instruction.
-
+		bios_word = rom_ptr[(im_addr&0x1fffff)>>2];
+		//if ( (im_addr&0x1fffff)>=0x00000000 && (im_addr&0x1fffff)<=0x03FFFFFF) top->im_resp_rdata = bios_word;
+		top->im_resp_rdata = (top->rootp->simtop__DOT__bios_cs) ? bios_word : ram_ptr[ (im_addr&0xffffff)>>3 ];	// SDRAM Instruction.
+		top->dm_resp_rdata = (top->rootp->simtop__DOT__bios_cs) ? bios_word : ram_ptr[ (dm_addr&0xffffff)>>3 ];	// SDRAM Data.
+		
+		top->im_resp_valid = 1;
 		top->dm_resp_valid = 1;
 
 		rgb[0] = 0xff;	// Red.
@@ -1017,6 +1138,7 @@ static MemoryEditor mem_edit_1;
 static MemoryEditor mem_edit_2;
 static MemoryEditor mem_edit_3;
 static MemoryEditor mem_edit_4;
+static MemoryEditor mem_edit_5;
 
 int main(int argc, char** argv, char** env) {
 
@@ -1080,6 +1202,9 @@ int main(int argc, char** argv, char** env) {
 		z_ptr[ i ] = 0;
 	}
 
+	for (uint32_t i = 0; i < tag_size; i++) {
+		tag_ptr[i] = 0;
+	}
 
 	memset(ram_ptr, 0x00, ram_size);
 	
@@ -1117,8 +1242,8 @@ int main(int argc, char** argv, char** env) {
 	FILE* pvrfile;
 	//pvrfile = fopen("pvr_regs_logo", "rb");
 	//pvrfile = fopen("pvr_regs_menu", "rb");
-	//pvrfile = fopen("pvr_regs_menu2", "rb");
-	pvrfile = fopen("pvr_regs_taxi", "rb");
+	pvrfile = fopen("pvr_regs_menu2", "rb");
+	//pvrfile = fopen("pvr_regs_taxi", "rb");
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");
@@ -1133,8 +1258,8 @@ int main(int argc, char** argv, char** env) {
 	FILE* vram_file;
 	//vram_file = fopen("vram_logo.bin", "rb");
 	//vram_file = fopen("vram_menu.bin", "rb");
-	//vram_file = fopen("vram_menu2.bin", "rb");
-	vram_file = fopen("vram_taxi.bin", "rb");
+	vram_file = fopen("vram_menu2.bin", "rb");
+	//vram_file = fopen("vram_taxi.bin", "rb");
 	//vram_file = fopen("vram_taxi2.bin", "rb");
 	//vram_file = fopen("vram_taxi3.bin", "rb");
 	//vram_file = fopen("vram_sonic.bin", "rb");
@@ -1268,6 +1393,11 @@ int main(int argc, char** argv, char** env) {
 			for (uint32_t i = 0; i < z_size; i++) {
 				z_ptr[i] = 0;
 			}
+
+			// Clear the Tag buffer.
+			for (uint32_t i = 0; i < tag_size; i++) {
+				tag_ptr[i] = 0;
+			}
 			
 			// Clear the DISPLAY buffer...
 			//uint32_t value = 0xff222222;
@@ -1322,6 +1452,12 @@ int main(int argc, char** argv, char** env) {
 		*/
 		mem_edit_4.DrawContents(rom_ptr, rom_size, 0);
 		ImGui::End();
+
+		ImGui::Begin("Tag Buffer Editor");
+		mem_edit_5.Cols = 4;
+		mem_edit_5.DrawContents(tag_ptr, tag_size, 0);
+		ImGui::End();
+
 		
 		ImGui::Begin("SH4 Regfile0");
 		ImGui::Text("   if_pc_plus4: 0x%08X", top->rootp->simtop__DOT__core__DOT__if_pc_plus4);

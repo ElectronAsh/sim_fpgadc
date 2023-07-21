@@ -16,4 +16,7 @@
     <LocalDebuggerWorkingDirectory>c:\linux_temp\sim_fpgadc\out</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup>
+    <ShowAllFiles>false</ShowAllFiles>
+  </PropertyGroup>
 </Project>

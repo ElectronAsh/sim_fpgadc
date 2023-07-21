@@ -5,10 +5,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
@@ -44,12 +40,6 @@
     </ClCompile>
     <ClCompile Include="C:\linux_temp\imgui\imgui_widgets.cpp">
       <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\verilator-4.224\include\verilated.cpp">
-      <Filter>Source Files\verilator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\verilator-4.224\include\verilated_save.cpp">
-      <Filter>Source Files\verilator</Filter>
     </ClCompile>
     <ClCompile Include="..\sim_main.cpp">
       <Filter>Source Files</Filter>
@@ -111,20 +101,11 @@
     <ClCompile Include="..\out\Vsimtop__Syms.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\verilator-4.224\include\verilated.cpp">
+      <Filter>Source Files\verilator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\linux_temp\imgui\ui_chip.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\linux_temp\imgui\ui_m6502.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\linux_temp\imgui\ui_util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\linux_temp\imgui\_m6502_decoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="C:\linux_temp\imgui\imconfig.h">
       <Filter>Source Files\imgui</Filter>
     </ClInclude>
@@ -137,30 +118,6 @@
     <ClInclude Include="C:\linux_temp\imgui\imgui_memory_editor.h">
       <Filter>Source Files\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\verilator-4.224\include\verilated.h">
-      <Filter>Source Files\verilator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\verilator-4.224\include\verilated_save.h">
-      <Filter>Source Files\verilator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\verilator-4.224\include\verilatedos.h">
-      <Filter>Source Files\verilator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\verilator-4.224\include\verilated_config.h">
-      <Filter>Source Files\verilator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\verilator-4.224\include\verilated_types.h">
-      <Filter>Source Files\verilator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\verilator-4.224\include\verilated_heavy.h">
-      <Filter>Source Files\verilator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\verilator-4.224\include\verilated_sym_props.h">
-      <Filter>Source Files\verilator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\verilator-4.224\include\verilated_syms.h">
-      <Filter>Source Files\verilator</Filter>
-    </ClInclude>
     <ClInclude Include="..\out\Vsimtop.h">
       <Filter>Source Files\Vsimtop</Filter>
     </ClInclude>
@@ -172,6 +129,30 @@
     </ClInclude>
     <ClInclude Include="..\out\Vsimtop__Syms.h">
       <Filter>Source Files\Vsimtop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\verilator-4.224\include\verilated.h">
+      <Filter>Source Files\verilator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\verilator-4.224\include\verilated_config.h">
+      <Filter>Source Files\verilator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\verilator-4.224\include\verilated_funcs.h">
+      <Filter>Source Files\verilator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\verilator-4.224\include\verilated_heavy.h">
+      <Filter>Source Files\verilator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\verilator-4.224\include\verilated_imp.h">
+      <Filter>Source Files\verilator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\verilator-4.224\include\verilated_intrinsics.h">
+      <Filter>Source Files\verilator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\verilator-4.224\include\verilated_types.h">
+      <Filter>Source Files\verilator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\verilator-4.224\include\verilatedos.h">
+      <Filter>Source Files\verilator</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

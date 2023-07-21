@@ -842,9 +842,17 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__cache_bypass;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__dcalc_ctrl;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__volume_inst;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_format;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt;
+    CData/*3:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_words;
     CData/*0:0*/ simtop__DOT__pvr__DOT__my_fpu_inst__DOT__clk;
     CData/*1:0*/ simtop__DOT__pvr__DOT__my_fpu_inst__DOT__op;

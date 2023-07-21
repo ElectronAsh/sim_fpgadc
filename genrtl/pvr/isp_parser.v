@@ -45,9 +45,17 @@ wire dcalc_ctrl = isp_inst[20];
 wire [2:0] volume_inst = isp_inst[31:29];
 //wire [1:0] culling_mode = isp_inst[28:27];	// Same bits as above.
 
-
 reg [31:0] tsp_inst;
+wire tex_u_flip = tsp_inst[18];
+wire tex_v_flip = tsp_inst[17];
+wire tex_u_clamp = tsp_inst[16];
+wire tex_v_clamp = tsp_inst[15];
+wire [2:0] tex_u_size = tsp_inst[5:3];
+wire [2:0] tex_v_size = tsp_inst[2:0];
+
+
 reg [31:0] tex_cont;
+wire [2:0] pix_format = tex_cont[29:27];
 
 reg [31:0] tsp2_inst;
 reg [31:0] tex2_cont;
@@ -103,6 +111,7 @@ wire two_volume = 1'b0;	// TODO.
 // Object List read state machine...
 reg [7:0] isp_state;
 reg [2:0] strip_cnt;
+reg [3:0] array_cnt;
 
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
@@ -129,8 +138,11 @@ else begin
 			if (render_poly) begin
 				isp_vram_addr <= poly_addr;
 				
-				if (!opb_word[31]) strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) + 1;	// TriangleStrips.
-				else strip_cnt <= 3'd0;	// Triangle Arrays or Quads.
+				if (!opb_word[31]) strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5])  + 1;	// TriangleStrips.
+				else begin
+					strip_cnt <= 3'd0;
+					array_cnt <= num_prims + 1;	// For Triangle Arrays or Quads.
+				end
 				
 				isp_vram_rd <= 1'b1;
 				isp_state <= 8'd1;
@@ -227,14 +239,28 @@ else begin
 		46: isp_entry_valid <= 1'b1;
 		
 		47: begin
-			if (strip_cnt==3'd0) begin		// (if TriangleStrip is done), or other type finished...
-				poly_drawn <= 1'b1;
-				isp_state <= 8'd0;
+			if (!opb_word[31]) begin				// Triangle Strip.
+				if (strip_cnt==3'd0) begin		// If TriangleStrip is done...
+					poly_drawn <= 1'b1;
+					isp_state <= 8'd0;
+				end
+				else begin	// TriangleStrip...
+					strip_cnt <= strip_cnt - 3'd1;
+					isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New. (plus one extra word, due to the isp_vram_addr++ thing).
+					isp_state <= 8'd6;
+				end
 			end
-			else begin	// TriangleStrip...
-				strip_cnt <= strip_cnt - 3'd1;
-				isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New. (plus one extra word, due to the isp_vram_addr++ thing).
-				isp_state <= 8'd6;
+			else
+			if (opb_word[31:29]==3'b100 || opb_word[31:29]==3'b101) begin		// Triangle Array or Quad Array.
+				if (array_cnt==4'd0) begin		// If Array is done...
+					poly_drawn <= 1'b1;
+					isp_state <= 8'd0;
+				end
+				else begin
+					array_cnt <= array_cnt - 3'd1;
+					isp_vram_addr <= isp_vram_addr - 4;
+					isp_state <= 8'd6;	// Jump back, to grab the next Array prim.
+				end
 			end
 		end
 
@@ -242,6 +268,6 @@ else begin
 	endcase
 end
 
-wire [7:0] vert_words = (two_volume&&shadow) ? ((skip*2)+3) : (skip+3);
+wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
 
 endmodule

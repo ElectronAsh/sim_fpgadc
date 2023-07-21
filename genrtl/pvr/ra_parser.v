@@ -189,17 +189,17 @@ else begin
 		// Check for Object Pointer Block Link, or Primitive Type...
 		12: begin
 			if (!opb_word[31]) begin					// Triangle Strip.
-				poly_addr <= {opb_word[20:0], 2'b00};	// Don't think we need to add PARAM_BASE?
+				poly_addr <= {opb_word[20:0], 2'b00};
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b100) begin		// Triangle Array.
-				poly_addr <= {opb_word[20:0], 2'b00};	// Don't think we need to add PARAM_BASE?
+				poly_addr <= {opb_word[20:0], 2'b00};
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b101) begin		// Quad Array.
-				poly_addr <= {opb_word[20:0], 2'b00};	// Don't think we need to add PARAM_BASE?
+				poly_addr <= {opb_word[20:0], 2'b00};
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
