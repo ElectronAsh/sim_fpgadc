@@ -5,13 +5,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-//#include <atomic>
-//#include <fstream>
-
 #include <verilated.h>
 #include "Vsimtop.h"
 #include "Vsimtop___024root.h"
-
 
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -804,6 +800,9 @@ static int ClampFlip(int coord, int size) {
 	return coord;
 }
 
+uint32_t texel_addr = 0;
+uint32_t texel_offs = 0;
+
 void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4, float z1, float z2, float z3) {
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
@@ -915,8 +914,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 		uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
 
 		// Convert UV coords to fixed-point, with 8 bits of fraction. (only using Vert A for now).
-		int ui = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, 12);
-		int vi = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0, 12);
+		int ui = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, 8);
+		int vi = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0, 8);
 
 		// Texture size valies are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
 		uint32_t tex_u_size = 1<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size+3);
@@ -958,28 +957,29 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 						//printf("tex_u_size: %d  tex_v_size: %d\n", tex_u_size, tex_v_size);
 						//auto offset = ClampFlip<pp_ClampU, pp_FlipU>(ui>>8, tex_u_size) + ClampFlip<pp_ClampV, pp_FlipV>(vi>>8, tex_v_size) * tex_u_size;
 						//mem128i px = ((mem128i*)vram_ptr)[offset];
-						//uint32_t offset = (ui>>12) + ((vi>>12) * tex_u_size);
-						uint32_t offset = x + ((vi>>12) * tex_u_size);
+						//uint32_t offset = (ui>>8) + ((vi>>8) * tex_u_size);
+						texel_offs = x + ((vi>>8) * tex_u_size);
 						
 						// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
 						// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
 						// 
 						// An example tex_cont value for the "Play" texture on the Menu is 0x140C8E00.
-						// The lower 21 bits masked would give 0xC8E00. Shifted left by TWO bits gives the VRAM BYTE address.
-						uint32_t texel_addr = ( (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont&0x1fffff)<<2) & 0xffffff;
+						// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
+						texel_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont&0x1fffff) & 0xffffff;
 
-						uint32_t texel_full = vram_ptr[ ( (texel_addr + offset)>>2 ) & 0x3fffff ];	// 32-bit WORD addr. Masked to 16MB.
-						uint16_t texel_word = (offset&1) ? texel_full>>16 : texel_full&0xffff;
+						uint32_t texel_full = vram_ptr[ ( texel_addr + (texel_offs>>2) ) & 0x3fffff ];	// 32-bit WORD addr. Masked to 16MB.
+						uint16_t texel_word = ((texel_offs&1)==0) ? (texel_full>>16) : (texel_full&0xffff);
+						
 						// Example texel words from the "Play" texture...
 						// texel_word: 0xFCCC
 						// texel_word: 0xF333
 						// So those textures are 4BPP, ARGB.
 						//old_pixel = disp_ptr[ disp_addr&(0x3fffff>>2) ];	// Read previous pixel value from the display buffer.
-						//alpha  = ((texel_word>>8) & 0xf0);	// 4-bit Alpha.
+						alpha  = ((texel_word>>8) & 0xf0);	// 4-bit Alpha.
 						//if (alpha==0xF0) {
-							rgb[0] = ((texel_word>>4) & 0xf0);	// Blue.
+							rgb[0] = ((texel_word>>4) & 0xf0);	// Red.
 							rgb[1] = ((texel_word>>0) & 0xf0);	// Green.
-							rgb[2] = ((texel_word<<4) & 0xf0);	// Red.
+							rgb[2] = ((texel_word<<4) & 0xf0);	// Blue.
 						/*}
 						else {
 							rgb[0] = (old_pixel&0x00ff0000)>>16;
@@ -1010,10 +1010,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 					}
 				}
 				x_ps = x_ps + 1;
-				ui = ui + (1<<12);
+				ui = ui + (1<<8);
 			}
 			y_ps = y_ps + 1;
-			vi = vi + (1<<12);
+			vi = vi + (1<<8);
 		}
 	}
 }
@@ -1241,8 +1241,8 @@ int main(int argc, char** argv, char** env) {
 
 	FILE* pvrfile;
 	//pvrfile = fopen("pvr_regs_logo", "rb");
-	//pvrfile = fopen("pvr_regs_menu", "rb");
-	pvrfile = fopen("pvr_regs_menu2", "rb");
+	pvrfile = fopen("pvr_regs_menu", "rb");
+	//pvrfile = fopen("pvr_regs_menu2", "rb");
 	//pvrfile = fopen("pvr_regs_taxi", "rb");
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");
@@ -1257,8 +1257,8 @@ int main(int argc, char** argv, char** env) {
 
 	FILE* vram_file;
 	//vram_file = fopen("vram_logo.bin", "rb");
-	//vram_file = fopen("vram_menu.bin", "rb");
-	vram_file = fopen("vram_menu2.bin", "rb");
+	vram_file = fopen("vram_menu.bin", "rb");
+	//vram_file = fopen("vram_menu2.bin", "rb");
 	//vram_file = fopen("vram_taxi.bin", "rb");
 	//vram_file = fopen("vram_taxi2.bin", "rb");
 	//vram_file = fopen("vram_taxi3.bin", "rb");
@@ -1440,8 +1440,10 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Begin("VRAM dump Editor");
 		mem_edit_3.Cols = 4;
 		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
-		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
-		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
+		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		mem_edit_3.HighlightMin = (texel_addr + texel_offs) & 0x3fffff;
+		mem_edit_3.HighlightMax = (texel_addr + texel_offs) & 0x3fffff + 256;
 		mem_edit_3.DrawContents(vram_ptr, vram_size, 0);
 		ImGui::End();
 
