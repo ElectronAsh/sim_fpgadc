@@ -176,7 +176,7 @@ else begin
 		end
 		
 		10: begin
-			ra_vram_addr <= (opb_mode) ? ra_vram_addr-ol_jump_bytes : ra_vram_addr+4;
+			ra_vram_addr <= /*(opb_mode) ? ra_vram_addr-ol_jump_bytes :*/ ra_vram_addr+4;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end

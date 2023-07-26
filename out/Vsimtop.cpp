@@ -38,6 +38,22 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , vram_addr{vlSymsp->TOP.vram_addr}
     , vram_din{vlSymsp->TOP.vram_din}
     , vram_dout{vlSymsp->TOP.vram_dout}
+    , v1_x{vlSymsp->TOP.v1_x}
+    , v1_y{vlSymsp->TOP.v1_y}
+    , v2_x{vlSymsp->TOP.v2_x}
+    , v2_y{vlSymsp->TOP.v2_y}
+    , v3_x{vlSymsp->TOP.v3_x}
+    , v3_y{vlSymsp->TOP.v3_y}
+    , v1_a{vlSymsp->TOP.v1_a}
+    , v2_a{vlSymsp->TOP.v2_a}
+    , v3_a{vlSymsp->TOP.v3_a}
+    , Aa{vlSymsp->TOP.Aa}
+    , Ba{vlSymsp->TOP.Ba}
+    , C{vlSymsp->TOP.C}
+    , c{vlSymsp->TOP.c}
+    , x{vlSymsp->TOP.x}
+    , y{vlSymsp->TOP.y}
+    , interp{vlSymsp->TOP.interp}
     , dm_req_wdata{vlSymsp->TOP.dm_req_wdata}
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
     , rootp{&(vlSymsp->TOP)}

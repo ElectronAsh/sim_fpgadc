@@ -22,7 +22,29 @@ module pvr (
 	input [31:0] vram_din,
 	output vram_rd,
 	output vram_wr,
-	output [31:0] vram_dout
+	output [31:0] vram_dout,
+	
+	input signed [31:0] v1_x,
+	input signed [31:0] v1_y,
+
+	input signed [31:0] v2_x,
+	input signed [31:0] v2_y,
+
+	input signed [31:0] v3_x,
+	input signed [31:0] v3_y,
+
+	input signed [31:0] v1_a,
+	input signed [31:0] v2_a,
+	input signed [31:0] v3_a,
+
+	output signed [31:0] Aa,
+	output signed [31:0] Ba,
+	output signed [31:0] C,
+	output signed [31:0] c,
+
+	input  signed [31:0] x,
+	input  signed [31:0] y,
+	output signed [31:0] interp
 );
 
 
@@ -417,8 +439,8 @@ always @(*) begin
 		TA_OL_POINTERS_END_addr: pvr_dout[31:0] =  TA_OL_POINTERS_END;		// 16'h0F5C;
 
 		//PALETTE_RAM_START_addr: pvr_dout[31:0] =  PALETTE_RAM_START; 		// 16'h1000; RW  Palette RAM
+
 		//PALETTE_RAM_END_addr: pvr_dout[31:0] =  PALETTE_RAM_END;			// 16'h1FFC;
-		
 		16'b0001????????????: pvr_dout[31:0] = pal_ram[ pvr_addr[11:0] ];
 
 		default: ;
@@ -684,6 +706,7 @@ end
 */
 
 
+/*
 parameter FPU_ADD = 2'd0;
 parameter FPU_SUB = 2'd1;
 parameter FPU_DIV = 2'd2;
@@ -701,15 +724,15 @@ my_fpu  my_fpu_inst(
 	.O( fpu_res )
 );
 
-/*
-	X1: 43AF5F3B 350.743988  X2: 43A1A798 323.309326  X3: 43AFB9B7 351.450897  X4: 00000000 0.000000
-	Y1: 43DE6D90 444.855957  Y2: 43E744E2 462.538147  Y3: 43DBF411 439.906769  Y4: 00000000 0.000000
-	area: 42F68F27 123.279594
 
-	X1: 43A1A798 323.309326  X2: 43AFB9B7 351.450897  X3: 43A03B11 320.461456  X4: 00000000 0.000000
-	Y1: 43E744E2 462.538147  Y2: 43DBF411 439.906769  Y3: 43D94FF1 434.624542  Y4: 00000000 0.000000
-	area: C4547EF7 -849.983826
-*/
+//	X1: 43AF5F3B 350.743988  X2: 43A1A798 323.309326  X3: 43AFB9B7 351.450897  X4: 00000000 0.000000
+//	Y1: 43DE6D90 444.855957  Y2: 43E744E2 462.538147  Y3: 43DBF411 439.906769  Y4: 00000000 0.000000
+//	area: 42F68F27 123.279594
+
+//	X1: 43A1A798 323.309326  X2: 43AFB9B7 351.450897  X3: 43A03B11 320.461456  X4: 00000000 0.000000
+//	Y1: 43E744E2 462.538147  Y2: 43DBF411 439.906769  Y3: 43D94FF1 434.624542  Y4: 00000000 0.000000
+//	area: C4547EF7 -849.983826
+
 
 wire [31:0] v1_x = 32'h43AF5F3B;
 wire [31:0] v2_x = 32'h43A1A798;
@@ -758,7 +781,8 @@ else begin
 
 	case (calc_state)
 		0: begin
-			/*if (trig_calcs)*/ begin
+			//if (trig_calcs) begin
+			begin
 				fpu_a <= x1;
 				fpu_b <= x3;
 				fpu_op <= FPU_SUB;
@@ -889,9 +913,33 @@ else begin
 end
 
 wire sgn = !area[31];
+*/
 
-
-
+edge_calc  edge_calc_1_inst (
+	.v1_x( v1_x ),
+	.v1_y( v1_y ),
+	
+	.v2_x( v2_x ),
+	.v2_y( v2_y ),
+	
+	.v3_x( v3_x ),
+	.v3_y( v3_y ),
+	
+	.v1_a( v1_a ),
+	.v2_a( v2_a ),
+	.v3_a( v3_a ),
+	
+	.Aa( Aa ),
+	.Ba( Ba ),
+	
+	.C( C ),
+	
+	.c( c ),
+	
+	.x( x ),
+	.y( y ),
+	.interp( interp )
+);
 
 
 endmodule

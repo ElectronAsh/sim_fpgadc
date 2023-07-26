@@ -64,7 +64,29 @@ module simtop (
 	output wire vram_wr,
 	output wire [22:0] vram_addr,
 	input wire [31:0] vram_din,
-	output wire [31:0] vram_dout
+	output wire [31:0] vram_dout,
+	
+	input signed [31:0] v1_x,
+	input signed [31:0] v1_y,
+
+	input signed [31:0] v2_x,
+	input signed [31:0] v2_y,
+
+	input signed [31:0] v3_x,
+	input signed [31:0] v3_y,
+
+	input signed [31:0] v1_a,
+	input signed [31:0] v2_a,
+	input signed [31:0] v3_a,
+
+	output signed [31:0] Aa,
+	output signed [31:0] Ba,
+	output signed [31:0] C,
+	output signed [31:0] c,
+
+	input  signed [31:0] x,
+	input  signed [31:0] y,
+	output signed [31:0] interp
 );
 
 
@@ -197,7 +219,31 @@ pvr pvr (
 	.vram_din( vram_din ),		// input [31:0]  vram_din
 	.vram_rd( vram_rd ),		// output  vram_rd
 	.vram_wr( vram_wr ),		// output  vram_wr
-	.vram_dout( vram_dout )		// output [31:0]  vram_dout
+	.vram_dout( vram_dout ),	// output [31:0]  vram_dout
+	
+	.v1_x( v1_x ),
+	.v1_y( v1_y ),
+	
+	.v2_x( v2_x ),
+	.v2_y( v2_y ),
+	
+	.v3_x( v3_x ),
+	.v3_y( v3_y ),
+	
+	.v1_a( v1_a ),
+	.v2_a( v2_a ),
+	.v3_a( v3_a ),
+	
+	.Aa( Aa ),
+	.Ba( Ba ),
+	
+	.C( C ),
+	
+	.c( c ),
+	
+	.x( x ),
+	.y( y ),
+	.interp( interp )
 );
 
 

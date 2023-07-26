@@ -43,9 +43,6 @@ VM_CLASSES_SLOW += \
 	Vsimtop___024root__DepSet_h305f3046__0__Slow \
 	Vsimtop___024root__DepSet_h305f3046__1__Slow \
 	Vsimtop___024root__DepSet_h305f3046__2__Slow \
-	Vsimtop___024root__DepSet_h305f3046__3__Slow \
-	Vsimtop___024root__DepSet_h305f3046__4__Slow \
-	Vsimtop___024root__DepSet_h305f3046__5__Slow \
 	Vsimtop___024unit__Slow \
 	Vsimtop___024unit__DepSet_h7e859b80__0__Slow \
 

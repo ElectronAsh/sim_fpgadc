@@ -14,11 +14,6 @@ constexpr CData/*1:0*/ Vsimtop___024root::simtop__DOT__core__DOT__lsu__DOT__SZ_L
 constexpr CData/*1:0*/ Vsimtop___024root::simtop__DOT__core__DOT__lsu__DOT__SZ_DOUBLE;
 constexpr CData/*0:0*/ Vsimtop___024root::simtop__DOT__core__DOT__lsu__DOT__AMO_READ;
 constexpr CData/*0:0*/ Vsimtop___024root::simtop__DOT__core__DOT__lsu__DOT__AMO_WRITE;
-constexpr CData/*1:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__FPU_ADD;
-constexpr CData/*1:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__FPU_SUB;
-constexpr CData/*1:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__FPU_DIV;
-constexpr CData/*1:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__FPU_MUL;
-constexpr CData/*7:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__delay_amt;
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__ID_addr;
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__REVISION_addr;
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__SOFTRESET_addr;
@@ -101,6 +96,7 @@ constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__core__DOT__fpu__DOT__fpu
 constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__rsh_b__DOT__SWIDTH_BOUNDED;
 constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__clz__DOT__WIDTH;
 constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__clz__DOT__SWIDTH;
+constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__FRAC_BITS;
 
 
 void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf);

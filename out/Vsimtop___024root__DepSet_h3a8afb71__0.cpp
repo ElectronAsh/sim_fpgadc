@@ -91,152 +91,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
             = ((0x200U & ((IData)(vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_c_exp) 
                           << 1U)) | (IData)(vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_c_exp));
     }
-    if (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__ADD) {
-        if (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_nan) 
-             | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_zero))) {
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-                = (1U & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_sign));
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-                = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_mantissa;
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-                = (0xffU & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_exponent));
-        } else if (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_nan) 
-                    | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_zero))) {
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-                = (1U & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_sign));
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-                = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_mantissa;
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-                = (0xffU & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_exponent));
-        } else if (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_inf) 
-                    | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_inf))) {
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-                = (1U & ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_sign) 
-                         ^ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_sign)));
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa = 0U;
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-                = (0xffU & 0xffU);
-        } else {
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-                = (1U & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_out 
-                         >> 0x1fU));
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-                = (0x7fffffU & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_out);
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-                = (0xffU & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_out 
-                            >> 0x17U));
-        }
-        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_nan) 
-                      | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_zero))))) {
-            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_nan) 
-                          | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_zero))))) {
-                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_inf) 
-                              | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_inf))))) {
-                    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_a_in 
-                        = vlSelf->simtop__DOT__pvr__DOT__fpu_a;
-                    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_b_in 
-                        = vlSelf->simtop__DOT__pvr__DOT__fpu_b;
-                }
-            }
-        }
-    } else if (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__SUB) {
-        if (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_nan) 
-             | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_zero))) {
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-                = (1U & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_sign));
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-                = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_mantissa;
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-                = (0xffU & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_exponent));
-        } else if (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_nan) 
-                    | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_zero))) {
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-                = (1U & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_sign));
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-                = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_mantissa;
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-                = (0xffU & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_exponent));
-        } else if (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_inf) 
-                    | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_inf))) {
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-                = (1U & ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_sign) 
-                         ^ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_sign)));
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa = 0U;
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-                = (0xffU & 0xffU);
-        } else {
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-                = (1U & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_out 
-                         >> 0x1fU));
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-                = (0x7fffffU & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_out);
-            vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-                = (0xffU & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_out 
-                            >> 0x17U));
-        }
-        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_nan) 
-                      | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_zero))))) {
-            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_nan) 
-                          | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_zero))))) {
-                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_inf) 
-                              | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_inf))))) {
-                    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_a_in 
-                        = vlSelf->simtop__DOT__pvr__DOT__fpu_a;
-                    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_b_in 
-                        = (((~ (vlSelf->simtop__DOT__pvr__DOT__fpu_b 
-                                >> 0x1fU)) << 0x1fU) 
-                           | (0x7fffffffU & vlSelf->simtop__DOT__pvr__DOT__fpu_b));
-                }
-            }
-        }
-    } else if (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__DIV) {
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-            = (1U & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_out 
-                     >> 0x1fU));
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-            = (0x7fffffU & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_out);
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-            = (0xffU & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_out 
-                        >> 0x17U));
-    } else if (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_nan) {
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-            = (1U & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_sign));
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-            = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_mantissa;
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-            = (0xffU & 0xffU);
-    } else if (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_nan) {
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-            = (1U & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_sign));
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-            = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_mantissa;
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-            = (0xffU & 0xffU);
-    } else if (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_zero) 
-                | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_zero))) {
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-            = (1U & ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_sign) 
-                     ^ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_sign)));
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa = 0U;
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-            = (0xffU & 0U);
-    } else if (((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_inf) 
-                | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_inf))) {
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-            = (1U & (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_sign));
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa = 0U;
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-            = (0xffU & 0xffU);
-    } else {
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_sign 
-            = (1U & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_out 
-                     >> 0x1fU));
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_mantissa 
-            = (0x7fffffU & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_out);
-        vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__o_exponent 
-            = (0xffU & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_out 
-                        >> 0x17U));
-    }
     if (vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__adder_o_valid) {
         vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_o_tag 
             = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__adder_o_tag;
@@ -568,30 +422,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                    | (IData)(vlSelf->simtop__DOT__core__DOT__e1_mtu0_t))
                 : (IData)(vlSelf->simtop__DOT__core__DOT__e1_exu_flags))
             : (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_flags));
-    if ((1U & (~ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__ADD)))) {
-        if ((1U & (~ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__SUB)))) {
-            if ((1U & (~ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__DIV)))) {
-                if ((1U & (~ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_nan)))) {
-                    if ((1U & (~ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_nan)))) {
-                        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_zero) 
-                                      | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_zero))))) {
-                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__a_is_inf) 
-                                          | (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__b_is_inf))))) {
-                                vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_a_in 
-                                    = vlSelf->simtop__DOT__pvr__DOT__fpu_a;
-                                vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_b_in 
-                                    = vlSelf->simtop__DOT__pvr__DOT__fpu_b;
-                            }
-                        }
-                    }
-                }
-            }
-            if (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__DIV) {
-                vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_a_in 
-                    = vlSelf->simtop__DOT__pvr__DOT__fpu_a;
-            }
-        }
-    }
     if (vlSelf->simtop__DOT__core__DOT__id_lsu_sel) {
         vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl 
             = vlSelf->simtop__DOT__core__DOT__id_instr1_opl;
@@ -718,14 +548,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
         vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_id 
             = vlSelf->simtop__DOT__core__DOT__id_dec0_csr_id;
     }
-    if ((1U & (~ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__ADD)))) {
-        if ((1U & (~ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__SUB)))) {
-            if (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__DIV) {
-                vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_b_in 
-                    = vlSelf->simtop__DOT__pvr__DOT__fpu_b;
-            }
-        }
-    }
     if (vlSelf->simtop__DOT__core__DOT__e2_reg_bru_write_pr) {
         vlSelf->simtop__DOT__core__DOT__csr_pr = vlSelf->simtop__DOT__core__DOT__e2_reg_bru_pr_target;
     }
@@ -842,23 +664,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__adder_o_is_nan 
         = ((IData)(vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__adder_a_is_nan) 
            | (IData)(vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__adder_b_is_nan));
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__A1__DOT__a 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_a_in;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__A1__DOT__b 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__adder_b_in;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__M1__DOT__a 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_a_in;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__M1__DOT__b 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_b_in;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__M1__DOT__a_sign 
-        = (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_a_in 
-           >> 0x1fU);
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__M1__DOT__b_sign 
-        = (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__multiplier_b_in 
-           >> 0x1fU);
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__M1__DOT__o_sign 
-        = ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__M1__DOT__a_sign) 
-           ^ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__M1__DOT__b_sign));
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__o_frac 
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_o_frac;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_round__DOT__i_frac 
@@ -875,8 +680,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_o_is_nan;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_round__DOT__i_is_nan 
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_o_is_nan;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__a 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_a_in;
     vlSelf->simtop__DOT__core__DOT__mtu0__DOT__in_oph 
         = vlSelf->simtop__DOT__core__DOT__e1_reg_mtu0_oph;
     vlSelf->simtop__DOT__core__DOT__mtu1__DOT__in_oph 
@@ -1342,13 +1145,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
     vlSelf->simtop__DOT__core__DOT__csr_fpscr_sz = 
         (1U & (vlSelf->simtop__DOT__core__DOT__csr_fpscr 
                >> 0x14U));
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__b 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_b_in;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__b_reciprocal 
-        = ((0x7fffffffU & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__b_reciprocal) 
-           | (0x80000000U & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_b_in));
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__D 
-        = (0x40000000U | (0x7fffffU & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_b_in));
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__o_tag 
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__adder_o_tag;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__out_wdst 
@@ -1369,8 +1165,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                                  & (IData)(vlSelf->simtop__DOT__core__DOT__fpu_out_valid));
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__o_is_nan 
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__adder_o_is_nan;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__mult__DOT__a 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__a;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_overflow = 0U;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_underflow = 0U;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fma_inexact = 0U;
@@ -2484,33 +2278,6 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
         vlSelf->simtop__DOT__core__DOT__lsu__DOT__fpscr_sz = 0U;
         vlSelf->simtop__DOT__core__DOT__lsu__DOT__fpsize = 2U;
     }
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__in 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__b;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S0_2D__DOT__b 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__D;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S1_DN0__DOT__a 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__D;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S2_DN1__DOT__a 
-        = vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__D;
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__b_reciprocal 
-        = ((0x807fffffU & vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__b_reciprocal) 
-           | (0x7f800000U & (((0x100U == vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__D)
-                               ? ((IData)(0x102U) - 
-                                  (0xffU & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_b_in 
-                                            >> 0x17U)))
-                               : ((IData)(0x101U) - 
-                                  (0xffU & (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__divider_b_in 
-                                            >> 0x17U)))) 
-                             << 0x17U)));
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S0_2D__DOT__a_sign 
-        = (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__C2 
-           >> 0x1fU);
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S0_2D__DOT__b_sign 
-        = (vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__D 
-           >> 0x1fU);
-    vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S0_2D__DOT__o_sign 
-        = ((IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S0_2D__DOT__a_sign) 
-           ^ (IData)(vlSelf->simtop__DOT__pvr__DOT__my_fpu_inst__DOT__D1__DOT__recip__DOT__S0_2D__DOT__b_sign));
     vlSelf->simtop__DOT__core__DOT__fprf__DOT__rf_wdst0 
         = vlSelf->simtop__DOT__core__DOT__fprf_wdst0;
     vlSelf->simtop__DOT__core__DOT__fprf__DOT__rf_wbank0 
@@ -5543,6 +5310,7 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
     vlSelf->simtop__DOT__core__DOT__lsu__DOT__in_csr_rdata 
         = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata;
     vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val = 0U;
+    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata = 0ULL;
     if (vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_valid) {
         if ((0x8000U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
             if ((0x4000U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -5562,6 +5330,24 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                             }
                                         }
                                     }
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (
+                                                   (1U 
+                                                    & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                    ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                    : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                        }
+                                    }
+                                } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
+                                        }
+                                    }
                                 }
                             } else if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                 if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -5574,6 +5360,24 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                                 vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
                                                     = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr;
                                             }
+                                        }
+                                    }
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (
+                                                   (1U 
+                                                    & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                    ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                    : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                        }
+                                    }
+                                } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
                                         }
                                     }
                                 }
@@ -5591,6 +5395,24 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                                     : vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr);
                                         }
                                     }
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (
+                                                   (1U 
+                                                    & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                    ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                    : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                        }
+                                    }
+                                } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
+                                        }
+                                    }
                                 }
                             } else if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                 if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -5601,6 +5423,23 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                                 & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
                                                 ? 0U
                                                 : vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr);
+                                    }
+                                }
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = ((1U 
+                                                & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                    }
+                                }
+                            } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
                                     }
                                 }
                             }
@@ -5618,6 +5457,24 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                             }
                                         }
                                     }
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (
+                                                   (1U 
+                                                    & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                    ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                    : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                        }
+                                    }
+                                } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
+                                        }
+                                    }
                                 }
                             } else if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                 if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -5633,6 +5490,24 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                                    (0x7fffffffU 
                                                     & vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)
                                                     : vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr);
+                                        }
+                                    }
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (
+                                                   (1U 
+                                                    & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                    ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                    : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                        }
+                                    }
+                                } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
                                         }
                                     }
                                 }
@@ -5653,6 +5528,23 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                                 : vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr);
                                     }
                                 }
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = ((1U 
+                                                & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                    }
+                                }
+                            } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
+                                    }
+                                }
                             }
                         } else if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                             if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -5665,6 +5557,23 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                         }
                                     }
                                 }
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = ((1U 
+                                                & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                    }
+                                }
+                            } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
+                                    }
+                                }
                             }
                         } else if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                             if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -5673,6 +5582,23 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                                   >> 1U)))) {
                                         vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
                                             = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr;
+                                    }
+                                }
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = ((1U 
+                                                & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                                : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                    }
+                                }
+                            } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
                                     }
                                 }
                             }
@@ -5684,6 +5610,22 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                         = ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
                                             ? vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata
                                             : vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr);
+                                }
+                            }
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 2U)))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                            ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr))
+                                            : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr)));
+                                }
+                            }
+                        } else if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_fpr));
                                 }
                             }
                         }
@@ -5699,6 +5641,46 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                     vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
                                         = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl;
                                 }
+                            }
+                            if ((0x200U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = ((0x100U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                        ? ((QData)((IData)(vlSelf->simtop__DOT__core__DOT__lsu__DOT__amo_oldval)) 
+                                           | (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl)))
+                                        : ((QData)((IData)(vlSelf->simtop__DOT__core__DOT__lsu__DOT__amo_oldval)) 
+                                           ^ (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl))));
+                            } else if ((0x100U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = ((QData)((IData)(vlSelf->simtop__DOT__core__DOT__lsu__DOT__amo_oldval)) 
+                                       & (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl)));
+                            }
+                        }
+                    } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                         >> 0xaU)))) {
+                        if ((0x200U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 8U)))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_r0));
+                            }
+                        } else {
+                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_r0));
+                        }
+                    }
+                }
+            } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                 >> 0xdU)))) {
+                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                              >> 0xcU)))) {
+                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                  >> 0xbU)))) {
+                        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                      >> 0xaU)))) {
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 9U)))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_r0));
                             }
                         }
                     }
@@ -5734,7 +5716,55 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                             }
                                         }
                                     }
-                                } else if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 3U)))) {
+                                        if ((1U & (~ 
+                                                   ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                    >> 2U)))) {
+                                            if ((2U 
+                                                 & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                    = 
+                                                    ((1U 
+                                                      & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
+                                                      ? (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl))
+                                                      : (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata)));
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            if ((2U 
+                                                 & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                                if (
+                                                    (1U 
+                                                     & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                                        = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 3U)))) {
+                                        if ((1U & (~ 
+                                                   ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                    >> 2U)))) {
+                                            if ((2U 
+                                                 & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                                if (
+                                                    (1U 
+                                                     & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                     if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                         if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                             if ((1U 
@@ -5745,7 +5775,22 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                         }
                                     }
                                 }
-                            } else if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 3U)))) {
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            if ((1U 
+                                                 & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                 if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                     if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                         if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
@@ -5755,12 +5800,15 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                     }
                                 }
                             }
-                        } else if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                            if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                                    if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                            = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 3U)))) {
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                        }
                                     }
                                 }
                             }
@@ -5781,6 +5829,19 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                         }
                                     }
                                 }
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 3U)))) {
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            if ((1U 
+                                                 & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata));
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         } else if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                             if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -5794,12 +5855,38 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                     }
                                 }
                             }
-                        } else if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                            if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                                    if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                            = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 3U)))) {
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata));
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                                = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                        }
+                                    }
+                                }
+                            }
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 3U)))) {
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata));
+                                        }
                                     }
                                 }
                             }
@@ -5816,11 +5903,33 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                     }
                                 }
                             }
-                        } else if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                                if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                        = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 3U)))) {
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata));
+                                    }
+                                }
+                            }
+                        } else {
+                            if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                            = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                    }
+                                }
+                            }
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 3U)))) {
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata));
+                                    }
                                 }
                             }
                         }
@@ -5838,24 +5947,111 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                     = ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))
                                         ? 0xffU : vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph);
                             }
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 2U)))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (0x80ULL 
+                                               | (QData)((IData)(vlSelf->simtop__DOT__core__DOT__lsu__DOT__amo_oldval)));
+                                    }
+                                }
+                            }
+                        } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                             >> 2U)))) {
+                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata));
+                            }
                         }
-                    } else if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                            if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                    = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                    } else {
+                        if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                        = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                }
+                            }
+                        }
+                        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                      >> 3U)))) {
+                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                          >> 2U)))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata));
+                                }
                             }
                         }
                     }
                 }
             }
-        } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
-                             >> 0xdU)))) {
+        } else {
             if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
-                          >> 0xcU)))) {
-                if ((0x80U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                    if ((0x40U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                        if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                          >> 0xdU)))) {
+                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                              >> 0xcU)))) {
+                    if ((0x80U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                        if ((0x40U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 3U)))) {
+                                        if ((1U & (~ 
+                                                   ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                    >> 2U)))) {
+                                            if ((2U 
+                                                 & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                                if (
+                                                    (1U 
+                                                     & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                                        = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else if ((1U & (~ 
+                                                  ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                   >> 3U)))) {
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            if ((1U 
+                                                 & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                                    = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 3U)))) {
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            if ((1U 
+                                                 & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                                    = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                 >> 3U)))) {
+                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                              >> 2U)))) {
+                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                        if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                                = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                        }
+                                    }
+                                }
+                            }
+                        } else if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                             if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                 if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
                                               >> 3U)))) {
@@ -5907,73 +6103,252 @@ VL_INLINE_OPT void Vsimtop___024root___sequent__TOP__0(Vsimtop___024root* vlSelf
                                 }
                             }
                         }
-                    } else if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                    } else if ((0x40U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                      >> 5U)))) {
+                            if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                                  >> 2U)))) {
+                                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                            if ((1U 
+                                                 & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
+                                                    = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if ((0x2000U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                              >> 0xcU)))) {
+                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                  >> 3U)))) {
+                        if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                }
+                            } else {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        } else if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        } else {
+                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                        }
+                    }
+                }
+            } else if ((0x1000U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+            } else if ((0x80U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                if ((0x40U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                    if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                         if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                             if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
                                           >> 3U)))) {
-                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
-                                              >> 2U)))) {
+                                if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                     if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                         if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                                = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                         }
+                                    } else {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                     }
                                 }
                             }
                         } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
                                              >> 3U)))) {
-                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
-                                          >> 2U)))) {
+                            if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                 if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                     if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                            = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                     }
+                                } else {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                 }
                             }
                         }
                     } else if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                         if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
                                       >> 3U)))) {
-                            if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
-                                          >> 2U)))) {
+                            if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                 if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                     if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                            = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                     }
+                                } else {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                 }
                             }
                         }
                     } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
                                          >> 3U)))) {
-                        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
-                                      >> 2U)))) {
+                        if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                             if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
                                 if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                        = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_oph;
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                 }
+                            } else {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        } else if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((1U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_r0));
                             }
                         }
                     }
-                } else if ((0x40U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
-                                  >> 5U)))) {
-                        if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                            if ((8U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                                if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
-                                              >> 2U)))) {
-                                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
-                                        if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
-                                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__passthrough_val 
-                                                = vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_csr_rdata;
-                                        }
+                } else if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                    if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                      >> 3U)))) {
+                            if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                     }
+                                } else {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                                 }
                             }
                         }
+                    } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                         >> 3U)))) {
+                        if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                }
+                            } else {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        }
+                    }
+                } else if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                  >> 3U)))) {
+                        if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                }
+                            } else {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        }
+                    }
+                } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                     >> 3U)))) {
+                    if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        } else {
+                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                        }
+                    }
+                }
+            } else if ((0x40U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                if ((0x20U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                    if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                        if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                      >> 3U)))) {
+                            if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                    if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                    }
+                                } else {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                }
+                            }
+                        }
+                    } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                         >> 3U)))) {
+                        if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                }
+                            } else {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        }
+                    }
+                } else if ((0x10U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                    if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                  >> 3U)))) {
+                        if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                                if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                    vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                        = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                                }
+                            } else {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        }
+                    }
+                } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                     >> 3U)))) {
+                    if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                        if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                            if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                                vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                    = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                            }
+                        } else {
+                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                        }
+                    }
+                }
+            } else if ((1U & (~ ((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw) 
+                                 >> 3U)))) {
+                if ((4U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                    if ((2U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
+                        if ((1U & (~ (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw)))) {
+                            vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                                = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
+                        }
+                    } else {
+                        vlSelf->simtop__DOT__core__DOT__lsu__DOT__wdata 
+                            = (QData)((IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_opl));
                     }
                 }
             }

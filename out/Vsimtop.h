@@ -53,6 +53,22 @@ class Vsimtop VL_NOT_FINAL {
     VL_OUT(&vram_addr,22,0);
     VL_IN(&vram_din,31,0);
     VL_OUT(&vram_dout,31,0);
+    VL_IN(&v1_x,31,0);
+    VL_IN(&v1_y,31,0);
+    VL_IN(&v2_x,31,0);
+    VL_IN(&v2_y,31,0);
+    VL_IN(&v3_x,31,0);
+    VL_IN(&v3_y,31,0);
+    VL_IN(&v1_a,31,0);
+    VL_IN(&v2_a,31,0);
+    VL_IN(&v3_a,31,0);
+    VL_OUT(&Aa,31,0);
+    VL_OUT(&Ba,31,0);
+    VL_OUT(&C,31,0);
+    VL_OUT(&c,31,0);
+    VL_IN(&x,31,0);
+    VL_IN(&y,31,0);
+    VL_OUT(&interp,31,0);
     VL_OUT64(&dm_req_wdata,63,0);
     VL_IN64(&dm_resp_rdata,63,0);
 
