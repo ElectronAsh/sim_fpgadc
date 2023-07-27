@@ -65,8 +65,8 @@ assign C = C_mult_1 - C_mult_2;
 
 // ddx = -Aa / C;
 // ddy = -Ba / C;
-wire signed [31:0] ddx = (-Aa) / C;	// TODO: Don't know if the sign flip will work here?
-wire signed [31:0] ddy = (-Ba) / C;	// TODO: Don't know if the sign flip will work here?
+wire signed [31:0] ddx = (-Aa) / C;	// TODO: Don't know if the neg will work as a sign flip here?
+wire signed [31:0] ddy = (-Ba) / C;	// TODO: Don't know if the neg will work as a sign flip here?
 
 // c = v1_a - (ddx * v1_x) - (ddy * v1_y);
 wire signed [31:0] ddx_v1x_mult = (ddx * v1_x) / (1<<FRAC_BITS);

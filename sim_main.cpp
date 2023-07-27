@@ -228,7 +228,7 @@ unsigned int vram_size = 1024 * 1024 * 8;	// 8MB words (32-bit wide).
 uint32_t* vram_ptr = (uint32_t*)malloc(vram_size);
 
 unsigned int z_size = 1024 * 1024 * 4;		// 4MB. (32-bit wide).
-uint32_t *z_ptr = (uint32_t *)malloc(z_size*4);
+float *z_ptr = (float *)malloc(z_size*4);
 
 unsigned int tag_size = 1024 * 1024 * 4;		// 4MB. (32-bit wide).
 uint32_t* tag_ptr = (uint32_t*)malloc(tag_size*4);
@@ -670,8 +670,7 @@ union mem128i {
 };
 
 // Clamp and flip a texture coordinate
-template<bool pp_Clamp, bool pp_Flip>
-static int ClampFlip(int coord, int size) {
+static int ClampFlip(bool pp_Clamp, bool pp_Flip, int coord, int size) {
 	if (pp_Clamp) { // clamp
 		if (coord < 0) {
 			coord = 0;
@@ -698,7 +697,11 @@ uint32_t texel_offs = 0;
 
 #define FRAC_BITS 8
 
-void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, float y2, float y3, float y4, float z1, float z2, float z3) {
+void rasterize_triangle_fixed(float x1, float x2, float x3,
+							  float y1, float y2, float y3,
+							  float z1, float z2, float z3,
+							  float u1, float u2, float u3,
+							  float v1, float v2, float v3) {
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
@@ -741,12 +744,12 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	const int FX1 = float_to_fixed(x1, FRAC_BITS);
 	const int FX2 = float_to_fixed(x2, FRAC_BITS);
 	const int FX3 = float_to_fixed(x3, FRAC_BITS);
-	const int FX4 = float_to_fixed(x4, FRAC_BITS);
+	//const int FX4 = float_to_fixed(x4, FRAC_BITS);
 
 	const int FY1 = float_to_fixed(y1, FRAC_BITS);
 	const int FY2 = float_to_fixed(y2, FRAC_BITS);
 	const int FY3 = float_to_fixed(y3, FRAC_BITS);
-	const int FY4 = float_to_fixed(y4, FRAC_BITS);
+	//const int FY4 = float_to_fixed(y4, FRAC_BITS);
 	
 	const int FZ1 = float_to_fixed(z1, FRAC_BITS);
 
@@ -784,7 +787,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	//printf("float y2_sub_y1: %f  core v2y_sub_v1y: %f\n", y2_sub_y1, ((float)v2y_sub_v1y)/(1<<FRAC_BITS) );
 	//printf("float x2_sub_x1: %f  core v2a_sub_v1a: %f\n", x2_sub_x1, ((float)v2a_sub_v1a)/(1<<FRAC_BITS) );
 	//printf("float y3_sub_y1: %f  core v3y_sub_v1y: %f\n", y3_sub_y1, ((float)v3y_sub_v1y)/(1<<FRAC_BITS) );
-	printf("float Aa = %4.6f        core Aa (float) %4.6f \n", Aa, ((float)Aa_fixed)/(1<<FRAC_BITS) );
+	//printf("float Aa = %4.6f        core Aa (float) %4.6f \n", Aa, ((float)Aa_fixed)/(1<<FRAC_BITS) );
 	//printf("fixed Aa_mult_1 raw = 0x%08X \n", top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__Aa_mult_1);
 	//printf("v3a_sub_v1a = 0x%08X \n", top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3a_sub_v1a);
 	//printf("v2y_sub_v1y = 0x%08X \n\n", top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2y_sub_v1y);
@@ -794,13 +797,13 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	const int FDX12 = sgn ? (FX2-FX1) : (FX1-FX2);
 	const int FDX23 = sgn ? (FX3-FX2) : (FX2-FX3);
 	const int FDX31 = sgn ? (FX1-FX3) : (FX3-FX1);
-	const int FDX41 = (x4 || y4) ? sgn ? (FX1-FX4) : (FX4-FX1) : 0;
+	//const int FDX41 = (x4 || y4) ? sgn ? (FX1-FX4) : (FX4-FX1) : 0;
 	//printf("fixed FDX12: %f  FDX23: %f  FDX31: %f\n", ((float)FDX12/1<<FRAC_BITS), ((float)FDX23/1<<FRAC_BITS), ((float)FDX31/1<<FRAC_BITS));
 
 	const int FDY12 = sgn ? (FY2-FY1) : (FY1-FY2);
 	const int FDY23 = sgn ? (FY3-FY2) : (FY2-FY3);
 	const int FDY31 = sgn ? (FY1-FY3) : (FY3-FY1);
-	const int FDY41 = (x4 || y4) ? sgn ? (FY1-FY4) : (FY4-FY1) : 0;
+	//const int FDY41 = (x4 || y4) ? sgn ? (FY1-FY4) : (FY4-FY1) : 0;
 	//printf("fixed FDY12: %f  FDY23: %f  FDY31: %f\n", ((float)FDY12/1<<FRAC_BITS), ((float)FDY23/1<<FRAC_BITS), ((float)FDY31/1<<FRAC_BITS));
 
 	// Bounding rectangle
@@ -817,13 +820,13 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	int FDY12_MULT = MUL_PREC(FDY12, FX1, FRAC_BITS); int FDX12_MULT = MUL_PREC(FDX12, FY1, FRAC_BITS);
 	int FDY23_MULT = MUL_PREC(FDY23, FX2, FRAC_BITS); int FDX23_MULT = MUL_PREC(FDX23, FY2, FRAC_BITS);
 	int FDY31_MULT = MUL_PREC(FDY31, FX3, FRAC_BITS); int FDX31_MULT = MUL_PREC(FDX31, FY3, FRAC_BITS);
-	int FDY41_MULT = MUL_PREC(FDY41, FX4, FRAC_BITS); int FDX41_MULT = MUL_PREC(FDX41, FY4, FRAC_BITS);
+	//int FDY41_MULT = MUL_PREC(FDY41, FX4, FRAC_BITS); int FDX41_MULT = MUL_PREC(FDX41, FY4, FRAC_BITS);
 	//printf("fixed FDY12_MULT: %f  FDX12_MULT: %f\n\n", ((float)FDY12_MULT/(1<<FRAC_BITS), ((float)FDX12_MULT/1<<FRAC_BITS) );
 
 	int C1 = FDY12_MULT - FDX12_MULT;
 	int C2 = FDY23_MULT - FDX23_MULT;
 	int C3 = FDY31_MULT - FDX31_MULT;
-	int C4 = (x4 || y4) ? FDY41_MULT - FDX41_MULT : 1;
+	//int C4 = (x4 || y4) ? FDY41_MULT - FDX41_MULT : 1;
 	//printf("fixed C1: %f  fixed C2: %f  fixed C3: %f\n\n", ((float)C1/1<<FRAC_BITS), ((float)C2/1<<FRAC_BITS), ((float)C3/1<<FRAC_BITS));
 
 	// Correct for fill convention
@@ -834,7 +837,21 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	PlaneStepper3 Z;
 	PlaneStepper3 U;
 	PlaneStepper3 V;
+
 	Z.Setup(x1, x2, x3, y1, y2, y3, z1, z2, z3);
+
+	// Texture size values are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
+	uint32_t tex_u_size = 1<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size+3);
+	uint32_t tex_v_size = 1<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size+3);
+
+	int w = tex_u_size-1;
+	int h = tex_v_size-1;
+
+	//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
+		U.Setup(x1, x2, x3, y1, y2, y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
+		V.Setup(x1, x2, x3, y1, y2, y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
+	//}
+
 
 	int halfpixel = 1<<(FRAC_BITS-1);
 	int y_ps = miny /*+ halfpixel*/;
@@ -845,12 +862,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 	//printf("fixed C1: %d   \n", CY1/(1<<4)  );
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 		// Convert UV coords to fixed-point, with 8 bits of fraction. (only using Vert A for now).
-		int ui = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, 8);
-		int vi = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0, 8);
-
-		// Texture size valies are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
-		uint32_t tex_u_size = 1<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size+3);
-		uint32_t tex_v_size = 1<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size+3);
+		//int ui = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, 8);
+		//int vi = float_to_fixed(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0, 8);
 
 		bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 		bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
@@ -867,9 +880,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 				int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 				int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 				int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
-				int Xhs41 = C4 + MUL_PREC(FDX41, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY41, x_ps<<FRAC_BITS, FRAC_BITS);
+				//int Xhs41 = C4 + MUL_PREC(FDX41, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY41, x_ps<<FRAC_BITS, FRAC_BITS);
 
-				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
+				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 /*&& Xhs41 >= 0*/;
 
 				uint32_t old_pixel = 0;
 				uint8_t alpha = 0;
@@ -878,17 +891,18 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 				if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_last) run_enable = 0;
 
 				if (inTriangle) {
-					float invW = Z.Ip(x_ps, y_ps);
+					float invW = Z.Ip(x_ps, y_ps);	// Interpolate the Z value, based on X and Y.
 					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
 
 					// Flat shading uses the colour from the third vertex. (DC System Bible PDF, page 204).
 					uint32_t vertex_c_col = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
 
 					if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
-						float u_fp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
-						float v_fp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
-						//float u = entry->ips.U.Ip(x, y, invW);
-						//float v = entry->ips.V.Ip(x, y, invW);
+						//float u_fp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
+						//float v_fp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
+						float u = U.Ip(x_ps, y_ps, invW);
+						float v = V.Ip(x_ps, y_ps, invW);
+						//printf("u: %f  v: %f\n", u, v);
 
 						//textel = entry->textureFetch(&entry->texture, u, v);
 						/*
@@ -896,22 +910,27 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 							offs = InterpolateOffs<true>(entry->ips.Ofs, x, y, W, *stencil);
 						}
 						*/
+						int ui = u * (1<<16);
+						int vi = v * (1<<16);
+						texel_offs = ui + (vi * tex_u_size);
 
 						//printf("tex_u_size: %d  tex_v_size: %d\n", tex_u_size, tex_v_size);
-						//auto offset = ClampFlip<pp_ClampU, pp_FlipU>(ui>>8, tex_u_size) + ClampFlip<pp_ClampV, pp_FlipV>(vi>>8, tex_v_size) * tex_u_size;
+						//texel_offs = ClampFlip(pp_ClampU, pp_FlipU, (ui>>8), tex_u_size) + ClampFlip(pp_ClampV, pp_FlipV, (vi>>8), tex_v_size * tex_u_size);
+						//printf("texel_offs: 0x%08X\n", texel_offs);
+
 						//mem128i px = ((mem128i*)vram_ptr)[offset];
 						//uint32_t offset = (ui>>8) + ((vi>>8) * tex_u_size);
-						texel_offs = x + ((vi>>8) * tex_u_size);
-						
+						//texel_offs = ui + ((vi>>8) * tex_u_size);
+
 						// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
 						// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
 						// 
 						// An example tex_cont value for the "Play" texture on the Menu is 0x140C8E00.
 						// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
-						texel_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont&0x1fffff) & 0xffffff;
+						texel_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont&0x1fffff);
 
-						uint32_t texel_full = vram_ptr[ ( texel_addr + (texel_offs>>2) ) & 0x3fffff ];	// 32-bit WORD addr. Masked to 16MB.
-						uint16_t texel_word = ((texel_offs&1)==0) ? (texel_full>>16) : (texel_full&0xffff);
+						uint32_t texel_full = vram_ptr[ (texel_addr + (texel_offs>>1)) & 0x1fffff ];	// 32-bit WORD addr. Masked to 16MB.
+						uint16_t texel_word = (texel_offs&1) ? (texel_full>>16) : (texel_full&0xffff);
 						
 						// Example texel words from the "Play" texture...
 						// texel_word: 0xFCCC
@@ -937,15 +956,14 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 					}
 
 					disp_addr = (y_ps * 640) + x_ps;
-					//disp_addr = (y * 640) + x;
 
-					uint32_t z1_r = float_to_fixed(z1, 30);			// Convert Z from float to fixed-point.
-					uint32_t z2_r = float_to_fixed(z2, 30);			// Convert Z from float to fixed-point.
-					uint32_t z3_r = float_to_fixed(z3, 30);			// Convert Z from float to fixed-point.
+					//uint32_t z_fixed = float_to_fixed(z, 30);		// Convert Z from float to fixed-point.
 
-					if ( z_ptr[disp_addr&(0x3fffff>>2)] < z3_r ) {	// Z-Compare of previous pixel/poly.
+					//if ( z_ptr[disp_addr&(0x3fffff>>2)] < z_fixed ) {	// Z-Compare of previous pixel/poly.
+					if ( z_ptr[disp_addr&(0x3fffff>>2)] < invW) {	// Z-Compare of previous pixel/poly.
 						// Overwrite value in Z-buffer if the new value is greater/closer.
-						if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ disp_addr&(0x3fffff>>2) ] = z3_r;
+						//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ disp_addr&(0x3fffff>>2) ] = z_fixed;
+						if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ disp_addr&(0x3fffff>>2) ] = invW;
 						tag_ptr[ disp_addr&(0x3fffff>>2) ] = top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr;
 						if ( (vertex_c_col&0x00ffffff) != 0x00CBCBFF ) {	// Hide the grey/purple smoke texture(s) in Crazy Taxi.
 							disp_ptr[ disp_addr&(0x3fffff>>2) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
@@ -954,10 +972,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4, float y1, 
 					}
 				}
 				x_ps = x_ps + 1;
-				ui = ui + (1<<8);
+				//ui = ui + (1<<8);
 			}
 			y_ps = y_ps + 1;
-			vi = vi + (1<<8);
+			//vi = vi + (1<<8);
 		}
 	}
 }
@@ -1052,6 +1070,16 @@ int verilate() {
 		float z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
 		float z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
 
+		float u1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
+		float u2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0;
+		float u3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0;
+		float u4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0;
+
+		float v1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
+		float v2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0;
+		float v3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0;
+		float v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
+
 		top->clk = 1;
 		top->eval();            // Evaluate model!
 		top->clk = 0;
@@ -1060,7 +1088,7 @@ int verilate() {
 		main_time++;            // Time passes...
 
 		//rasterize_triangle_float(x1, x2, x3, y1, y2, y3);
-		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3);
+		rasterize_triangle_fixed(x1,x2,x3, y1,y2,y3, z1,z2,z3, u1,u2,u3, v1,v2,v3);
 
 		return 1;
 	}
@@ -1631,7 +1659,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("        strip_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt);
 		ImGui::Text("         isp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst);
 		ImGui::Text("         tsp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
-		ImGui::Text("         tex_cont: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont);
+		ImGui::Text("         tcw_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont);
 		ImGui::Text("         vert_a_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
 		ImGui::Text("         vert_a_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y);
 		ImGui::Text("         vert_a_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z);

@@ -138,7 +138,7 @@ else begin
 			if (render_poly) begin
 				isp_vram_addr <= poly_addr;
 				
-				if (!opb_word[31]) strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5])  + 1;	// TriangleStrips.
+				if (!opb_word[31]) strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) + 1;	// TriangleStrips.
 				else begin
 					strip_cnt <= 3'd0;
 					array_cnt <= num_prims + 1;	// For Triangle Arrays or Quads.
