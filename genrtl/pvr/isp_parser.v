@@ -54,8 +54,12 @@ wire [2:0] tex_u_size = tsp_inst[5:3];
 wire [2:0] tex_v_size = tsp_inst[2:0];
 
 
-reg [31:0] tex_cont;
-wire [2:0] pix_format = tex_cont[29:27];
+reg [31:0] tcw_word;
+wire mip_map = tcw_word[31];
+wire vq_comp = tcw_word[30];
+wire scan_order = tcw_word[26];
+wire stride = tcw_word[25];
+wire [2:0] pix_format = tcw_word[29:27];
 
 reg [31:0] tsp2_inst;
 reg [31:0] tex2_cont;
@@ -150,7 +154,7 @@ else begin
 		end
 		1:  isp_inst <= isp_vram_din;
 		2:  begin /*if (shadow) tsp2_inst <= isp_vram_din; else*/ tsp_inst <= isp_vram_din; end
-		3:  begin /*if (shadow) tex2_cont <= isp_vram_din; else*/ tex_cont <= isp_vram_din; isp_state <= 8'd6; end
+		3:  begin /*if (shadow) tex2_cont <= isp_vram_din; else*/ tcw_word <= isp_vram_din; isp_state <= 8'd6; end
 		
 		// if (shadow)...
 		//4:  tsp2_inst <= isp_vram_din;

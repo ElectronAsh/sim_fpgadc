@@ -843,6 +843,10 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_format;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state;
@@ -1357,7 +1361,7 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp2_inst;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex2_cont;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;

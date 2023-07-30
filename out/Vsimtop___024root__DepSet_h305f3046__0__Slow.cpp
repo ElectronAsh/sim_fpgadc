@@ -386,8 +386,20 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
                  >> 3U));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size 
         = (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map 
+        = (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
+           >> 0x1fU);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp 
+        = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
+                 >> 0x1eU));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order 
+        = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
+                 >> 0x1aU));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride 
+        = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
+                 >> 0x19U));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_format 
-        = (7U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_cont 
+        = (7U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
                  >> 0x1bU));
     vlSelf->simtop__DOT__core__DOT__e2_lsu_fpul_wen 
         = vlSelf->simtop__DOT__core__DOT__lsu__DOT__e2_reg_fpul_wen;
@@ -7700,6 +7712,18 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__core__DOT__fp_p1_waw_busy 
         = (1U & (vlSelf->simtop__DOT__core__DOT__fp_scoreboard 
                  >> (IData)(vlSelf->simtop__DOT__core__DOT__fpsb_set_p1)));
+}
+
+extern const VlUnpacked<CData/*0:0*/, 256> Vsimtop__ConstPool__TABLE_ha04c9b6f_0;
+extern const VlUnpacked<CData/*0:0*/, 256> Vsimtop__ConstPool__TABLE_h6591541e_0;
+
+VL_ATTR_COLD void Vsimtop___024root___settle__TOP__1(Vsimtop___024root* vlSelf) {
+    if (false && vlSelf) {}  // Prevent unused
+    Vsimtop__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vsimtop___024root___settle__TOP__1\n"); );
+    // Init
+    CData/*7:0*/ __Vtableidx1;
+    // Body
     if (vlSelf->simtop__DOT__core__DOT__rf_rbank_p0) {
         vlSelf->simtop__DOT__core__DOT__rf__DOT__rf_rbank0 = 1U;
         vlSelf->simtop__DOT__core__DOT__rf__DOT__rf_rbank1 = 1U;
@@ -7716,18 +7740,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__core__DOT__fp_p0_waw_busy 
         = (1U & (vlSelf->simtop__DOT__core__DOT__fp_scoreboard 
                  >> (IData)(vlSelf->simtop__DOT__core__DOT__fpsb_set_p0)));
-}
-
-extern const VlUnpacked<CData/*0:0*/, 256> Vsimtop__ConstPool__TABLE_ha04c9b6f_0;
-extern const VlUnpacked<CData/*0:0*/, 256> Vsimtop__ConstPool__TABLE_h6591541e_0;
-
-VL_ATTR_COLD void Vsimtop___024root___settle__TOP__1(Vsimtop___024root* vlSelf) {
-    if (false && vlSelf) {}  // Prevent unused
-    Vsimtop__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vsimtop___024root___settle__TOP__1\n"); );
-    // Init
-    CData/*7:0*/ __Vtableidx1;
-    // Body
     vlSelf->simtop__DOT__core__DOT__rf__DOT__rf_rsrc0 
         = vlSelf->simtop__DOT__core__DOT__rf_rsrc[0U];
     vlSelf->simtop__DOT__core__DOT__rf__DOT__rf_rsrc1 
