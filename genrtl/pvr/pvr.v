@@ -496,15 +496,15 @@ ra_parser ra_parser_inst (
 	//.REGION_BASE( 32'h001667C0 ),		// input [31:0]  REGION_BASE.   Logo.
 	//.PARAM_BASE( 32'h00000000 ),		// input [31:0]  PARAM_BASE.    Logo
 	
-	.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG. Menu / Menu2.
-	.TA_ALLOC_CTRL( 32'h00100303 ),		// input [31:0]  TA_ALLOC_CTRL. Menu / Menu2.
-	.REGION_BASE( 32'h001667C0 ),		// input [31:0]  REGION_BASE.   Menu / Menu2.
-	.PARAM_BASE( 32'h00000000 ),		// input [31:0]  PARAM_BASE.    Menu / Menu2
+	//.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG. Menu / Menu2.
+	//.TA_ALLOC_CTRL( 32'h00100303 ),		// input [31:0]  TA_ALLOC_CTRL. Menu / Menu2.
+	//.REGION_BASE( 32'h001667C0 ),		// input [31:0]  REGION_BASE.   Menu / Menu2.
+	//.PARAM_BASE( 32'h00000000 ),		// input [31:0]  PARAM_BASE.    Menu / Menu2
 	
-	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Taxi.
-	//.TA_ALLOC_CTRL( 32'h00101313 ),	// input [31:0]  TA_ALLOC_CTRL. Taxi.
-	//.REGION_BASE( 32'h004D33C8 ),		// input [31:0]  REGION_BASE.   Taxi.
-	//.PARAM_BASE( 32'h00400000 ),		// input [31:0]  PARAM_BASE.    Taxi.
+	.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Taxi.
+	.TA_ALLOC_CTRL( 32'h00101313 ),	// input [31:0]  TA_ALLOC_CTRL. Taxi.
+	.REGION_BASE( 32'h004D33C8 ),		// input [31:0]  REGION_BASE.   Taxi.
+	.PARAM_BASE( 32'h00400000 ),		// input [31:0]  PARAM_BASE.    Taxi.
 	
 	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Sonic.
 	//.TA_ALLOC_CTRL( 32'h00120303 ),	// input [31:0]  TA_ALLOC_CTRL. Sonic.

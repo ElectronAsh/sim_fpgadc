@@ -57,6 +57,7 @@ wire [2:0] tex_v_size = tsp_inst[2:0];
 reg [31:0] tcw_word;
 wire mip_map = tcw_word[31];
 wire vq_comp = tcw_word[30];
+wire pix_fmt = tcw_word[29:27];
 wire scan_order = tcw_word[26];
 wire stride = tcw_word[25];
 wire [2:0] pix_format = tcw_word[29:27];

@@ -178,8 +178,8 @@ wire g2_ext_cs   = req_addr>=29'h01000000 && req_addr<=29'h01ffffff;
 /// CS1...
 wire vram_64_cs       = req_addr>=29'h04000000 && req_addr<=29'h047fffff;	// 8MB (64-bit access).
 wire vram_32_cs       = req_addr>=29'h05000000 && req_addr<=29'h057fffff;	// 8MB (32-bit access).
-wire vram_64_mirr_cs  = req_addr>=29'h06000000 && req_addr<=29'h067fffff;	// 8MB (64-bit access).
-wire vram_32_mirr_cs  = req_addr>=29'h07000000 && req_addr<=29'h077fffff;	// 8MB (32-bit access).
+wire vram_64_mirr_cs  = req_addr>=29'h06000000 && req_addr<=29'h067fffff;	// 8MB (Mirror. 64-bit access).
+wire vram_32_mirr_cs  = req_addr>=29'h07000000 && req_addr<=29'h077fffff;	// 8MB (Mirror. 32-bit access).
 
 // CS3...
 wire sdram_cs	 = req_addr>=29'h08000000 && req_addr<=29'h0bffffff;

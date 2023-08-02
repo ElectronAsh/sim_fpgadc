@@ -845,6 +845,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_format;
@@ -853,6 +854,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt;
     CData/*3:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_words;
+    CData/*0:0*/ __Vdly__simtop__DOT__pvr__DOT__poly_drawn;
     CData/*0:0*/ __VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n;
     CData/*0:0*/ __Vclklast__TOP__clk;
     CData/*0:0*/ __Vclklast__TOP____VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n;
@@ -1438,6 +1440,10 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__ddy_v1y_mult;
     IData/*31:0*/ simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__x_mult_ddx;
     IData/*31:0*/ simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__y_mult_ddy;
+    IData/*23:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_vram_addr;
+    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_trans_mod;
+    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_puncht;
+    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__opb_word;
     VL_OUT64(dm_req_wdata,63,0);
     VL_IN64(dm_resp_rdata,63,0);
     QData/*63:0*/ simtop__DOT__dm_req_wdata;
