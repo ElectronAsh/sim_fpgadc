@@ -1533,9 +1533,15 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__ddy_v1y_mult = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__x_mult_ddx = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__y_mult_ddy = VL_RAND_RESET_I(32);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state = VL_RAND_RESET_I(8);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_vram_addr = VL_RAND_RESET_I(24);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_opaque = VL_RAND_RESET_I(32);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_opaque_mod = VL_RAND_RESET_I(32);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_trans = VL_RAND_RESET_I(32);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_trans_mod = VL_RAND_RESET_I(32);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_puncht = VL_RAND_RESET_I(32);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region = VL_RAND_RESET_I(24);
+    vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt = VL_RAND_RESET_I(3);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__opb_word = VL_RAND_RESET_I(32);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__poly_drawn = VL_RAND_RESET_I(1);
     vlSelf->__VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n = VL_RAND_RESET_I(1);

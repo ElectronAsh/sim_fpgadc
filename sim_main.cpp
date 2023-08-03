@@ -705,6 +705,38 @@ const uint32_t MipPoint[8] =
 	0x15556//1024
 };
 
+uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
+{
+	uint32_t rv=0;//low 2 bits are directly passed  -> needs some misc stuff to work.
+	//However, Pvr internally maps the 64b banks "as if" they were twiddled :p
+
+	uint32_t sh=0;
+	x_sz>>=1;
+	y_sz>>=1;
+	while (x_sz!=0 || y_sz!=0)
+	{
+		if (y_sz)
+		{
+			uint32_t temp=y&1;
+			rv|=temp<<sh;
+
+			y_sz>>=1;
+			y>>=1;
+			sh++;
+		}
+		if (x_sz)
+		{
+			uint32_t temp=x&1;
+			rv|=temp<<sh;
+
+			x_sz>>=1;
+			x>>=1;
+			sh++;
+		}
+	}
+	return rv;
+}
+
 uint32_t texel_addr = 0;
 uint32_t texel_offs = 0;
 
@@ -715,10 +747,28 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 							  float z1, float z2, float z3,
 							  float u1, float u2, float u3,
 							  float v1, float v2, float v3) {
+	// Lazy clip...
+	/*
+	if (x1<10) x1=10;
+	if (x2<10) x2=10;
+	if (x3<10) x3=10;
+
+	if (y1<10) y1=10;
+	if (y2<10) y2=10;
+	if (y3<10) y3=10;
+
+	if (x1>639) x1=639;
+	if (x2>639) x2=639;
+	if (x3>639) x3=639;
+
+	if (y1>479) y1=479;
+	if (y2>479) y2=479;
+	if (y3>479) y3=479;
+	*/
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
-	if (x1<2 || x2<2 || x3<2 || y1<2 || y2<2 || y3<2) return;	// Hide some spikey bits.
+	if (x1<10 || x2<10 || x3<10 || y1<10 || y2<10 || y3<10) return;	// Hide some spikey bits.
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
@@ -852,6 +902,12 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	PlaneStepper3 V;
 
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		// Triangle Array...
+		//if ((top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)==0x80000000) run_enable = 0;
+
+		// Quad Array...
+		//if ((top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)==0xA0000000) run_enable = 0;
+
 		Z.Setup(x1, x2, x3, y1, y2, y3, z1, z2, z3);
 
 		// Texture size values are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
@@ -924,6 +980,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 						// Decode Twiddled texture offset...
 						if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) {
+							/*
 							bool v10 = vi&0x0400; bool v09 = vi&0x0200; bool v08 = vi&0x0100; bool v07 = vi&0x0080;
 							bool v06 = vi&0x0040; bool v05 = vi&0x0020; bool v04 = vi&0x0010; bool v03 = vi&0x0008;
 							bool v02 = vi&0x0004; bool v01 = vi&0x0002; bool v00 = vi&0x0001;
@@ -932,13 +989,27 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 							bool u06 = ui&0x0040; bool u05 = ui&0x0020; bool u04 = ui&0x0010; bool u03 = ui&0x0008;
 							bool u02 = ui&0x0004; bool u01 = ui&0x0002; bool u00 = ui&0x0001;
 
-							// Square textures...
-							texel_offs = (u10<<21) | (v10<<20) | (u09<<19) | (v09<<18) | (u08<<17) | (v08<<16) | (u07<<15) | (v07<<14) | (u06<<13) | (v06<<12) |
-										 (u05<<11) | (v05<<10) | (u04<<9)  | (v04<<8)  | (u03<<7)  | (v03<<6)  | (u02<<5)  | (v02<<4)  | (u01<<3)  | (v01<<2)  | (u00<<1)  | (v00);
+							if (tex_u_size==tex_v_size)	{	// Check for square texture.
+								texel_offs = (u10<<21) | (v10<<20) | (u09<<19) | (v09<<18) | (u08<<17) | (v08<<16) | (u07<<15) | (v07<<14) | (u06<<13) | (v06<<12) |
+											 (u05<<11) | (v05<<10) | (u04<<9)  | (v04<<8)  | (u03<<7)  | (v03<<6)  | (u02<<5)  | (v02<<4)  | (u01<<3)  | (v01<<2)  | (u00<<1)  | (v00);
+							}
+							else {	// Rectangle textures... TODO
 
-							// Rectangle textures... TODO
-							//texel_offs = (u10<<21) | (v10<<20) | (u09<<19) | (v09<<18) | (u08<<17) | (v08<<16) | (u07<<15) | (v07<<14) | (u06<<13) | (v06<<12) | (u05<<11) |
-								//(v05<<10) | (u04<<9)  | (v04<<8)  | (u03<<7)  | (v03<<6)  | (u02<<5)  | (v02<<4)  | (u01<<3)  | (v01<<2)  | (u00<<1)  | (v00);
+								texel_offs = (u10<<21) | (v10<<20) | (u09<<19) | (v09<<18) | (u08<<17) | (v08<<16) | (u07<<15) | (v07<<14) | (u06<<13) | (v06<<12) |
+									(u05<<11) | (v05<<10) | (u04<<9)  | (v04<<8)  | (u03<<7)  | (v03<<6)  | (u02<<5)  | (v02<<4)  | (u01<<3)  | (v01<<2)  | (u00<<1)  | (v00);
+
+								//texel_offs = 0x00000000;
+								//int i=0;
+								//while ( (1<<i) < tex_v_size ) {
+								//	texel_offs |= vi&(1<<i); i+=2;
+								//}
+								//i=0;
+								//while ((1<<i) < tex_u_size) {
+								//	texel_offs |= ui&(1<<(i+1)); i+=2;
+								//}
+							}*/
+
+							texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
 						}
 
 						//printf("u float: %f  ui: %d   v float: %f vi: %d\n", u, ui, v, vi);
@@ -952,55 +1023,56 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 						//uint32_t offset = (ui>>8) + ((vi>>8) * tex_u_size);
 						//texel_offs = ui + ((vi>>8) * tex_u_size);
 
-						uint32_t texel_word;
-						uint16_t texel_pix = 0xf0ff;	// Cyan.
+						uint16_t texel_pix0 = 0x0000;
+						uint16_t texel_pix1 = 0x0000;
+						uint16_t texel_pix2 = 0x0000;
+						uint16_t texel_pix3 = 0x0000;
 
-						uint8_t index_byte_0;
-						uint8_t index_byte_1;
-						uint8_t index_byte_2;
-						uint8_t index_byte_3;
-						uint32_t code_word;
+						uint16_t texel_pix = 0x0000;
 
 						if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
-							texel_addr += 0x800>>2;	// VQ Compressed texture. Skip the code book, point at the Index table.
-							if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {
+							if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map)
 								texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7];
+							
+							//texel_offs = ui + (vi * tex_u_size);	// Don't de-twiddle the offset?
+							uint8_t index_byte = vram_ptr[ (texel_addr+0x800 + (texel_offs>>2) ) & 0x7fffff];	// Read the index BYTE.
+							
+							// Read the four CODE BOOK pixels...
+							// Each INDEX value represents FOUR 16-bit pixels (8 bytes) in the CODE BOOK.
+							uint32_t code_addr = (texel_addr-0x800) + (index_byte*8);	// Four 16-bit pixels per index. 8 bytes.
+							texel_pix0  = vram_ptr[ (code_addr+1) & 0x7fffff ] << 8;
+							texel_pix0 |= vram_ptr[ (code_addr+0) & 0x7fffff ];
+
+							texel_pix1  = vram_ptr[ (code_addr+3) & 0x7fffff ] << 8;
+							texel_pix1 |= vram_ptr[ (code_addr+2) & 0x7fffff ];
+
+							texel_pix2  = vram_ptr[ (code_addr+5) & 0x7fffff ] << 8;
+							texel_pix2 |= vram_ptr[ (code_addr+4) & 0x7fffff ];
+							
+							texel_pix3  = vram_ptr[ (code_addr+7) & 0x7fffff ] << 8;
+							texel_pix3 |= vram_ptr[ (code_addr+6) & 0x7fffff ];
+
+							//switch ( (x&2) + (y&1) ) {
+							switch ( texel_offs&3 ) {
+								case 0: texel_pix = texel_pix0; break;
+								case 1: texel_pix = texel_pix1; break;
+								case 2: texel_pix = texel_pix2; break;
+								case 3: texel_pix = texel_pix3; break;
 							}
-							texel_word = vram_ptr[ (texel_addr + (texel_offs>>2)   ) & 0x1fffff];	// Read the INDEX byte!
-							index_byte_0 = texel_word>>24;
-							index_byte_1 = texel_word>>16;
-							index_byte_2 = texel_word>>8;
-							index_byte_3 = texel_word;
-							texel_pix = 0xff00;			// TESTING !! Red.
-							//texel_pix = vram_ptr[ (texel_addr-(0x800>>2)) + (index_byte_0) & 0x1fffff ];	// Read the first CODE BOOK pixel.
 						}
 						else {
-							if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {
-								//if (tcw.MipMapped) sa+=MipPoint[tsp.TexU]*tex->bpp/2;
+							if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {	// Mipmapped, but no VQ.
+								//sa+=MipPoint[tsp.TexU]*tex->bpp/2;
 								//texconv = tex->TW;
 								//texconv32 = tex->TW32;
 								//size=w*h*tex->bpp/8;	//size, in bytes, in vram
 								texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7] * 8;
-								texel_pix = 0xf0f0;			// TESTING !! Green.
+								//texel_pix = 0xf0f0;			// TESTING !! Green.
 							}
+							uint8_t byte1 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+1) & 0x7fffff];
+							uint8_t byte0 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+0) & 0x7fffff];
+							texel_pix = byte1<<8 | byte0;
 						}
-
-						/*
-						if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {
-							texel_pix = 0xf00f;			// TESTING !! Blue.
-						}
-						*/ 
-
-						uint8_t byte3 = vram_ptr[((texel_addr + ((texel_offs>>2)*4))+0) & 0x7fffff];
-						uint8_t byte2 = vram_ptr[((texel_addr + ((texel_offs>>2)*4))+1) & 0x7fffff];
-						uint8_t byte1 = vram_ptr[((texel_addr + ((texel_offs>>2)*4))+2) & 0x7fffff];
-						uint8_t byte0 = vram_ptr[((texel_addr + ((texel_offs>>2)*4))+3) & 0x7fffff];
-
-						// Byte swap here, because Wintel...
-						uint16_t upper_word = byte0<<8 | byte1;
-						uint16_t lower_word = byte2<<8 | byte3;
-
-						texel_pix = (texel_offs&1) ? upper_word : lower_word;
 
 						//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) texel_pix = 0xff0f;
 						
@@ -1012,6 +1084,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 								//rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);// Red.
 								//rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7) & 0x07);	// Green.
 								//rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2) & 0x07);	// Blue.
+
+								// Not sure why the menu seems to use pix_fmt 0 (ARGB 1555), but only looks correct when decoded as ARGB 4444?
 								rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
 								rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
 								rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
@@ -1019,14 +1093,14 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 							else if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt==1) {
 								// RGB 565...								
 								rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
-								rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9) & 0x3;	// Green.
-								rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2) & 0x7;	// Blue.
+								rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
+								rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
 							}
 							else if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt==2) {
 								// ARGB 4444...
-								rgb[0] = ((texel_pix>>4) & 0xf0);	// Red.
-								rgb[1] = ((texel_pix>>0) & 0xf0);	// Green.
-								rgb[2] = ((texel_pix<<4) & 0xf0);	// Blue.
+								rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+								rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+								rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
 							}
 						///
 						//else {
@@ -1076,10 +1150,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 					}
 				}
 				x_ps = x_ps + 1;
-				//ui = ui + (1<<8);
 			}
 			y_ps = y_ps + 1;
-			//vi = vi + (1<<8);
 		}
 	}
 }
@@ -1230,7 +1302,9 @@ int verilate() {
 		main_time++;            // Time passes...
 
 		//rasterize_triangle_float(x1, x2, x3, y1, y2, y3);
-		rasterize_triangle_fixed(x1,x2,x3, y1,y2,y3, z1,z2,z3, u1,u2,u3, v1,v2,v3);
+		//if ( (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)!=0xA0000000 ) // Skip drawing QUAD arrays, for now.
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) 
+				rasterize_triangle_fixed(x1,x2,x3, y1,y2,y3, z1,z2,z3, u1,u2,u3, v1,v2,v3);
 
 		return 1;
 	}
@@ -1553,10 +1627,10 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Begin("VRAM dump Editor");
 		mem_edit_3.Cols = 4;
 		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
-		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
-		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
-		mem_edit_3.HighlightMin = (texel_addr + texel_offs) & 0x7fffff;
-		mem_edit_3.HighlightMax = ((texel_addr + texel_offs) & 0x7fffff) + 256;
+		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
+		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		//mem_edit_3.HighlightMin = (texel_addr + texel_offs) & 0x7fffff;
+		//mem_edit_3.HighlightMax = ((texel_addr + texel_offs) & 0x7fffff) + 256;
 		mem_edit_3.DrawContents(vram_ptr, vram_size, 0);
 		ImGui::End();
 
@@ -1768,7 +1842,6 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("        vram_din: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__vram_din);
 		ImGui::Text("     next_region: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region);
 		ImGui::Text("   ol_jump_bytes: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes);
-		ImGui::Text("        opb_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word);
 		ImGui::Separator();
 		ImGui::Text("   FPU_PARAM_CFG: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__FPU_PARAM_CFG);
 		ImGui::Text("      ra_control: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_control);
@@ -1784,7 +1857,9 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("        ra_trans: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans);
 		ImGui::Text("    ra_trans_mod: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans_mod);
 		ImGui::Text("       ra_puncht: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_puncht);
+		ImGui::Separator();
 		uint8_t s_mask = top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__strip_mask;
+		ImGui::Text("        opb_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word);
 		ImGui::Text("      strip_mask: 0b%d%d%d%d%d%d", (s_mask&1), (s_mask&2)>>1, (s_mask&4)>>2, (s_mask&8)>>3, (s_mask&16)>>4, (s_mask&32)>>5, (s_mask&64)>>6 );
 		ImGui::Text("       num_prims: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__num_prims);
 		ImGui::Text("          shadow: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__shadow);
@@ -1799,11 +1874,17 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Begin(" ISP Parser");
 		ImGui::Text("        isp_state: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state);
 		ImGui::Text("        strip_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt);
+		ImGui::Text("        array_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt);
 		ImGui::Text("         isp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst);
 		ImGui::Text("         tsp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
 		ImGui::Text("         tcw_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
 		ImGui::Text("       texel_addr: 0x%08X", texel_addr);
-		ImGui::Text("     texel_offset: 0x%08X", texel_offs);
+		ImGui::Text("        texel_off: 0x%08X", texel_offs);
+		ImGui::Text("       tex_u_size: %d", 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7) );
+		ImGui::Text("       tex_v_size: %d", 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size&7) );
+		ImGui::Text("          texture: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture);
+		ImGui::Text("           offset: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__offset);
+		ImGui::Text("        uv_16_bit: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit);
 		ImGui::Text(" mipmap: %d     vq: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp);
 		ImGui::Text("         vert_a_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
 		ImGui::Text("         vert_a_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y);
@@ -1865,13 +1946,20 @@ int main(int argc, char** argv, char** env) {
 		//g_pSwapChain->Present(1, 0); // Present with vsync
 		g_pSwapChain->Present(0, 0); // Present without vsync
 
-
 		//ram_ptr[0] = 0x00000000; // Don't remember what this is for??
 
 		//my_dram = calloc(1, );
 
-		if (run_enable) for (int step = 0; step < 256; step++) verilate();	// Simulates MUCH faster if it's done in batches.
-		else {																// But, that will affect the values we can grab for the GUI.
+		if (run_enable) for (int step = 0; step < 256; step++) {	// Simulates MUCH faster if it's done in batches.
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) run_enable = 0;
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x28e50) run_enable = 0;
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) run_enable = 0;
+			/*if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state==1 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) run_enable = 0;
+			else*/ verilate();
+			/*if (main_time==391280) run_enable = 0;
+			else verilate();*/
+		}
+		else {														// But, that will affect the GUI update rate / value fetch.
 			if (single_step) verilate();
 			if (multi_step) for (int step = 0; step < multi_step_amount; step++) verilate();
 		}

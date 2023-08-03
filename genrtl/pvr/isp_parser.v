@@ -143,27 +143,45 @@ else begin
 			if (render_poly) begin
 				isp_vram_addr <= poly_addr;
 				
-				if (!opb_word[31]) strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) + 1;	// TriangleStrips.
-				else begin
-					strip_cnt <= 3'd0;
-					array_cnt <= num_prims + 1;	// For Triangle Arrays or Quads.
+				if (!opb_word[31]) begin	// TriangleStrips.
+					if (!strip_mask) begin	// Nothing to draw for this strip.
+						//strip_cnt <= 3'd0;	// Sanity check.
+						//array_cnt <= 4'd0;	// Sanity check.
+						poly_drawn <= 1'b1;
+					end
+					else begin
+						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) /*- 1*/;
+						//array_cnt <= 4'd0;	// Sanity check.
+						isp_vram_rd <= 1'b1;
+						isp_state <= 8'd1;
+					end
 				end
-				
-				isp_vram_rd <= 1'b1;
-				isp_state <= 8'd1;
+				else /*if (opb_word[31:29]==3'b100 || opb_word[31:29]==3'b101)*/ begin	// Triangle Arrays or Quads.
+					strip_cnt <= 3'd0;
+					array_cnt <= num_prims /*-1*/;
+					isp_vram_rd <= 1'b1;
+					isp_state <= 8'd1;
+				end
+				/*
+				else begin
+					strip_cnt <= 3'd0;	// Sanity check.
+					array_cnt <= 4'd0;	// Sanity check.
+					poly_drawn <= 1'b1;	// No idea which prim type, so skip!
+				end
+				*/
 			end
 		end
 		1:  isp_inst <= isp_vram_din;
-		2:  begin /*if (shadow) tsp2_inst <= isp_vram_din; else*/ tsp_inst <= isp_vram_din; end
-		3:  begin /*if (shadow) tex2_cont <= isp_vram_din; else*/ tcw_word <= isp_vram_din; isp_state <= 8'd6; end
+		2:  tsp_inst <= isp_vram_din;
+		3:  begin tcw_word <= isp_vram_din; /*if (shadow) isp_state <= 8'd4; else*/ isp_state <= 8'd6; end	// Shadow still breaks everything?
 		
 		// if (shadow)...
-		//4:  tsp2_inst <= isp_vram_din;
-		//5:  tex2_cont <= isp_vram_din;
+		4:  tsp2_inst <= isp_vram_din;
+		5:  tex2_cont <= isp_vram_din;
 		
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
-		8:  begin vert_a_z <= isp_vram_din;  if (!texture) isp_state <= 8'd11; end	// Skip UV if not Textured.
+		8:  begin vert_a_z <= isp_vram_din; if (!texture) isp_state <= 8'd11; end	// Skip UV if not Textured.
 		9:  begin vert_a_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd11; end	// Skip v0 if 16-bit UV. 
 		10: vert_a_v0 <= isp_vram_din;
 		11: begin
@@ -183,7 +201,7 @@ else begin
 		
 		16: vert_b_x <= isp_vram_din;
 		17: vert_b_y <= isp_vram_din;
-		18: begin vert_b_z <= isp_vram_din;  if (!texture) isp_state <= 8'd21; end	// Skip UV if not Textured.
+		18: begin vert_b_z <= isp_vram_din; if (!texture) isp_state <= 8'd21; end	// Skip UV if not Textured.
 		19: begin vert_b_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd21; end	// Skip v0 if 16-bit UV. 
 		20: vert_b_v0 <= isp_vram_din;
 		21: begin
@@ -203,7 +221,7 @@ else begin
 		
 		26: vert_c_x <= isp_vram_din;
 		27: vert_c_y <= isp_vram_din;
-		28: begin vert_c_z <= isp_vram_din;  if (!texture) isp_state <= 8'd31; end	// Skip UV if not Textured.
+		28: begin vert_c_z <= isp_vram_din; if (!texture) isp_state <= 8'd31; end	// Skip UV if not Textured.
 		29: begin vert_c_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd31; end	// Skip v0 if 16-bit UV. 
 		30: vert_c_v0 <= isp_vram_din;
 		31: begin
@@ -216,7 +234,7 @@ else begin
 		// if Two-volume...
 		32: vert_c_u1 <= isp_vram_din;
 		33: vert_c_v1 <= isp_vram_din;
-		34: begin vert_c_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd36; end
+		34: begin vert_c_base_col_1 <= isp_vram_din; /*if (!offset) isp_state <= 8'd36; end*/ isp_state <= 8'd46; end	// TESTING. Skip Vert D.
 		
 		// if Offset colour...
 		35: begin vert_c_off_col <= isp_vram_din; isp_state <= 8'd46; end	// TESTING. Skip Vert D.
@@ -264,7 +282,7 @@ else begin
 				else begin
 					array_cnt <= array_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - 4;
-					isp_state <= 8'd6;	// Jump back, to grab the next Array prim.
+					isp_state <= 8'd1;	// Jump back, to grab the next PRIM (including ISP/TSP/TCW).
 				end
 			end
 		end
@@ -273,6 +291,6 @@ else begin
 	endcase
 end
 
-wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
+wire [7:0] vert_words = ((two_volume&shadow) ? ((skip*2)+3) : (skip+3)) /*+ offset*/;
 
 endmodule

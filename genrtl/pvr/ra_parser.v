@@ -176,7 +176,7 @@ else begin
 		end
 		
 		10: begin
-			ra_vram_addr <= /*(opb_mode) ? ra_vram_addr-ol_jump_bytes :*/ ra_vram_addr+4;
+			//ra_vram_addr <= /*(opb_mode) ? ra_vram_addr-ol_jump_bytes :*/ ra_vram_addr+4;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
@@ -189,17 +189,17 @@ else begin
 		// Check for Object Pointer Block Link, or Primitive Type...
 		12: begin
 			if (!opb_word[31]) begin					// Triangle Strip.
-				poly_addr <= {opb_word[20:0], 2'b00};
+				poly_addr <= /*(PARAM_BASE&32'hf00000)+*/{opb_word[20:0], 2'b00};
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b100) begin		// Triangle Array.
-				poly_addr <= {opb_word[20:0], 2'b00};
+				poly_addr <= /*(PARAM_BASE&32'hf00000)+*/{opb_word[20:0], 2'b00};
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
 			else if (opb_word[31:29]==3'b101) begin		// Quad Array.
-				poly_addr <= {opb_word[20:0], 2'b00};
+				poly_addr <= /*(PARAM_BASE&32'hf00000)+*/{opb_word[20:0], 2'b00};
 				render_poly <= 1'b1;
 				ra_state <= ra_state + 8'd1;
 			end
