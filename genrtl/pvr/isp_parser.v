@@ -14,10 +14,38 @@ module isp_parser (
 	output reg isp_vram_wr,
 	output reg [23:0] isp_vram_addr,
 	input [31:0] isp_vram_din,
+	output reg [31:0] isp_vram_dout,
 	
 	output reg isp_entry_valid,
 	
-	output reg poly_drawn
+	output reg poly_drawn,
+	
+	//int C1 = FDY12 * FX1 - FDX12 * FY1;
+	input signed [31:0] FDY12,
+	input signed [31:0] FX1,
+	input signed [31:0] FDX12,
+	input signed [31:0] FY1,
+	
+	//int C2 = FDY23 * FX2 - FDX23 * FY2;
+	input signed [31:0] FDY23,
+	input signed [31:0] FX2,
+	input signed [31:0] FDX23,
+	input signed [31:0] FY2,
+	
+	//int C3 = FDY31 * FX3 - FDX31 * FY3;
+	input signed [31:0] FDY31,
+	input signed [31:0] FX3,
+	input signed [31:0] FDX31,
+	input signed [31:0] FY3,
+	
+	//input signed [31:0] x_ps,
+	//input signed [31:0] y_ps,
+	
+	input signed [31:0] minx,
+	input signed [31:0] miny,
+	
+	input signed [31:0] spanx,
+	input signed [31:0] spany
 );
 
 // OL Word bit decodes...
@@ -128,14 +156,15 @@ if (!reset_n) begin
 end
 else begin
 	//isp_vram_rd <= 1'b0;
-	//isp_vram_wr <= 1'b0;
+	isp_vram_wr <= 1'b0;
 	
 	isp_entry_valid <= 1'b0;
 	poly_drawn <= 1'b0;
 
 	if (isp_state > 0) begin
-		if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47) isp_state <= isp_state + 8'd1;
-		isp_vram_addr <= isp_vram_addr + 4;
+		//if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47 || isp_state != 8'd48 || isp_state != 8'd49 || isp_state != 8'd50) isp_state <= isp_state + 8'd1;
+		if (isp_state < 8'd45) isp_state <= isp_state + 8'd1;
+		if (isp_state < 8'd48) isp_vram_addr <= isp_vram_addr + 4;
 	end
 
 	case (isp_state)
@@ -145,33 +174,31 @@ else begin
 				
 				if (!opb_word[31]) begin	// TriangleStrips.
 					if (!strip_mask) begin	// Nothing to draw for this strip.
-						//strip_cnt <= 3'd0;	// Sanity check.
-						//array_cnt <= 4'd0;	// Sanity check.
+						strip_cnt <= 3'd0;	// Sanity check.
+						array_cnt <= 4'd0;	// Sanity check.
 						poly_drawn <= 1'b1;
 					end
 					else begin
-						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) /*- 1*/;
-						//array_cnt <= 4'd0;	// Sanity check.
+						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) +1;
+						array_cnt <= 4'd0;	// Sanity check.
 						isp_vram_rd <= 1'b1;
 						isp_state <= 8'd1;
 					end
 				end
-				else /*if (opb_word[31:29]==3'b100 || opb_word[31:29]==3'b101)*/ begin	// Triangle Arrays or Quads.
+				else if (opb_word[31:29]==3'b100 || opb_word[31:29]==3'b101) begin	// Triangle Arrays or Quads.
 					strip_cnt <= 3'd0;
 					array_cnt <= num_prims /*-1*/;
 					isp_vram_rd <= 1'b1;
 					isp_state <= 8'd1;
 				end
-				/*
 				else begin
 					strip_cnt <= 3'd0;	// Sanity check.
 					array_cnt <= 4'd0;	// Sanity check.
 					poly_drawn <= 1'b1;	// No idea which prim type, so skip!
 				end
-				*/
 			end
 		end
-		1:  isp_inst <= isp_vram_din;
+		1: begin isp_inst <= isp_vram_din; /*if (strip_cnt==7) strip_cnt <= 3'd0;*/ end
 		2:  tsp_inst <= isp_vram_din;
 		3:  begin tcw_word <= isp_vram_din; /*if (shadow) isp_state <= 8'd4; else*/ isp_state <= 8'd6; end	// Shadow still breaks everything?
 		
@@ -181,7 +208,7 @@ else begin
 		
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
-		8:  begin vert_a_z <= isp_vram_din; if (!texture) isp_state <= 8'd11; end	// Skip UV if not Textured.
+		8:  begin vert_a_z <= isp_vram_din; if (!texture) isp_state <= 8'd11; end	// Skip U+V if not Textured.
 		9:  begin vert_a_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd11; end	// Skip v0 if 16-bit UV. 
 		10: vert_a_v0 <= isp_vram_din;
 		11: begin
@@ -259,7 +286,10 @@ else begin
 		// if Offset colour...
 		45: vert_d_off_col <= isp_vram_din;
 		
-		46: isp_entry_valid <= 1'b1;
+		46: begin
+			isp_entry_valid <= 1'b1;
+			isp_state <= 8'd48;
+		end
 		
 		47: begin
 			if (!opb_word[31]) begin				// Triangle Strip.
@@ -287,10 +317,192 @@ else begin
 			end
 		end
 
+		48: begin
+				// Half-edge constants (setup).
+				//int C1 = FDY12 * FX1 - FDX12 * FY1;
+				mult1 <= (FDY12 * FX1);
+				mult2 <= (FDX12 * FY1);
+
+				//int C2 = FDY23 * FX2 - FDX23 * FY2;
+				mult3 <= (FDY23 * FX2);
+				mult4 <= (FDX23 * FY2);
+
+				//int C3 = FDY31 * FX3 - FDX31 * FY3;
+				mult5 <= (FDY31 * FX3);
+				mult6 <= (FDX31 * FY3);
+				
+				x <= 12'd0;
+				y <= 12'd0;
+				
+				y_ps <= miny;
+				
+				isp_state <= isp_state + 8'd1;
+		end
+		
+		49: begin
+			if (y < spany) begin
+				x_ps <= minx;
+				isp_state <= isp_state + 8'd1;
+			end
+			else begin
+				isp_state <= 8'd47;
+			end
+		end
+		
+		50: begin
+			if (x < spanx) begin
+				if (inTriangle) begin
+					isp_vram_addr <= ((y_ps * 640) + x_ps) << 2;
+					//isp_vram_dout <= 32'hfabcfabc;
+					isp_vram_dout <= vert_c_base_col_0;
+					isp_vram_wr <= 1'b1;
+				end
+				x <= x + 12'd1;
+				x_ps <= x_ps + 12'd1;
+			end
+			else begin
+				x <= 12'd0;
+				y <= y + 12'd1;
+				y_ps <= y_ps + 12'd1;
+				isp_state <= 8'd49;
+			end
+		end
+
 		default: ;
 	endcase
 end
 
 wire [7:0] vert_words = ((two_volume&shadow) ? ((skip*2)+3) : (skip+3)) /*+ offset*/;
+
+
+reg [11:0] x_ps;
+reg [11:0] y_ps;
+
+reg [11:0] x;
+reg [11:0] y;
+
+parameter FRAC_BITS = 8;
+
+// Half-edge constants
+//int C1 = FDY12 * FX1 - FDX12 * FY1;
+reg signed [63:0] mult1;
+reg signed [63:0] mult2;
+wire signed [31:0] C1 = (mult1 - mult2) / (1<<FRAC_BITS);
+
+//int C2 = FDY23 * FX2 - FDX23 * FY2;
+reg signed [63:0] mult3;
+reg signed [63:0] mult4;
+wire signed [31:0] C2 = (mult3 - mult4) / (1<<FRAC_BITS);
+
+//int C3 = FDY31 * FX3 - FDX31 * FY3;
+reg signed [63:0] mult5;
+reg signed [63:0] mult6;
+wire signed [31:0] C3 = (mult5 - mult6) / (1<<FRAC_BITS);
+
+
+//int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
+//int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
+//int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
+wire signed [63:0] mult7  = (FDX12 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [63:0] mult8  = (FDY12 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+
+wire signed [63:0] mult9  = (FDX23 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [63:0] mult10 = (FDY23 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+
+wire signed [63:0] mult11 = (FDX31 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [63:0] mult12 = (FDY31 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+
+wire signed [31:0] Xhs12 = C1 + (mult7  - mult8 );
+wire signed [31:0] Xhs23 = C2 + (mult9  - mult10);
+wire signed [31:0] Xhs31 = C2 + (mult11 - mult12);
+
+wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
+
+
+// Aa = ((v3_a - v1_a) * (v2_y - v1_y) - (v2_a - v1_a) * (v3_y - v1_y));
+// Ba = ((v3_x - v1_x) * (v2_a - v1_a) - (v2_x - v1_x) * (v3_a - v1_a));
+// C = ((v2_x - v1_x) * (v3_y - v1_y) - (v3_x - v1_x) * (v2_y - v1_y));
+/*
+edge_calc  edge_calc_c1 (
+	.v1_x( FDY12 ),
+	.v1_y( FX1 ),
+	
+	.v2_x( FDX12 ),
+	.v2_y( FY1 ),
+	
+	.v3_x( v3_x ),
+	.v3_y( v3_y ),
+	
+	.v1_a( v1_a ),
+	.v2_a( v2_a ),
+	.v3_a( v3_a ),
+	
+	.Aa( Aa ),
+	.Ba( Ba ),
+	
+	.C( C1 ),
+	
+	.c( c ),
+	
+	.x( x ),
+	.y( y ),
+	.interp( interp )
+);
+
+
+edge_calc  edge_calc_c2 (
+	.v1_x( v1_x ),
+	.v1_y( v1_y ),
+	
+	.v2_x( v2_x ),
+	.v2_y( v2_y ),
+	
+	.v3_x( v3_x ),
+	.v3_y( v3_y ),
+	
+	.v1_a( v1_a ),
+	.v2_a( v2_a ),
+	.v3_a( v3_a ),
+	
+	.Aa( Aa ),
+	.Ba( Ba ),
+	
+	.C( C ),
+	
+	.c( c ),
+	
+	.x( x ),
+	.y( y ),
+	.interp( interp )
+);
+
+
+edge_calc  edge_calc_c3 (
+	.v1_x( v1_x ),
+	.v1_y( v1_y ),
+	
+	.v2_x( v2_x ),
+	.v2_y( v2_y ),
+	
+	.v3_x( v3_x ),
+	.v3_y( v3_y ),
+	
+	.v1_a( v1_a ),
+	.v2_a( v2_a ),
+	.v3_a( v3_a ),
+	
+	.Aa( Aa ),
+	.Ba( Ba ),
+	
+	.C( C ),
+	
+	.c( c ),
+	
+	.x( x ),
+	.y( y ),
+	.interp( interp )
+);
+*/
+
 
 endmodule

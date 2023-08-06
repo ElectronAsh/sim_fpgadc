@@ -69,6 +69,22 @@ class Vsimtop VL_NOT_FINAL {
     VL_IN(&x,31,0);
     VL_IN(&y,31,0);
     VL_OUT(&interp,31,0);
+    VL_IN(&FDY12,31,0);
+    VL_IN(&FX1,31,0);
+    VL_IN(&FDX12,31,0);
+    VL_IN(&FY1,31,0);
+    VL_IN(&FDY23,31,0);
+    VL_IN(&FX2,31,0);
+    VL_IN(&FDX23,31,0);
+    VL_IN(&FY2,31,0);
+    VL_IN(&FDY31,31,0);
+    VL_IN(&FX3,31,0);
+    VL_IN(&FDX31,31,0);
+    VL_IN(&FY3,31,0);
+    VL_IN(&minx,31,0);
+    VL_IN(&miny,31,0);
+    VL_IN(&spanx,31,0);
+    VL_IN(&spany,31,0);
     VL_OUT64(&dm_req_wdata,63,0);
     VL_IN64(&dm_resp_rdata,63,0);
 

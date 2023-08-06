@@ -9474,14 +9474,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__8(Vsimtop___024root* vlSelf) 
     // Init
     CData/*0:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__clz__DOT____Vlvbound_haa0d8dcd__0;
     // Body
-    vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__Aa 
-        = vlSelf->simtop__DOT__pvr__DOT__Aa;
-    vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__Ba 
-        = vlSelf->simtop__DOT__pvr__DOT__Ba;
-    vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__C 
-        = vlSelf->simtop__DOT__pvr__DOT__C;
-    vlSelf->c = ((vlSelf->v1_a - vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__ddx_v1x_mult) 
-                 - vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__ddy_v1y_mult);
     vlSelf->simtop__DOT__core__DOT__rf__DOT__rf_rd_r0 
         = vlSelf->simtop__DOT__core__DOT____Vcellout__rf__rf_rd_r0;
     vlSelf->simtop__DOT__core__DOT__rf_rdata[4U] = vlSelf->simtop__DOT__core__DOT____Vcellout__rf__rf_rd_r0;
@@ -10869,10 +10861,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__8(Vsimtop___024root* vlSelf) 
                                                      (vlSelf->dm_req_wdata 
                                                       >> 0U));
     vlSelf->simtop__DOT__dm_req_wdata = vlSelf->dm_req_wdata;
-    vlSelf->simtop__DOT__c = vlSelf->c;
-    vlSelf->interp = ((vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__x_mult_ddx 
-                       + vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__y_mult_ddy) 
-                      + vlSelf->c);
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__o_exp 
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__mul_o_exp;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fcmp__DOT__eq 
@@ -11739,8 +11727,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__8(Vsimtop___024root* vlSelf) 
                                                     ? (IData)(vlSelf->simtop__DOT__core__DOT__id_instr0_rsh)
                                                     : (IData)(vlSelf->simtop__DOT__core__DOT__id_instr0_rsl)));
     vlSelf->simtop__DOT__core__DOT__dm_req_wdata = vlSelf->simtop__DOT__dm_req_wdata;
-    vlSelf->simtop__DOT__pvr__DOT__c = vlSelf->simtop__DOT__c;
-    vlSelf->simtop__DOT__interp = vlSelf->interp;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__out_t 
         = vlSelf->simtop__DOT__core__DOT__fpu_out_t;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__invalid 
@@ -12725,9 +12711,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__8(Vsimtop___024root* vlSelf) 
                                                        | (IData)(vlSelf->simtop__DOT__core__DOT__fprf_rsrc0))));
     vlSelf->simtop__DOT__core__DOT__lsu__DOT__dm_req_wdata 
         = vlSelf->simtop__DOT__core__DOT__dm_req_wdata;
-    vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__c 
-        = vlSelf->simtop__DOT__pvr__DOT__c;
-    vlSelf->simtop__DOT__pvr__DOT__interp = vlSelf->simtop__DOT__interp;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__o_is_inf 
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__mul_o_is_inf;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__o_is_zero 
@@ -12842,8 +12825,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__8(Vsimtop___024root* vlSelf) 
              & (IData)(vlSelf->simtop__DOT__core__DOT__fp_r0_busy))) 
          | ((IData)(vlSelf->simtop__DOT__core__DOT__id_dec0_fp_write_rn) 
             & (IData)(vlSelf->simtop__DOT__core__DOT__fp_p0_waw_busy)));
-    vlSelf->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__interp 
-        = vlSelf->simtop__DOT__pvr__DOT__interp;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__frac_shamt = 0U;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__frac_shamt 
         = (0x1fU & ((IData)(vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__frac_shamt) 

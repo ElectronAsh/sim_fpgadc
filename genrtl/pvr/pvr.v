@@ -44,7 +44,34 @@ module pvr (
 
 	input  signed [31:0] x,
 	input  signed [31:0] y,
-	output signed [31:0] interp
+	output signed [31:0] interp,
+	
+	//int C1 = FDY12 * FX1 - FDX12 * FY1;
+	input signed [31:0] FDY12,
+	input signed [31:0] FX1,
+	input signed [31:0] FDX12,
+	input signed [31:0] FY1,
+	
+	//int C2 = FDY23 * FX2 - FDX23 * FY2;
+	input signed [31:0] FDY23,
+	input signed [31:0] FX2,
+	input signed [31:0] FDX23,
+	input signed [31:0] FY2,
+	
+	//int C3 = FDY31 * FX3 - FDX31 * FY3;
+	input signed [31:0] FDY31,
+	input signed [31:0] FX3,
+	input signed [31:0] FDX31,
+	input signed [31:0] FY3,
+	
+	input signed [31:0] minx,
+	input signed [31:0] miny,
+	
+	input signed [31:0] spanx,
+	input signed [31:0] spany
+	
+	//input signed [31:0] x_ps,
+	//input signed [31:0] y_ps
 );
 
 
@@ -493,28 +520,28 @@ ra_parser ra_parser_inst (
 	
 	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Logo.
 	//.TA_ALLOC_CTRL( 32'h00101213 ),	// input [31:0]  TA_ALLOC_CTRL. Logo.
-	//.REGION_BASE( 32'h001667C0 ),		// input [31:0]  REGION_BASE.   Logo.
-	//.PARAM_BASE( 32'h00000000 ),		// input [31:0]  PARAM_BASE.    Logo
+	//.REGION_BASE(   32'h005667C0 ),	// input [31:0]  REGION_BASE.   Logo.
+	//.PARAM_BASE(    32'h00400000 ),	// input [31:0]  PARAM_BASE.    Logo
 	
-	//.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG. Menu / Menu2.
-	//.TA_ALLOC_CTRL( 32'h00100303 ),		// input [31:0]  TA_ALLOC_CTRL. Menu / Menu2.
-	//.REGION_BASE( 32'h001667C0 ),		// input [31:0]  REGION_BASE.   Menu / Menu2.
-	//.PARAM_BASE( 32'h00000000 ),		// input [31:0]  PARAM_BASE.    Menu / Menu2
+	.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Menu / Menu2.
+	.TA_ALLOC_CTRL( 32'h00100303 ),	// input [31:0]  TA_ALLOC_CTRL. Menu / Menu2.
+	.REGION_BASE(   32'h001667C0 ),	// input [31:0]  REGION_BASE.   Menu / Menu2.
+	.PARAM_BASE(    32'h00000000 ),	// input [31:0]  PARAM_BASE.    Menu / Menu2
 	
-	.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Taxi.
-	.TA_ALLOC_CTRL( 32'h00101313 ),	// input [31:0]  TA_ALLOC_CTRL. Taxi.
-	.REGION_BASE( 32'h004D33C8 ),		// input [31:0]  REGION_BASE.   Taxi.
-	.PARAM_BASE( 32'h00400000 ),		// input [31:0]  PARAM_BASE.    Taxi.
+	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Taxi / title screen.
+	//.TA_ALLOC_CTRL( 32'h00101313 ),	// input [31:0]  TA_ALLOC_CTRL. Taxi / title screen.
+	//.REGION_BASE(   32'h004D33C8 ),	// input [31:0]  REGION_BASE.   Taxi / title screen.
+	//.PARAM_BASE(    32'h00400000 ),	// input [31:0]  PARAM_BASE.    Taxi / title screen.
 	
 	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Sonic.
 	//.TA_ALLOC_CTRL( 32'h00120303 ),	// input [31:0]  TA_ALLOC_CTRL. Sonic.
-	//.REGION_BASE( 32'h001303E0 ),		// input [31:0]  REGION_BASE.   Sonic.
-	//.PARAM_BASE( 32'h00400000 ),		// input [31:0]  PARAM_BASE.   Sonic??
+	//.REGION_BASE(   32'h001303E0 ),	// input [31:0]  REGION_BASE.   Sonic.
+	//.PARAM_BASE(    32'h00400000 ),	// input [31:0]  PARAM_BASE.   Sonic??
 	
 	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. memcard.
 	//.TA_ALLOC_CTRL( 32'h00100303 ),	// input [31:0]  TA_ALLOC_CTRL. memcard.
-	//.REGION_BASE( 32'h005667C0 ),		// input [31:0]  REGION_BASE.   memcard.
-	//.PARAM_BASE( 32'h00400000 ),		// input [31:0]  PARAM_BASE.   memcard
+	//.REGION_BASE(   32'h005667C0 ),	// input [31:0]  REGION_BASE.   memcard.
+	//.PARAM_BASE(    32'h00400000 ),	// input [31:0]  PARAM_BASE.   memcard
 	
 	.ra_vram_rd( ra_vram_rd ),			// output  ra_vram_rd
 	.ra_vram_wr( ra_vram_wr ),			// output  ra_vram_wr
@@ -552,6 +579,7 @@ wire isp_vram_wr;
 wire [23:0] isp_vram_addr;
 
 wire [31:0] isp_vram_din;
+wire [31:0] isp_vram_dout;
 assign isp_vram_din = vram_din;
 
 wire isp_entry_valid;
@@ -567,6 +595,9 @@ else begin
 end
 
 assign vram_addr = (isp_switch) ? isp_vram_addr : ra_vram_addr;
+assign vram_dout = isp_vram_dout;
+assign vram_wr = isp_vram_wr;
+
 //assign vram_addr = isp_vram_addr;
 //assign vram_addr = ra_vram_addr;
 
@@ -584,10 +615,38 @@ isp_parser isp_parser_inst (
 	.isp_vram_wr( isp_vram_wr ),		// output  isp_vram_wr
 	.isp_vram_addr( isp_vram_addr ),	// output [23:0]  isp_vram_addr
 	.isp_vram_din( isp_vram_din ),		// input  [31:0]  isp_vram_din
+	.isp_vram_dout( isp_vram_dout ),	// output  [31:0]  isp_vram_dout
 	
 	.isp_entry_valid( isp_entry_valid ),// output  isp_entry_valid
 	
-	.poly_drawn( poly_drawn )
+	.poly_drawn( poly_drawn ),
+	
+	//int C1 = FDY12 * FX1 - FDX12 * FY1;
+	.FDY12( FDY12 ),		// input sign [31:0]   
+	.FX1( FX1 ),			// input sign [31:0]  
+	.FDX12( FDX12 ),		// input sign [31:0]  
+	.FY1( FY1 ),			// input sign [31:0]  
+	
+	//int C2 = FDY23 * FX2 - FDX23 * FY2;
+	.FDY23( FDY23 ),		// input sign [31:0]  
+	.FX2( FX2 ),			// input sign [31:0]  
+	.FDX23( FDX23 ),		// input sign [31:0]  
+	.FY2( FY2 ),			// input sign [31:0]  
+	
+	//int C3 = FDY31 * FX3 - FDX31 * FY3;
+	.FDY31( FDY31 ),		// input sign [31:0]  
+	.FX3( FX3 ),			// input sign [31:0]  
+	.FDX31( FDX31 ),		// input sign [31:0]  
+	.FY3( FY3 ),			// input sign [31:0]  
+	
+	.minx( minx ),
+	.miny( miny ),
+	
+	.spanx( spanx ),
+	.spany( spany )
+	
+	//.x_ps( x_ps ),
+	//.y_ps( y_ps )
 );
 
 
@@ -914,33 +973,6 @@ end
 
 wire sgn = !area[31];
 */
-
-edge_calc  edge_calc_1_inst (
-	.v1_x( v1_x ),
-	.v1_y( v1_y ),
-	
-	.v2_x( v2_x ),
-	.v2_y( v2_y ),
-	
-	.v3_x( v3_x ),
-	.v3_y( v3_y ),
-	
-	.v1_a( v1_a ),
-	.v2_a( v2_a ),
-	.v3_a( v3_a ),
-	
-	.Aa( Aa ),
-	.Ba( Ba ),
-	
-	.C( C ),
-	
-	.c( c ),
-	
-	.x( x ),
-	.y( y ),
-	.interp( interp )
-);
-
 
 endmodule
 

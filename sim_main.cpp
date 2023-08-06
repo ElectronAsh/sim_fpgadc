@@ -768,7 +768,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
-	if (x1<10 || x2<10 || x3<10 || y1<10 || y2<10 || y3<10) return;	// Hide some spikey bits.
+	if (x1<5 || x2<5 || x3<5 || y1<5 || y2<5 || y3<5) return;	// Hide some spikey bits.
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
@@ -842,10 +842,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 	//printf("x1: %f  x2: %f  x3: %f  y1: %f  y2: %f  y3: %f \n", x1, x2, x3, y1, y2, y3);
 
-	int v3a_sub_v1a = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3a_sub_v1a;
-	int v2y_sub_v1y = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2y_sub_v1y;
-	int v2a_sub_v1a = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2a_sub_v1a;
-	int v3y_sub_v1y = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3y_sub_v1y;
+	//int v3a_sub_v1a = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3a_sub_v1a;
+	//int v2y_sub_v1y = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2y_sub_v1y;
+	//int v2a_sub_v1a = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2a_sub_v1a;
+	//int v3y_sub_v1y = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3y_sub_v1y;
 	//printf("float x3_sub_x1: %f  core v3a_sub_v1a: %f\n", x3_sub_x1, ((float)v3a_sub_v1a)/(1<<FRAC_BITS) );
 	//printf("float y2_sub_y1: %f  core v2y_sub_v1y: %f\n", y2_sub_y1, ((float)v2y_sub_v1y)/(1<<FRAC_BITS) );
 	//printf("float x2_sub_x1: %f  core v2a_sub_v1a: %f\n", x2_sub_x1, ((float)v2a_sub_v1a)/(1<<FRAC_BITS) );
@@ -893,15 +893,16 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	//printf("fixed C1: %f  fixed C2: %f  fixed C3: %f\n\n", ((float)C1/1<<FRAC_BITS), ((float)C2/1<<FRAC_BITS), ((float)C3/1<<FRAC_BITS));
 
 	// Correct for fill convention
-	if ((FDY12>>FRAC_BITS) < 0 || (FDY12>>FRAC_BITS) == 0 && (FDX12>>FRAC_BITS) > 0) C1=C1+(1<<FRAC_BITS);
-	if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
-	if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
-	
+	//if ((FDY12>>FRAC_BITS) < 0 || (FDY12>>FRAC_BITS) == 0 && (FDX12>>FRAC_BITS) > 0) C1=C1+(1<<FRAC_BITS);
+	//if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
+	//if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
+
+
 	PlaneStepper3 Z;
 	PlaneStepper3 U;
 	PlaneStepper3 V;
 
-	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+	//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 		// Triangle Array...
 		//if ((top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)==0x80000000) run_enable = 0;
 
@@ -924,31 +925,88 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			V.Setup(x1, x2, x3, y1, y2, y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
 		//}
 
-		int halfpixel = 1<<(FRAC_BITS-1);
+		//int halfpixel = 1<<(FRAC_BITS-1);
 		int y_ps = miny /*+ halfpixel*/;
 		int minx_ps = minx /*+ halfpixel*/;
 
 		//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
-
-		//printf("fixed C1: %d   \n", CY1/(1<<4)  );
 
 		bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 		bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
 		bool pp_ClampU = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
 		bool pp_ClampV = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
 
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly) {
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+			top->rootp->spanx = spanx;
+			top->rootp->spany = spany;
+			top->rootp->minx = minx;
+			top->rootp->miny = miny;
+
+			top->rootp->FDY12 = FDY12;
+			top->rootp->FX1 = FX1;
+			top->rootp->FDX12 = FDX12;
+			top->rootp->FY1 = FY1;
+
+			top->rootp->FDY23 = FDY23;
+			top->rootp->FX2 = FX2;
+			top->rootp->FDX23 = FDX23;
+			top->rootp->FY2 = FY2;
+
+			top->rootp->FDY31 = FDY31;
+			top->rootp->FX3 = FX3;
+			top->rootp->FDX31 = FDX31;
+			top->rootp->FY3 = FY3;
+		//}
+
+		if (top->vram_wr) {
+			disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = top->vram_dout;
+		}
+
+		//printf("sim mult1: %d  core_mult1: %d\n", (FDY12 * FX1), top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
+		//printf("sim C1: %d  core C1: %d\n\n", C1, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1);
+
+		/*
 		for (int y = 0; y < spany; y++) {
 		//for (uint32_t y = y_start; y < (y_start+32); y++) {
-			int x_ps = minx_ps;
+			int x_ps = minx_ps;	
 			for (int x = 0; x < spanx; x++) {
 			//for (uint32_t x = x_start; x < (x_start+32); x++) {
 				int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 				int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 				int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
-				//int Xhs41 = C4 + MUL_PREC(FDX41, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY41, x_ps<<FRAC_BITS, FRAC_BITS);
 
-				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 /*&& Xhs41 >= 0*/;
+				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
+
+				top->rootp->FDY12 = FDY12;
+				top->rootp->FX1 = FX1;
+				top->rootp->FDX12 = FDX12;
+				top->rootp->FY1 = FY1;
+
+				top->rootp->FDY23 = FDY23;
+				top->rootp->FX2 = FX2;
+				top->rootp->FDX23 = FDX23;
+				top->rootp->FY2 = FY2;
+
+				top->rootp->FDY31 = FDY31;
+				top->rootp->FX3 = FX3;
+				top->rootp->FDX31 = FDX31;
+				top->rootp->FY3 = FY3;
+
+				int core_c1 = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1;
+				int core_c2 = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2;
+				int core_c3 = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3;
+				//printf("sim C1: %d  core C1: %f\n",   C1, core_c1 );
+				//printf("sim C2: %d  core C2: %f\n",   C2, core_c2 );
+				//printf("sim C3: %d  core C3: %f\n\n", C3, core_c3 );
+
+				//top->rootp->x_ps = x_ps;
+				//top->rootp->y_ps = y_ps;
+
+				//printf("sim mult1: %d  core_mult1: %d\n", (FDY12 * FX1), top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
+				//if (x==0) printf("sim C1: %d  core C1: %d\n", C1, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1);
+
+				//int mult7 = MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS);
+				//printf("sim mult7: %d  core mult7: %d\n", mult7, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7 );
 
 				uint32_t old_pixel = 0;
 				uint8_t alpha = 0;
@@ -974,46 +1032,17 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 						// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
 						texel_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word&0x1fffff)<<2;	// BYTE addr.
 
+						// Float to uint...
 						uint32_t ui = (uint32_t)u;
 						uint32_t vi = (uint32_t)v;
-						texel_offs = ui + (vi * tex_u_size);
-
+						
 						// Decode Twiddled texture offset...
 						if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) {
-							/*
-							bool v10 = vi&0x0400; bool v09 = vi&0x0200; bool v08 = vi&0x0100; bool v07 = vi&0x0080;
-							bool v06 = vi&0x0040; bool v05 = vi&0x0020; bool v04 = vi&0x0010; bool v03 = vi&0x0008;
-							bool v02 = vi&0x0004; bool v01 = vi&0x0002; bool v00 = vi&0x0001;
-
-							bool u10 = ui&0x0400; bool u09 = ui&0x0200; bool u08 = ui&0x0100; bool u07 = ui&0x0080;
-							bool u06 = ui&0x0040; bool u05 = ui&0x0020; bool u04 = ui&0x0010; bool u03 = ui&0x0008;
-							bool u02 = ui&0x0004; bool u01 = ui&0x0002; bool u00 = ui&0x0001;
-
-							if (tex_u_size==tex_v_size)	{	// Check for square texture.
-								texel_offs = (u10<<21) | (v10<<20) | (u09<<19) | (v09<<18) | (u08<<17) | (v08<<16) | (u07<<15) | (v07<<14) | (u06<<13) | (v06<<12) |
-											 (u05<<11) | (v05<<10) | (u04<<9)  | (v04<<8)  | (u03<<7)  | (v03<<6)  | (u02<<5)  | (v02<<4)  | (u01<<3)  | (v01<<2)  | (u00<<1)  | (v00);
-							}
-							else {	// Rectangle textures... TODO
-
-								texel_offs = (u10<<21) | (v10<<20) | (u09<<19) | (v09<<18) | (u08<<17) | (v08<<16) | (u07<<15) | (v07<<14) | (u06<<13) | (v06<<12) |
-									(u05<<11) | (v05<<10) | (u04<<9)  | (v04<<8)  | (u03<<7)  | (v03<<6)  | (u02<<5)  | (v02<<4)  | (u01<<3)  | (v01<<2)  | (u00<<1)  | (v00);
-
-								//texel_offs = 0x00000000;
-								//int i=0;
-								//while ( (1<<i) < tex_v_size ) {
-								//	texel_offs |= vi&(1<<i); i+=2;
-								//}
-								//i=0;
-								//while ((1<<i) < tex_u_size) {
-								//	texel_offs |= ui&(1<<(i+1)); i+=2;
-								//}
-							}*/
-
 							texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
 						}
-
-						//printf("u float: %f  ui: %d   v float: %f vi: %d\n", u, ui, v, vi);
-						//printf("x_ps: %f   y_ps: %f   invW: %f   texture_addr: 0x%08X\n\n", x_ps, y_ps, invW, texel_addr+texel_offs);
+						else {	// Non-Twiddled...
+							texel_offs = ui + (vi * tex_u_size);
+						}
 
 						//printf("tex_u_size: %d  tex_v_size: %d\n", tex_u_size, tex_v_size);
 						//texel_offs = ClampFlip(pp_ClampU, pp_FlipU, ui, tex_u_size) + ClampFlip(pp_ClampV, pp_FlipV, vi, tex_v_size * tex_u_size);
@@ -1035,29 +1064,32 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 								texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7];
 							
 							//texel_offs = ui + (vi * tex_u_size);	// Don't de-twiddle the offset?
+							texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);	// Make sure it's using the Twiddled offset for VQ?
 							uint8_t index_byte = vram_ptr[ (texel_addr+0x800 + (texel_offs>>2) ) & 0x7fffff];	// Read the index BYTE.
 							
 							// Read the four CODE BOOK pixels...
 							// Each INDEX value represents FOUR 16-bit pixels (8 bytes) in the CODE BOOK.
-							uint32_t code_addr = (texel_addr-0x800) + (index_byte*8);	// Four 16-bit pixels per index. 8 bytes.
-							texel_pix0  = vram_ptr[ (code_addr+1) & 0x7fffff ] << 8;
-							texel_pix0 |= vram_ptr[ (code_addr+0) & 0x7fffff ];
+							uint32_t code_addr = (texel_addr-0x800) + index_byte;	// Four 16-bit pixels per index. 8 bytes.
+
+							texel_pix3  = vram_ptr[ (code_addr+7) & 0x7fffff ] << 8;
+							texel_pix3 |= vram_ptr[ (code_addr+6) & 0x7fffff ];
+
+							texel_pix2  = vram_ptr[ (code_addr+5) & 0x7fffff ] << 8;
+							texel_pix2 |= vram_ptr[ (code_addr+4) & 0x7fffff ];
 
 							texel_pix1  = vram_ptr[ (code_addr+3) & 0x7fffff ] << 8;
 							texel_pix1 |= vram_ptr[ (code_addr+2) & 0x7fffff ];
 
-							texel_pix2  = vram_ptr[ (code_addr+5) & 0x7fffff ] << 8;
-							texel_pix2 |= vram_ptr[ (code_addr+4) & 0x7fffff ];
-							
-							texel_pix3  = vram_ptr[ (code_addr+7) & 0x7fffff ] << 8;
-							texel_pix3 |= vram_ptr[ (code_addr+6) & 0x7fffff ];
+							texel_pix0  = vram_ptr[ (code_addr+1) & 0x7fffff ] << 8;
+							texel_pix0 |= vram_ptr[ (code_addr+0) & 0x7fffff ];
 
-							//switch ( (x&2) + (y&1) ) {
-							switch ( texel_offs&3 ) {
-								case 0: texel_pix = texel_pix0; break;
-								case 1: texel_pix = texel_pix1; break;
-								case 2: texel_pix = texel_pix2; break;
-								case 3: texel_pix = texel_pix3; break;
+							//switch ( ((ui&1)<<1) + (vi&1) ) {
+							//switch ( ((texel_offs&1)<<1) + ((texel_offs&2)>>1) ) {
+							switch (texel_offs&3) {
+								case 0: texel_pix = texel_pix3; break;
+								case 1: texel_pix = texel_pix2; break;
+								case 2: texel_pix = texel_pix1; break;
+								case 3: texel_pix = texel_pix0; break;
 							}
 						}
 						else {
@@ -1074,62 +1106,48 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 							texel_pix = byte1<<8 | byte0;
 						}
 
-						//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) texel_pix = 0xff0f;
-						
-						//old_pixel = disp_ptr[ disp_addr&(0x3fffff>>2) ];	// Read previous pixel value from the display buffer.
-						//alpha  = ((texel_pix>>8) & 0xf0);	// 4-bit Alpha.
-						//if (alpha==0xF0) {
-							if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt==0) {
-								// ARGB 1555...
-								//rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);// Red.
-								//rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7) & 0x07);	// Green.
-								//rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2) & 0x07);	// Blue.
+						uint8_t pix_fmt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
+						if (pix_fmt==0 || pix_fmt==7) {
+							// ARGB 1555 (Swirl logo, etc.)...
+							//alpha = (texel_pix>>8)&0x80;
+							//rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);// Red.
+							//rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7) & 0x07);	// Green.
+							//rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2) & 0x07);	// Blue.
 
-								// Not sure why the menu seems to use pix_fmt 0 (ARGB 1555), but only looks correct when decoded as ARGB 4444?
-								rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-								rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-								rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
-							}
-							else if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt==1) {
-								// RGB 565...								
-								rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
-								rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
-								rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
-							}
-							else if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt==2) {
-								// ARGB 4444...
-								rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-								rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-								rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
-							}
-						///
-						//else {
-							//rgb[0] = (old_pixel&0x00ff0000)>>16;
-							//rgb[1] = (old_pixel&0x0000ff00)>>8;
-							//rgb[2] = (old_pixel&0x000000ff);
-						//}
+							// Not sure why the menu seems to use pix_fmt 0 (ARGB 1555), but only looks correct when decoded as ARGB 4444 ???
+							alpha = (texel_pix>>8)&0xf0;
+							rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+							rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+							rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+						}
+						else if (pix_fmt==1) {
+							// RGB 565...
+							alpha = 0xff;
+							rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
+							rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
+							rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
+						}
+						else if (pix_fmt==2) {
+							// ARGB 4444...
+							alpha = (texel_pix>>8)&0xf0;
+							rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+							rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+							rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+						}
+						else {	// Default, to show *anything*. (until more pixel formats are handled).
+							// ARGB 4444...
+							alpha = (texel_pix>>8)&0x80;
+							rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+							rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+							rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+						}
 					}
 					else {	// Non-textured, so use Flat-shaded for now. Gouraud stuff later.
+						alpha  = (vertex_c_col&0xff000000)>>24;
 						rgb[0] = (vertex_c_col&0x00ff0000)>>16;
 						rgb[1] = (vertex_c_col&0x0000ff00)>>8;
 						rgb[2] = (vertex_c_col&0x000000ff);
 					}
-
-					/*
-					if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {
-						printf("u float: %f  v float: %f\n", u, v);
-						rgb[0] = 0x00;
-						rgb[1] = 0xff;
-						rgb[2] = 0x00;
-					}
-
-					if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride) {
-						//printf("Stride!\n");
-						rgb[0] = 0xff;
-						rgb[1] = 0xff;
-						rgb[2] = 0xff;
-					}
-					*/
 
 					disp_addr = (y_ps * 640) + x_ps;
 
@@ -1141,19 +1159,21 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 						if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ disp_addr&(0x3fffff>>2) ] = z_fixed;
 						tag_ptr[ disp_addr&(0x3fffff>>2) ] = top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr;
 						if ( (vertex_c_col&0x00ffffff) != 0x00CBCBFF ) {	// Hide the grey/purple smoke texture(s) in Crazy Taxi.
-							//rgb[0] = z_fixed>>8;
-							//rgb[1] = z_fixed>>8;
-							//rgb[2] = z_fixed>>8;
-							disp_ptr[ disp_addr&(0x3fffff>>2) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
-							//disp_ptr[ disp_addr&(0x3fffff>>2) ] = 0xff<<24 | tag_ptr[ disp_addr&(0x3fffff>>2) ]&0x00ffffff;
+							//rgb[0] = rgb[1] = rgb[2] = z_fixed>>8;
+							//old_pixel = disp_ptr[disp_addr&(0x3fffff>>2)];
+							//if (alpha>0)
+							disp_ptr[ (disp_addr>>2)&0x3fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+							//disp_ptr[ (disp_addr>>2)&0x3fffff ] = 0xff<<24 | tag_ptr[ disp_addr&(0x3fffff>>2) ]&0x00ffffff;
 						}
 					}
 				}
 				x_ps = x_ps + 1;
 			}
 			y_ps = y_ps + 1;
+			
 		}
-	}
+		*/
+	//}
 }
 
 int verilate() {
@@ -1225,10 +1245,6 @@ int verilate() {
 		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = upper_word<<16 | lower_word;
 		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = upper_word<<16 | lower_word;
 
-		//top->vram_din = vram_ptr[ (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)>>2 ];
-		//top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = vram_ptr[(top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)>>2];
-		//top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = vram_ptr[(top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)>>2];
-
 		if (tile_highlight && top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid) {
 			uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
 			uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
@@ -1244,67 +1260,76 @@ int verilate() {
 			}
 		}
 
+		float x1,x2,x3,x4;
+		float y1,y2,y3,y4;
+		float z1,z2,z3,z4;
+
 		//X1: 43C994E8 403.163330  X2: 43C994E8 403.163330  X3: 43BC780C 376.937866  X4: 00000000 0.000000
 		//Y1: 43074970 135.286865  Y2: 4391829E 291.020447  Y3: 43074970 135.286865  Y4: 00000000 0.000000
-		float x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
-		float x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
-		float x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
-		float x4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+			x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
+			x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
+			x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
+			x4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x;
 
-		float y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
-		float y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
-		float y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
-		float y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
+			y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
+			y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
+			y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
+			y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
 
-		float z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
-		float z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
-		float z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
-		float z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
-
+			z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
+			z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
+			z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
+			z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
+		//}
 
 		float u1,u2,u3,u4 = 0;
 		float v1,v2,v3,v4 = 0;
 
-		/*
-		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {
-			u1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
-			u2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0;
-			u3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0;
-			u4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {
+				int u1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0&0xffff0000;
+				int u2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0&0xffff0000;
+				int u3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0&0xffff0000;
+				int u4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0&0xffff0000;
+				u1 = *(float*)&u1_temp;
+				u2 = *(float*)&u2_temp;
+				u3 = *(float*)&u3_temp;
+				u4 = *(float*)&u4_temp;
 
-			// U and V are BOTH taken from the u0 regs!...
-			int v1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0<<16;
-			int v2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0<<16;
-			int v3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0<<16;
-			int v4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0<<16;
-			v1 = *(float*)&v1_temp;
-			v2 = *(float*)&v2_temp;
-			v3 = *(float*)&v3_temp;
-			v4 = *(float*)&v4_temp;
-		}
-		else {*/
-			u1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
-			u2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0;
-			u3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0;
-			u4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0;
+				// U and V are BOTH taken from the u0 regs!...
+				int v1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0<<16;
+				int v2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0<<16;
+				int v3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0<<16;
+				int v4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0<<16;
+				v1 = *(float*)&v1_temp;
+				v2 = *(float*)&v2_temp;
+				v3 = *(float*)&v3_temp;
+				v4 = *(float*)&v4_temp;
 
-			v1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
-			v2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0;
-			v3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0;
-			v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
+				//printf("uv_16_bit u1: %f  v1: %f\n", u1, v1);
+			}
+			else {
+				u1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
+				u2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0;
+				u3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0;
+				u4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0;
+
+				v1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
+				v2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0;
+				v3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0;
+				v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
+			}
+
+			//if ( (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)!=0xA0000000 ) // Skip drawing QUAD arrays, for now.
+				rasterize_triangle_fixed(x1, x2, x3, y1, y2, y3, z1, z2, z3, u1, u2, u3, v1, v2, v3);
 		//}
 
 		top->clk = 1;
 		top->eval();            // Evaluate model!
 		top->clk = 0;
 		top->eval();            // Evaluate model!
-
 		main_time++;            // Time passes...
-
-		//rasterize_triangle_float(x1, x2, x3, y1, y2, y3);
-		//if ( (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)!=0xA0000000 ) // Skip drawing QUAD arrays, for now.
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) 
-				rasterize_triangle_fixed(x1,x2,x3, y1,y2,y3, z1,z2,z3, u1,u2,u3, v1,v2,v3);
 
 		return 1;
 	}
@@ -1427,11 +1452,12 @@ int main(int argc, char** argv, char** env) {
 
 	FILE* pvrfile;
 	//pvrfile = fopen("pvr_regs_logo", "rb");
-	//pvrfile = fopen("pvr_regs_menu", "rb");
+	pvrfile = fopen("pvr_regs_menu", "rb");
 	//pvrfile = fopen("pvr_regs_menu2", "rb");
-	pvrfile = fopen("pvr_regs_taxi", "rb");
+	//pvrfile = fopen("pvr_regs_taxi", "rb");
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");
+	//pvrfile = fopen("pvr_regs_crazy_title", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");
 	//pvrfile = fopen("pvr_regs_mem", "rb");
 	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
@@ -1443,11 +1469,12 @@ int main(int argc, char** argv, char** env) {
 
 	FILE* vram_file;
 	//vram_file = fopen("vram_logo.bin", "rb");
-	//vram_file = fopen("vram_menu.bin", "rb");
+	vram_file = fopen("vram_menu.bin", "rb");
 	//vram_file = fopen("vram_menu2.bin", "rb");
-	vram_file = fopen("vram_taxi.bin", "rb");
+	//vram_file = fopen("vram_taxi.bin", "rb");
 	//vram_file = fopen("vram_taxi2.bin", "rb");
 	//vram_file = fopen("vram_taxi3.bin", "rb");
+	//vram_file = fopen("vram_crazy_title.bin", "rb");
 	//vram_file = fopen("vram_sonic.bin", "rb");
 	//vram_file = fopen("vram_mem.bin", "rb");
 	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
@@ -1873,6 +1900,17 @@ int main(int argc, char** argv, char** env) {
 
 		ImGui::Begin(" ISP Parser");
 		ImGui::Text("        isp_state: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state);
+		ImGui::Separator();
+		ImGui::Text("        core minx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__minx);
+		ImGui::Text("        core miny: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny);
+		ImGui::Text("       core spanx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx);
+		ImGui::Text("       core spany: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany);
+		ImGui::Text("           core x: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x);
+		ImGui::Text("           core y: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y);
+		ImGui::Text("        core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
+		ImGui::Text("        core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
+		ImGui::Text("  core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);
+		ImGui::Separator();
 		ImGui::Text("        strip_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt);
 		ImGui::Text("        array_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt);
 		ImGui::Text("         isp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst);

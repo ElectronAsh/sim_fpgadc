@@ -54,6 +54,22 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , x{vlSymsp->TOP.x}
     , y{vlSymsp->TOP.y}
     , interp{vlSymsp->TOP.interp}
+    , FDY12{vlSymsp->TOP.FDY12}
+    , FX1{vlSymsp->TOP.FX1}
+    , FDX12{vlSymsp->TOP.FDX12}
+    , FY1{vlSymsp->TOP.FY1}
+    , FDY23{vlSymsp->TOP.FDY23}
+    , FX2{vlSymsp->TOP.FX2}
+    , FDX23{vlSymsp->TOP.FDX23}
+    , FY2{vlSymsp->TOP.FY2}
+    , FDY31{vlSymsp->TOP.FDY31}
+    , FX3{vlSymsp->TOP.FX3}
+    , FDX31{vlSymsp->TOP.FDX31}
+    , FY3{vlSymsp->TOP.FY3}
+    , minx{vlSymsp->TOP.minx}
+    , miny{vlSymsp->TOP.miny}
+    , spanx{vlSymsp->TOP.spanx}
+    , spany{vlSymsp->TOP.spany}
     , dm_req_wdata{vlSymsp->TOP.dm_req_wdata}
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
     , rootp{&(vlSymsp->TOP)}

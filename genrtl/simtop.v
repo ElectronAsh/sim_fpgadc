@@ -86,7 +86,34 @@ module simtop (
 
 	input  signed [31:0] x,
 	input  signed [31:0] y,
-	output signed [31:0] interp
+	output signed [31:0] interp,
+	
+	//int C1 = FDY12 * FX1 - FDX12 * FY1;
+	input signed [31:0] FDY12,
+	input signed [31:0] FX1,
+	input signed [31:0] FDX12,
+	input signed [31:0] FY1,
+	
+	//int C2 = FDY23 * FX2 - FDX23 * FY2;
+	input signed [31:0] FDY23,
+	input signed [31:0] FX2,
+	input signed [31:0] FDX23,
+	input signed [31:0] FY2,
+	
+	//int C3 = FDY31 * FX3 - FDX31 * FY3;
+	input signed [31:0] FDY31,
+	input signed [31:0] FX3,
+	input signed [31:0] FDX31,
+	input signed [31:0] FY3,
+	
+	input signed [31:0] minx,
+	input signed [31:0] miny,
+	
+	input signed [31:0] spanx,
+	input signed [31:0] spany
+	
+	//input signed [31:0] x_ps,
+	//input signed [31:0] y_ps
 );
 
 
@@ -243,7 +270,34 @@ pvr pvr (
 	
 	.x( x ),
 	.y( y ),
-	.interp( interp )
+	.interp( interp ),
+	
+	//int C1 = FDY12 * FX1 - FDX12 * FY1;
+	.FDY12( FDY12 ),		// input signed [31:0]   
+	.FX1( FX1 ),			// input signed [31:0]  
+	.FDX12( FDX12 ),		// input signed [31:0]  
+	.FY1( FY1 ),			// input signed [31:0]  
+	
+	//int C2 = FDY23 * FX2 - FDX23 * FY2;
+	.FDY23( FDY23 ),		// input signed [31:0]  
+	.FX2( FX2 ),			// input signed [31:0]  
+	.FDX23( FDX23 ),		// input signed [31:0]  
+	.FY2( FY2 ),			// input signed [31:0]  
+	
+	//int C3 = FDY31 * FX3 - FDX31 * FY3;
+	.FDY31( FDY31 ),		// input signed [31:0]  
+	.FX3( FX3 ),			// input signed [31:0]  
+	.FDX31( FDX31 ),		// input signed [31:0]  
+	.FY3( FY3 ),			// input signed [31:0]  
+	
+	.minx( minx ),
+	.miny( miny ),
+	
+	.spanx( spanx ),
+	.spany( spany )
+	
+	//.x_ps( x_ps ),			// input signed [31:0]  x_ps
+	//.y_ps( y_ps )			// input signed [31:0]  y_ps
 );
 
 

@@ -9822,6 +9822,18 @@ VL_INLINE_OPT void Vsimtop___024root___combo__TOP__8(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__core__DOT__e1_flush = vlSelf->simtop__DOT__core__DOT__e2_lsu_nack;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din 
         = vlSelf->simtop__DOT__pvr__DOT__isp_vram_din;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 
+        = ((IData)(VL_EXTENDS_QI(64,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1)) 
+           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7) 
+              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult8)));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23 
+        = ((IData)(VL_EXTENDS_QI(64,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2)) 
+           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9) 
+              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10)));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31 
+        = ((IData)(VL_EXTENDS_QI(64,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2)) 
+           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11) 
+              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12)));
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_din 
         = vlSelf->simtop__DOT__pvr__DOT__ra_vram_din;
     vlSelf->simtop__DOT__core__DOT__du1__DOT__out_csr_id 
@@ -10172,6 +10184,10 @@ VL_INLINE_OPT void Vsimtop___024root___combo__TOP__8(Vsimtop___024root* vlSelf) 
         vlSelf->simtop__DOT__core__DOT__e1_p1_wen = 0U;
         vlSelf->simtop__DOT__core__DOT__e1_p0_wen = 0U;
     }
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle 
+        = ((VL_LTES_III(32, 0U, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12) 
+            & VL_LTES_III(32, 0U, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23)) 
+           & VL_LTES_III(32, 0U, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31));
     vlSelf->simtop__DOT__core__DOT__rf__DOT__rf_rbank2 
         = vlSelf->simtop__DOT__core__DOT__rf_rbank_p1;
     vlSelf->simtop__DOT__core__DOT__rf__DOT__rf_rbank3 
