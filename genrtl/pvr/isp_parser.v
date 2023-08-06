@@ -146,6 +146,8 @@ reg [7:0] isp_state;
 reg [2:0] strip_cnt;
 reg [3:0] array_cnt;
 
+reg [23:0] isp_vram_addr_last;
+
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
 	isp_state <= 8'd0;
@@ -164,7 +166,7 @@ else begin
 	if (isp_state > 0) begin
 		//if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47 || isp_state != 8'd48 || isp_state != 8'd49 || isp_state != 8'd50) isp_state <= isp_state + 8'd1;
 		if (isp_state < 8'd45) isp_state <= isp_state + 8'd1;
-		if (isp_state < 8'd48) isp_vram_addr <= isp_vram_addr + 4;
+		if (isp_state < 8'd47) isp_vram_addr <= isp_vram_addr + 4;
 	end
 
 	case (isp_state)
@@ -318,6 +320,8 @@ else begin
 		end
 
 		48: begin
+				isp_vram_addr_last <= isp_vram_addr;
+		
 				// Half-edge constants (setup).
 				//int C1 = FDY12 * FX1 - FDX12 * FY1;
 				mult1 <= (FDY12 * FX1);
@@ -345,6 +349,7 @@ else begin
 				isp_state <= isp_state + 8'd1;
 			end
 			else begin
+				isp_vram_addr <= isp_vram_addr_last;
 				isp_state <= 8'd47;
 			end
 		end
@@ -375,6 +380,14 @@ end
 wire [7:0] vert_words = ((two_volume&shadow) ? ((skip*2)+3) : (skip+3)) /*+ offset*/;
 
 
+wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
+
+wire [7:0]  exp = test_float[30:23];
+wire [22:0] man = test_float[22:00];
+
+wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
+									   {1'b1, man}>>(127-exp);
+
 reg [11:0] x_ps;
 reg [11:0] y_ps;
 
@@ -385,36 +398,36 @@ parameter FRAC_BITS = 8;
 
 // Half-edge constants
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
-reg signed [63:0] mult1;
-reg signed [63:0] mult2;
+reg signed [47:0] mult1;
+reg signed [47:0] mult2;
 wire signed [31:0] C1 = (mult1 - mult2) / (1<<FRAC_BITS);
 
 //int C2 = FDY23 * FX2 - FDX23 * FY2;
-reg signed [63:0] mult3;
-reg signed [63:0] mult4;
+reg signed [47:0] mult3;
+reg signed [47:0] mult4;
 wire signed [31:0] C2 = (mult3 - mult4) / (1<<FRAC_BITS);
 
 //int C3 = FDY31 * FX3 - FDX31 * FY3;
-reg signed [63:0] mult5;
-reg signed [63:0] mult6;
+reg signed [47:0] mult5;
+reg signed [47:0] mult6;
 wire signed [31:0] C3 = (mult5 - mult6) / (1<<FRAC_BITS);
 
 
 //int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
-wire signed [63:0] mult7  = (FDX12 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
-wire signed [63:0] mult8  = (FDY12 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult7  = (FDX12 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult8  = (FDY12 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
 
-wire signed [63:0] mult9  = (FDX23 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
-wire signed [63:0] mult10 = (FDY23 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult9  = (FDX23 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult10 = (FDY23 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
 
-wire signed [63:0] mult11 = (FDX31 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
-wire signed [63:0] mult12 = (FDY31 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult11 = (FDX31 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult12 = (FDY31 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
 
 wire signed [31:0] Xhs12 = C1 + (mult7  - mult8 );
 wire signed [31:0] Xhs23 = C2 + (mult9  - mult10);
-wire signed [31:0] Xhs31 = C2 + (mult11 - mult12);
+wire signed [31:0] Xhs31 = C3 + (mult11 - mult12);
 
 wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
 

@@ -893,9 +893,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	//printf("fixed C1: %f  fixed C2: %f  fixed C3: %f\n\n", ((float)C1/1<<FRAC_BITS), ((float)C2/1<<FRAC_BITS), ((float)C3/1<<FRAC_BITS));
 
 	// Correct for fill convention
-	//if ((FDY12>>FRAC_BITS) < 0 || (FDY12>>FRAC_BITS) == 0 && (FDX12>>FRAC_BITS) > 0) C1=C1+(1<<FRAC_BITS);
-	//if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
-	//if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
+	if ((FDY12>>FRAC_BITS) < 0 || (FDY12>>FRAC_BITS) == 0 && (FDX12>>FRAC_BITS) > 0) C1=C1+(1<<FRAC_BITS);
+	if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
+	if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
 
 
 	PlaneStepper3 Z;
@@ -942,24 +942,38 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			top->rootp->minx = minx;
 			top->rootp->miny = miny;
 
-			top->rootp->FDY12 = FDY12;
 			top->rootp->FX1 = FX1;
-			top->rootp->FDX12 = FDX12;
-			top->rootp->FY1 = FY1;
-
-			top->rootp->FDY23 = FDY23;
 			top->rootp->FX2 = FX2;
-			top->rootp->FDX23 = FDX23;
-			top->rootp->FY2 = FY2;
-
-			top->rootp->FDY31 = FDY31;
 			top->rootp->FX3 = FX3;
-			top->rootp->FDX31 = FDX31;
+
+			top->rootp->FY1 = FY1;
+			top->rootp->FY2 = FY2;
 			top->rootp->FY3 = FY3;
+
+			top->rootp->FDX12 = FDX12;
+			top->rootp->FDY12 = FDY12;
+			
+			top->rootp->FDX23 = FDX23;
+			top->rootp->FDY23 = FDY23;
+			
+			top->rootp->FDX31 = FDX31;
+			top->rootp->FDY31 = FDY31;
+		//}
+
+		float invW = Z.Ip(*(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);	// Interpolate the Z value, based on X and Y.
+		float u = U.Ip(*(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
+		float v = V.Ip(*(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
+
+		uint32_t z_fixed = float_to_fixed(invW, 28);		// Convert Z from float to fixed-point.
+
+		//if (z_ptr[disp_addr&(0x3fffff>>2)] < z_fixed) {	// Z-Compare of previous pixel/poly.
+		//	if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[disp_addr&(0x3fffff>>2)] = z_fixed;
 		//}
 
 		if (top->vram_wr) {
-			disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = top->vram_dout;
+			//if (z_ptr[disp_addr&(0x3fffff>>2)] < z_fixed) {	// Z-Compare of previous pixel/poly.
+				disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = top->vram_dout;
+			//}
 		}
 
 		//printf("sim mult1: %d  core_mult1: %d\n", (FDY12 * FX1), top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
@@ -1910,6 +1924,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("        core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
 		ImGui::Text("        core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
 		ImGui::Text("  core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);
+		ImGui::Text("       core fixed: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed);
 		ImGui::Separator();
 		ImGui::Text("        strip_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt);
 		ImGui::Text("        array_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt);
