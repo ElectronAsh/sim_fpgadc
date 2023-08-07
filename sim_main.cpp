@@ -945,16 +945,16 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			//}
 		}
 
-		bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
-		bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
-		bool pp_ClampU = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
-		bool pp_ClampV = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
-
 		float invW = Z.Ip(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);	// Interpolate the Z value, based on X and Y.
 
 		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
 			float u = U.Ip((float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
 			float v = V.Ip((float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
+
+			bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
+			bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
+			bool pp_ClampU = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
+			bool pp_ClampV = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
 
 			// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
 			// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
@@ -986,48 +986,55 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 			uint16_t texel_pix = 0x0000;
 
-			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
-				if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map)
-					texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7];
+			uint32_t mipmap_offs = 0;
+			bool mipmap_flag = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
 
-				//texel_offs = ui + (vi * tex_u_size);	// Don't de-twiddle the offset?
-				texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);	// Make sure it's using the Twiddled offset for VQ?
-				uint8_t index_byte = vram_ptr[(texel_addr+0x800 + (texel_offs>>2)) & 0x7fffff];	// Read the index BYTE.
+			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
+				if (mipmap_flag) mipmap_offs = MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size & 7];
+				else mipmap_offs = 0;
+
+				uint32_t index_start = texel_addr + 2048 + mipmap_offs;
+
+				// Always use Twiddled offset for VQ? (ui and vi swapped, to rotate textures!)
+				//texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
+				texel_offs = twiddle_slow(vi, ui, tex_v_size, tex_u_size);	// VI and UI swapped, to rotate textures??
+				uint8_t index_byte = vram_ptr[ (index_start + (texel_offs>>2)) & 0x7fffff ];	// Read the index BYTE.
 
 				// Read the four CODE BOOK pixels...
 				// Each INDEX value represents FOUR 16-bit pixels (8 bytes) in the CODE BOOK.
-				uint32_t code_addr = (texel_addr-0x800) + index_byte;	// Four 16-bit pixels per index. 8 bytes.
+				uint32_t code_addr = texel_addr + index_byte;	// Group of 8 bytes (four 16-bit pixels) per index_byte.
 
-				texel_pix3  = vram_ptr[(code_addr+7) & 0x7fffff] << 8;
-				texel_pix3 |= vram_ptr[(code_addr+6) & 0x7fffff];
+				texel_pix3  = vram_ptr[(code_addr+0) & 0x7fffff] << 8;
+				texel_pix3 |= vram_ptr[(code_addr+1) & 0x7fffff];
 
-				texel_pix2  = vram_ptr[(code_addr+5) & 0x7fffff] << 8;
-				texel_pix2 |= vram_ptr[(code_addr+4) & 0x7fffff];
+				texel_pix2  = vram_ptr[(code_addr+2) & 0x7fffff] << 8;
+				texel_pix2 |= vram_ptr[(code_addr+3) & 0x7fffff];
 
-				texel_pix1  = vram_ptr[(code_addr+3) & 0x7fffff] << 8;
-				texel_pix1 |= vram_ptr[(code_addr+2) & 0x7fffff];
+				texel_pix1  = vram_ptr[(code_addr+4) & 0x7fffff] << 8;
+				texel_pix1 |= vram_ptr[(code_addr+5) & 0x7fffff];
 
-				texel_pix0  = vram_ptr[(code_addr+1) & 0x7fffff] << 8;
-				texel_pix0 |= vram_ptr[(code_addr+0) & 0x7fffff];
+				texel_pix0  = vram_ptr[(code_addr+6) & 0x7fffff] << 8;
+				texel_pix0 |= vram_ptr[(code_addr+7) & 0x7fffff];
 
 				//switch ( ((ui&1)<<1) + (vi&1) ) {
 				//switch ( ((texel_offs&1)<<1) + ((texel_offs&2)>>1) ) {
 				switch (texel_offs&3) {
-				case 0: texel_pix = texel_pix3; break;
-				case 1: texel_pix = texel_pix2; break;
-				case 2: texel_pix = texel_pix1; break;
-				case 3: texel_pix = texel_pix0; break;
+					case 0: texel_pix = texel_pix3; break;
+					case 1: texel_pix = texel_pix2; break;
+					case 2: texel_pix = texel_pix1; break;
+					case 3: texel_pix = texel_pix0; break;
 				}
 			}
-			else {
+			else {	// Non-VQ.
 				if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {	// Mipmapped, but no VQ.
 					//sa+=MipPoint[tsp.TexU]*tex->bpp/2;
 					//texconv = tex->TW;
 					//texconv32 = tex->TW32;
 					//size=w*h*tex->bpp/8;	//size, in bytes, in vram
-					texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7] * 8;
+					texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7] /* * 8*/;
 					//texel_pix = 0xf0f0;			// TESTING !! Green.
 				}
+
 				uint8_t byte1 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+1) & 0x7fffff];
 				uint8_t byte0 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+0) & 0x7fffff];
 				texel_pix = byte1<<8 | byte0;
@@ -1082,7 +1089,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			if (z_ptr[ (top->vram_addr&0x7fffff)>>2 ] < invW) {	// Z-Compare of previous pixel/poly.
 				if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff)>>2 ] = invW;
 				//disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = top->vram_dout;
-				disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+				/*if (alpha>0)*/ disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			}
 		}
 
@@ -1393,64 +1400,59 @@ int verilate() {
 
 		//X1: 43C994E8 403.163330  X2: 43C994E8 403.163330  X3: 43BC780C 376.937866  X4: 00000000 0.000000
 		//Y1: 43074970 135.286865  Y2: 4391829E 291.020447  Y3: 43074970 135.286865  Y4: 00000000 0.000000
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
-			x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
-			x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
-			x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
-			x4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x;
+		x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
+		x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
+		x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
+		x4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x;
 
-			y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
-			y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
-			y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
-			y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
+		y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
+		y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
+		y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
+		y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
 
-			z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
-			z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
-			z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
-			z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
-		//}
+		z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
+		z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
+		z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
+		z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
 
 		float u1,u2,u3,u4 = 0;
 		float v1,v2,v3,v4 = 0;
 
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
-			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {
-				int u1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0&0xffff0000;
-				int u2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0&0xffff0000;
-				int u3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0&0xffff0000;
-				int u4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0&0xffff0000;
-				u1 = *(float*)&u1_temp;
-				u2 = *(float*)&u2_temp;
-				u3 = *(float*)&u3_temp;
-				u4 = *(float*)&u4_temp;
+		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {
+			int u1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0&0xffff0000;
+			int u2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0&0xffff0000;
+			int u3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0&0xffff0000;
+			int u4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0&0xffff0000;
+			u1 = *(float*)&u1_temp;
+			u2 = *(float*)&u2_temp;
+			u3 = *(float*)&u3_temp;
+			u4 = *(float*)&u4_temp;
 
-				// U and V are BOTH taken from the u0 regs!...
-				int v1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0<<16;
-				int v2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0<<16;
-				int v3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0<<16;
-				int v4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0<<16;
-				v1 = *(float*)&v1_temp;
-				v2 = *(float*)&v2_temp;
-				v3 = *(float*)&v3_temp;
-				v4 = *(float*)&v4_temp;
+			// U and V are BOTH taken from the u0 regs!...
+			int v1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0<<16;
+			int v2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0<<16;
+			int v3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0<<16;
+			int v4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0<<16;
+			v1 = *(float*)&v1_temp;
+			v2 = *(float*)&v2_temp;
+			v3 = *(float*)&v3_temp;
+			v4 = *(float*)&v4_temp;
 
-				//printf("uv_16_bit u1: %f  v1: %f\n", u1, v1);
-			}
-			else {
-				u1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
-				u2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0;
-				u3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0;
-				u4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0;
+			//printf("uv_16_bit u1: %f  v1: %f\n", u1, v1);
+		}
+		else {
+			u1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
+			u2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0;
+			u3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0;
+			u4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0;
 
-				v1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
-				v2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0;
-				v3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0;
-				v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
-			}
+			v1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
+			v2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0;
+			v3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0;
+			v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
+		}
 
-			//if ( (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)!=0xA0000000 ) // Skip drawing QUAD arrays, for now.
-				rasterize_triangle_fixed(x1, x2, x3, y1, y2, y3, z1, z2, z3, u1, u2, u3, v1, v2, v3);
-		//}
+		rasterize_triangle_fixed(x1, x2, x3, y1, y2, y3, z1, z2, z3, u1, u2, u3, v1, v2, v3);
 
 		top->clk = 1;
 		top->eval();            // Evaluate model!
@@ -1581,12 +1583,15 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_logo", "rb");
 	//pvrfile = fopen("pvr_regs_menu", "rb");
 	//pvrfile = fopen("pvr_regs_menu2", "rb");
-	pvrfile = fopen("pvr_regs_taxi", "rb");
+	//pvrfile = fopen("pvr_regs_taxi", "rb");
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");
 	//pvrfile = fopen("pvr_regs_crazy_title", "rb");
-	//pvrfile = fopen("pvr_regs_sonic", "rb");
+	pvrfile = fopen("pvr_regs_sonic", "rb");
 	//pvrfile = fopen("pvr_regs_mem", "rb");
+	//pvrfile = fopen("pvr_regs_hydro_title", "rb");
+	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");
+	//pvrfile = fopen("pvr_regs_looney_startline", "rb");
 	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
 	else { printf("\npvr_regs dump file not found!\n\n"); return 0; }
 	fseek(pvrfile, 0L, SEEK_END);
@@ -1594,16 +1599,23 @@ int main(int argc, char** argv, char** env) {
 	fseek(pvrfile, 0L, SEEK_SET);
 	fread(pvr_ptr, 1, pvr_size, pvrfile);
 
+	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = pvr_ptr[ 0x140>>2 ];
+	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE   = pvr_ptr[ 0x02C>>2 ];
+	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE    = pvr_ptr[ 0x020>>2 ];
+
 	FILE* vram_file;
 	//vram_file = fopen("vram_logo.bin", "rb");
 	//vram_file = fopen("vram_menu.bin", "rb");
 	//vram_file = fopen("vram_menu2.bin", "rb");
-	vram_file = fopen("vram_taxi.bin", "rb");
+	//vram_file = fopen("vram_taxi.bin", "rb");
 	//vram_file = fopen("vram_taxi2.bin", "rb");
 	//vram_file = fopen("vram_taxi3.bin", "rb");
 	//vram_file = fopen("vram_crazy_title.bin", "rb");
-	//vram_file = fopen("vram_sonic.bin", "rb");
+	vram_file = fopen("vram_sonic.bin", "rb");
 	//vram_file = fopen("vram_mem.bin", "rb");
+	//vram_file = fopen("vram_hydro_title.bin", "rb");
+	//vram_file = fopen("vram_looney_foghorn.bin", "rb");
+	//vram_file = fopen("vram_looney_startline.bin", "rb");
 	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
 	else { printf("\nvram.bin dump file not found!\n\n"); return 0; }
 	fseek(vram_file, 0L, SEEK_END);
@@ -1781,10 +1793,10 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Begin("VRAM dump Editor");
 		mem_edit_3.Cols = 4;
 		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
-		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
-		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
-		//mem_edit_3.HighlightMin = (texel_addr + texel_offs) & 0x7fffff;
-		//mem_edit_3.HighlightMax = ((texel_addr + texel_offs) & 0x7fffff) + 256;
+		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
+		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		mem_edit_3.HighlightMin = (texel_addr + texel_offs) & 0x7fffff;
+		mem_edit_3.HighlightMax = ((texel_addr + texel_offs) & 0x7fffff) + 256;
 		mem_edit_3.DrawContents(vram_ptr, vram_size, 0);
 		ImGui::End();
 

@@ -517,32 +517,9 @@ ra_parser ra_parser_inst (
 	.reset_n( reset_n ),	// input  reset_n
 	
 	.ra_trig( ra_trig ),	// input  ra_trig
-	
-	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Logo.
-	//.TA_ALLOC_CTRL( 32'h00101213 ),	// input [31:0]  TA_ALLOC_CTRL. Logo.
-	//.REGION_BASE(   32'h005667C0 ),	// input [31:0]  REGION_BASE.   Logo.
-	//.PARAM_BASE(    32'h00400000 ),	// input [31:0]  PARAM_BASE.    Logo
-	
-	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Menu / Menu2.
-	//.TA_ALLOC_CTRL( 32'h00100303 ),	// input [31:0]  TA_ALLOC_CTRL. Menu / Menu2.
-	//.REGION_BASE(   32'h001667C0 ),	// input [31:0]  REGION_BASE.   Menu / Menu2.
-	//.PARAM_BASE(    32'h00000000 ),	// input [31:0]  PARAM_BASE.    Menu / Menu2
-	
-	.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Taxi / title screen.
-	.TA_ALLOC_CTRL( 32'h00101313 ),	// input [31:0]  TA_ALLOC_CTRL. Taxi / title screen.
-	.REGION_BASE(   32'h004D33C8 ),	// input [31:0]  REGION_BASE.   Taxi / title screen.
-	.PARAM_BASE(    32'h00400000 ),	// input [31:0]  PARAM_BASE.    Taxi / title screen.
-	
-	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. Sonic.
-	//.TA_ALLOC_CTRL( 32'h00120303 ),	// input [31:0]  TA_ALLOC_CTRL. Sonic.
-	//.REGION_BASE(   32'h001303E0 ),	// input [31:0]  REGION_BASE.   Sonic.
-	//.PARAM_BASE(    32'h00400000 ),	// input [31:0]  PARAM_BASE.   Sonic??
-	
-	//.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. memcard.
-	//.TA_ALLOC_CTRL( 32'h00100303 ),	// input [31:0]  TA_ALLOC_CTRL. memcard.
-	//.REGION_BASE(   32'h005667C0 ),	// input [31:0]  REGION_BASE.   memcard.
-	//.PARAM_BASE(    32'h00400000 ),	// input [31:0]  PARAM_BASE.   memcard
-	
+
+	.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. (always the same value, so far).
+
 	.ra_vram_rd( ra_vram_rd ),			// output  ra_vram_rd
 	.ra_vram_wr( ra_vram_wr ),			// output  ra_vram_wr
 	.ra_vram_addr( ra_vram_addr ),		// output [23:0]  ra_vram_addr
