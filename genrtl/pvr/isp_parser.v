@@ -20,6 +20,9 @@ module isp_parser (
 	
 	output reg poly_drawn,
 	
+	input reg [5:0] tilex,
+	input reg [5:0] tiley,
+	
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
 	input signed [31:0] FDY12,
 	input signed [31:0] FX1,
@@ -181,7 +184,7 @@ else begin
 						poly_drawn <= 1'b1;
 					end
 					else begin
-						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) +1;
+						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) + 1;
 						array_cnt <= 4'd0;	// Sanity check.
 						isp_vram_rd <= 1'b1;
 						isp_state <= 8'd1;
@@ -210,7 +213,7 @@ else begin
 		
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
-		8:  begin vert_a_z <= isp_vram_din; if (!texture) isp_state <= 8'd11; end	// Skip U+V if not Textured.
+		8:  begin vert_a_z <= isp_vram_din; /*if (array_cnt) isp_state <= 8'd16; else*/ if (!texture) isp_state <= 8'd11; end	// Skip U+V if not Textured.
 		9:  begin vert_a_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd11; end	// Skip v0 if 16-bit UV. 
 		10: vert_a_v0 <= isp_vram_din;
 		11: begin
@@ -230,7 +233,7 @@ else begin
 		
 		16: vert_b_x <= isp_vram_din;
 		17: vert_b_y <= isp_vram_din;
-		18: begin vert_b_z <= isp_vram_din; if (!texture) isp_state <= 8'd21; end	// Skip UV if not Textured.
+		18: begin vert_b_z <= isp_vram_din; /*if (array_cnt) isp_state <= 8'd26; else*/ if (!texture) isp_state <= 8'd21; end	// Skip UV if not Textured.
 		19: begin vert_b_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd21; end	// Skip v0 if 16-bit UV. 
 		20: vert_b_v0 <= isp_vram_din;
 		21: begin
@@ -250,7 +253,7 @@ else begin
 		
 		26: vert_c_x <= isp_vram_din;
 		27: vert_c_y <= isp_vram_din;
-		28: begin vert_c_z <= isp_vram_din; if (!texture) isp_state <= 8'd31; end	// Skip UV if not Textured.
+		28: begin vert_c_z <= isp_vram_din; /*if (array_cnt) isp_state <= 8'd46; else*/ if (!texture) isp_state <= 8'd31; end	// Skip UV if not Textured.
 		29: begin vert_c_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd31; end	// Skip v0 if 16-bit UV. 
 		30: vert_c_v0 <= isp_vram_din;
 		31: begin
@@ -335,17 +338,17 @@ else begin
 				mult5 <= (FDY31 * FX3);
 				mult6 <= (FDX31 * FY3);
 				
-				x <= 12'd0;
-				y <= 12'd0;
-				
-				y_ps <= miny;
+				y_ps <= miny;		// Per-poly rendering.
+				//y_ps <= tiley*32;	// Per-tile rendering.
 				
 				isp_state <= isp_state + 8'd1;
 		end
 		
 		49: begin
-			if (y < spany) begin
-				x_ps <= minx;
+			if (y_ps < miny+spany) begin	// Per-poly rendering.
+			x_ps <= minx;					// Per-poly rendering.
+			//if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
+				//x_ps <= tilex*32;			// Per-tile rendering.
 				isp_state <= isp_state + 8'd1;
 			end
 			else begin
@@ -355,19 +358,17 @@ else begin
 		end
 		
 		50: begin
-			if (x < spanx) begin
+			if (x_ps < minx+spanx) begin	// Per-poly rendering.
+			//if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
 				if (inTriangle) begin
 					isp_vram_addr <= ((y_ps * 640) + x_ps) << 2;
-					//isp_vram_dout <= 32'hfabcfabc;
-					isp_vram_dout <= vert_c_base_col_0;
+					isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.
+					//isp_vram_dout <= {8'hff, vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, Alpha boosted.
 					isp_vram_wr <= 1'b1;
 				end
-				x <= x + 12'd1;
 				x_ps <= x_ps + 12'd1;
 			end
 			else begin
-				x <= 12'd0;
-				y <= y + 12'd1;
 				y_ps <= y_ps + 12'd1;
 				isp_state <= 8'd49;
 			end
@@ -390,9 +391,6 @@ wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
 
 reg [11:0] x_ps;
 reg [11:0] y_ps;
-
-reg [11:0] x;
-reg [11:0] y;
 
 parameter FRAC_BITS = 8;
 

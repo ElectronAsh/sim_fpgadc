@@ -742,6 +742,10 @@ uint32_t texel_offs = 0;
 
 #define FRAC_BITS 8
 
+PlaneStepper3 Z;
+PlaneStepper3 U;
+PlaneStepper3 V;
+
 void rasterize_triangle_fixed(float x1, float x2, float x3,
 							  float y1, float y2, float y3,
 							  float z1, float z2, float z3,
@@ -897,46 +901,18 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
 	if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
 
+	// Texture size values are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
+	uint32_t tex_u_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
+	uint32_t tex_v_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
 
-	PlaneStepper3 Z;
-	PlaneStepper3 U;
-	PlaneStepper3 V;
+	uint8_t alpha = 0xff;
 
 	//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
-		// Triangle Array...
-		//if ((top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)==0x80000000) run_enable = 0;
-
-		// Quad Array...
-		//if ((top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)==0xA0000000) run_enable = 0;
-
-		Z.Setup(x1, x2, x3, y1, y2, y3, z1, z2, z3);
-
-		// Texture size values are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
-		uint32_t tex_u_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
-		uint32_t tex_v_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
-
-		int w = tex_u_size-1;
-		int h = tex_v_size-1;
-		//int w = tex_u_size;
-		//int h = tex_v_size;
-
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
-			U.Setup(x1, x2, x3, y1, y2, y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
-			V.Setup(x1, x2, x3, y1, y2, y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
-		//}
-
 		//int halfpixel = 1<<(FRAC_BITS-1);
 		int y_ps = miny /*+ halfpixel*/;
 		int minx_ps = minx /*+ halfpixel*/;
 
-		//auto pixelFlush = pixelPipeline->GetIsp(render_mode, params->isp);
-
-		bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
-		bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
-		bool pp_ClampU = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
-		bool pp_ClampV = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
-
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 			top->rootp->spanx = spanx;
 			top->rootp->spany = spany;
 			top->rootp->minx = minx;
@@ -952,29 +928,166 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 			top->rootp->FDX12 = FDX12;
 			top->rootp->FDY12 = FDY12;
-			
+
 			top->rootp->FDX23 = FDX23;
 			top->rootp->FDY23 = FDY23;
-			
+
 			top->rootp->FDX31 = FDX31;
 			top->rootp->FDY31 = FDY31;
-		//}
 
-		float invW = Z.Ip(*(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);	// Interpolate the Z value, based on X and Y.
-		float u = U.Ip(*(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
-		float v = V.Ip(*(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
+			Z.Setup(x1, x2, x3, y1, y2, y3, z1, z2, z3);
 
-		uint32_t z_fixed = float_to_fixed(invW, 28);		// Convert Z from float to fixed-point.
-
-		//if (z_ptr[disp_addr&(0x3fffff>>2)] < z_fixed) {	// Z-Compare of previous pixel/poly.
-		//	if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[disp_addr&(0x3fffff>>2)] = z_fixed;
-		//}
-
-		if (top->vram_wr) {
-			//if (z_ptr[disp_addr&(0x3fffff>>2)] < z_fixed) {	// Z-Compare of previous pixel/poly.
-				disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = top->vram_dout;
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
+			int w = tex_u_size-1;
+			int h = tex_v_size-1;
+			U.Setup(x1, x2, x3, y1, y2, y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
+			V.Setup(x1, x2, x3, y1, y2, y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
 			//}
 		}
+
+		bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
+		bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
+		bool pp_ClampU = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
+		bool pp_ClampV = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
+
+		float invW = Z.Ip(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);	// Interpolate the Z value, based on X and Y.
+
+		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
+			float u = U.Ip((float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
+			float v = V.Ip((float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
+
+			// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
+			// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
+			// 
+			// An example tcw_word value for the "Play" texture on the Menu is 0x140C8E00.
+			// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
+			texel_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word&0x1fffff)<<2;	// BYTE addr.
+
+			// Float to uint...
+			uint32_t ui = (uint32_t)u;
+			uint32_t vi = (uint32_t)v;
+
+			// Decode Twiddled texture offset...
+			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
+			else texel_offs = ui + (vi * tex_u_size);	// Non-Twiddled...
+
+			//printf("tex_u_size: %d  tex_v_size: %d\n", tex_u_size, tex_v_size);
+			//texel_offs = ClampFlip(pp_ClampU, pp_FlipU, ui, tex_u_size) + ClampFlip(pp_ClampV, pp_FlipV, vi, tex_v_size * tex_u_size);
+			//printf("texel_offs: 0x%08X\n", texel_offs);
+
+			//mem128i px = ((mem128i*)vram_ptr)[offset];
+			//uint32_t offset = (ui>>8) + ((vi>>8) * tex_u_size);
+			//texel_offs = ui + ((vi>>8) * tex_u_size);
+
+			uint16_t texel_pix0 = 0x0000;
+			uint16_t texel_pix1 = 0x0000;
+			uint16_t texel_pix2 = 0x0000;
+			uint16_t texel_pix3 = 0x0000;
+
+			uint16_t texel_pix = 0x0000;
+
+			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
+				if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map)
+					texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7];
+
+				//texel_offs = ui + (vi * tex_u_size);	// Don't de-twiddle the offset?
+				texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);	// Make sure it's using the Twiddled offset for VQ?
+				uint8_t index_byte = vram_ptr[(texel_addr+0x800 + (texel_offs>>2)) & 0x7fffff];	// Read the index BYTE.
+
+				// Read the four CODE BOOK pixels...
+				// Each INDEX value represents FOUR 16-bit pixels (8 bytes) in the CODE BOOK.
+				uint32_t code_addr = (texel_addr-0x800) + index_byte;	// Four 16-bit pixels per index. 8 bytes.
+
+				texel_pix3  = vram_ptr[(code_addr+7) & 0x7fffff] << 8;
+				texel_pix3 |= vram_ptr[(code_addr+6) & 0x7fffff];
+
+				texel_pix2  = vram_ptr[(code_addr+5) & 0x7fffff] << 8;
+				texel_pix2 |= vram_ptr[(code_addr+4) & 0x7fffff];
+
+				texel_pix1  = vram_ptr[(code_addr+3) & 0x7fffff] << 8;
+				texel_pix1 |= vram_ptr[(code_addr+2) & 0x7fffff];
+
+				texel_pix0  = vram_ptr[(code_addr+1) & 0x7fffff] << 8;
+				texel_pix0 |= vram_ptr[(code_addr+0) & 0x7fffff];
+
+				//switch ( ((ui&1)<<1) + (vi&1) ) {
+				//switch ( ((texel_offs&1)<<1) + ((texel_offs&2)>>1) ) {
+				switch (texel_offs&3) {
+				case 0: texel_pix = texel_pix3; break;
+				case 1: texel_pix = texel_pix2; break;
+				case 2: texel_pix = texel_pix1; break;
+				case 3: texel_pix = texel_pix0; break;
+				}
+			}
+			else {
+				if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {	// Mipmapped, but no VQ.
+					//sa+=MipPoint[tsp.TexU]*tex->bpp/2;
+					//texconv = tex->TW;
+					//texconv32 = tex->TW32;
+					//size=w*h*tex->bpp/8;	//size, in bytes, in vram
+					texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7] * 8;
+					//texel_pix = 0xf0f0;			// TESTING !! Green.
+				}
+				uint8_t byte1 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+1) & 0x7fffff];
+				uint8_t byte0 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+0) & 0x7fffff];
+				texel_pix = byte1<<8 | byte0;
+			}
+
+			uint8_t pix_fmt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
+			if (pix_fmt==0 || pix_fmt==7) {
+				// ARGB 1555 (Swirl logo, etc.)...
+				//alpha = (texel_pix>>8)&0x80;
+				//rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);// Red.
+				//rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7) & 0x07);	// Green.
+				//rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2) & 0x07);	// Blue.
+
+				// Not sure why the menu seems to use pix_fmt 0 (ARGB 1555), but only looks correct when decoded as ARGB 4444 ???
+				alpha = (texel_pix>>8)&0xf0;
+				rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+			}
+			else if (pix_fmt==1) {
+				// RGB 565...
+				alpha = 0xff;
+				rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
+				rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
+				rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
+			}
+			else if (pix_fmt==2) {
+				// ARGB 4444...
+				alpha = (texel_pix>>8)&0xf0;
+				rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+			}
+			else {	// Default, to show *anything*. (until more pixel formats are handled).
+				// ARGB 4444...
+				alpha = (texel_pix>>8)&0x80;
+				rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+			}
+		}
+		else {	// Non-textured, so use Flat-shaded for now. Gouraud stuff later.
+			uint32_t vertex_c_col = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
+			alpha  = (vertex_c_col&0xff000000)>>24;
+			rgb[0] = (vertex_c_col&0x00ff0000)>>16;
+			rgb[1] = (vertex_c_col&0x0000ff00)>>8;
+			rgb[2] = (vertex_c_col&0x000000ff);
+		}
+
+		//uint32_t z_fixed = float_to_fixed(invW, 28);		// Convert Z from float to fixed-point.
+		if (top->vram_wr) {
+			if (z_ptr[ (top->vram_addr&0x7fffff)>>2 ] < invW) {	// Z-Compare of previous pixel/poly.
+				if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff)>>2 ] = invW;
+				//disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = top->vram_dout;
+				disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+			}
+		}
+
+		//rgb[0] = rgb[1] = rgb[2] = z_fixed>>8;
+		//disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 
 		//printf("sim mult1: %d  core_mult1: %d\n", (FDY12 * FX1), top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
 		//printf("sim C1: %d  core C1: %d\n\n", C1, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1);
@@ -1466,9 +1579,9 @@ int main(int argc, char** argv, char** env) {
 
 	FILE* pvrfile;
 	//pvrfile = fopen("pvr_regs_logo", "rb");
-	pvrfile = fopen("pvr_regs_menu", "rb");
+	//pvrfile = fopen("pvr_regs_menu", "rb");
 	//pvrfile = fopen("pvr_regs_menu2", "rb");
-	//pvrfile = fopen("pvr_regs_taxi", "rb");
+	pvrfile = fopen("pvr_regs_taxi", "rb");
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");
 	//pvrfile = fopen("pvr_regs_crazy_title", "rb");
@@ -1483,9 +1596,9 @@ int main(int argc, char** argv, char** env) {
 
 	FILE* vram_file;
 	//vram_file = fopen("vram_logo.bin", "rb");
-	vram_file = fopen("vram_menu.bin", "rb");
+	//vram_file = fopen("vram_menu.bin", "rb");
 	//vram_file = fopen("vram_menu2.bin", "rb");
-	//vram_file = fopen("vram_taxi.bin", "rb");
+	vram_file = fopen("vram_taxi.bin", "rb");
 	//vram_file = fopen("vram_taxi2.bin", "rb");
 	//vram_file = fopen("vram_taxi3.bin", "rb");
 	//vram_file = fopen("vram_crazy_title.bin", "rb");
@@ -1919,8 +2032,6 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("        core miny: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny);
 		ImGui::Text("       core spanx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx);
 		ImGui::Text("       core spany: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany);
-		ImGui::Text("           core x: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x);
-		ImGui::Text("           core y: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y);
 		ImGui::Text("        core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
 		ImGui::Text("        core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
 		ImGui::Text("  core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);
@@ -2007,7 +2118,9 @@ int main(int argc, char** argv, char** env) {
 			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) run_enable = 0;
 			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x28e50) run_enable = 0;
 			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) run_enable = 0;
-			/*if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state==1 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) run_enable = 0;
+			
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state==1 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) run_enable = 0;
+			/*if (top->rootp->simtop__DOT__pvr__DOT__vram_addr==0x428234) run_enable = 0;
 			else*/ verilate();
 			/*if (main_time==391280) run_enable = 0;
 			else verilate();*/

@@ -822,6 +822,8 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_wr;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_drawn;
+    CData/*5:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tilex;
+    CData/*5:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tiley;
     CData/*5:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_mask;
     CData/*3:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__num_prims;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow;
@@ -932,8 +934,6 @@ VL_MODULE(Vsimtop___024root) {
     SData/*15:0*/ simtop__DOT__pvr__DOT__pvr_addr;
     SData/*11:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
     SData/*11:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
-    SData/*11:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x;
-    SData/*11:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y;
     VL_IN(boot_vector,31,0);
     VL_OUT(im_req_addr,31,0);
     VL_IN(im_resp_rdata,31,0);

@@ -16,9 +16,9 @@ VL_ATTR_COLD void Vsimtop___024root___initial__TOP__0(Vsimtop___024root* vlSelf)
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__const_zero_expand__DOT__i = 0U;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__const_one_expand__DOT__i = 0x3f800000U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG = 0x27df77U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = 0x100303U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = 0x1667c0U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE = 0U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = 0x101313U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = 0x4d33c8U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE = 0x400000U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_mode = 1U;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float = 0x4212c0e0U;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__const_zero_sign = 0U;
@@ -32,9 +32,9 @@ VL_ATTR_COLD void Vsimtop___024root___initial__TOP__0(Vsimtop___024root* vlSelf)
     vlSelf->simtop__DOT__core__DOT__e1_exu_wpending = 0U;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume = 0U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__pt_opb = 0U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__tm_opb = 0U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__tm_opb = 1U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__t_opb = 3U;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb = 0U;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb = 1U;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__o_opb = 3U;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp 
         = (0xffU & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float 
@@ -1272,12 +1272,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__ra_cont_flush = 
         (1U & (vlSelf->simtop__DOT__pvr__DOT__ra_control 
                >> 0x1cU));
-    vlSelf->simtop__DOT__pvr__DOT__ra_cont_tiley = 
-        (0x3fU & (vlSelf->simtop__DOT__pvr__DOT__ra_control 
-                  >> 8U));
-    vlSelf->simtop__DOT__pvr__DOT__ra_cont_tilex = 
-        (0x3fU & (vlSelf->simtop__DOT__pvr__DOT__ra_control 
-                  >> 2U));
     vlSelf->simtop__DOT__core__DOT__dm_req_writeback = 0U;
     vlSelf->simtop__DOT__core__DOT__dm_req_invalidate = 0U;
     vlSelf->simtop__DOT__core__DOT__dm_req_nofill = 0U;
@@ -1290,6 +1284,12 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__skip 
         = (7U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                  >> 0x15U));
+    vlSelf->simtop__DOT__pvr__DOT__ra_cont_tiley = 
+        (0x3fU & (vlSelf->simtop__DOT__pvr__DOT__ra_control 
+                  >> 8U));
+    vlSelf->simtop__DOT__pvr__DOT__ra_cont_tilex = 
+        (0x3fU & (vlSelf->simtop__DOT__pvr__DOT__ra_control 
+                  >> 2U));
     simtop__DOT____Vcellout__pvr__vram_addr = ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_switch)
                                                 ? vlSelf->simtop__DOT__pvr__DOT__isp_vram_addr
                                                 : vlSelf->simtop__DOT__pvr__DOT__ra_vram_addr);
@@ -2361,10 +2361,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
         = vlSelf->simtop__DOT__pvr__DOT__ra_cont_zclear;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_flush 
         = vlSelf->simtop__DOT__pvr__DOT__ra_cont_flush;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_tiley 
-        = vlSelf->simtop__DOT__pvr__DOT__ra_cont_tiley;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_tilex 
-        = vlSelf->simtop__DOT__pvr__DOT__ra_cont_tilex;
     if (vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_valid) {
         if ((0x8000U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
             if ((0x4000U & (IData)(vlSelf->simtop__DOT__core__DOT__e1_reg_lsu_raw))) {
@@ -3270,6 +3266,14 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
                      ? ((IData)(3U) + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__skip) 
                                        << 1U)) : ((IData)(3U) 
                                                   + (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__skip))));
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_tiley 
+        = vlSelf->simtop__DOT__pvr__DOT__ra_cont_tiley;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tiley 
+        = vlSelf->simtop__DOT__pvr__DOT__ra_cont_tiley;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_tilex 
+        = vlSelf->simtop__DOT__pvr__DOT__ra_cont_tilex;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tilex 
+        = vlSelf->simtop__DOT__pvr__DOT__ra_cont_tilex;
     vlSelf->simtop__DOT__pvr__DOT__vram_addr = simtop__DOT____Vcellout__pvr__vram_addr;
     vlSelf->vram_addr = (0x7fffffU & simtop__DOT____Vcellout__pvr__vram_addr);
     vlSelf->simtop__DOT__core__DOT__lsu__DOT__e2_csr_tonly 
