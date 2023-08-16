@@ -59,23 +59,26 @@ wire [2:0] skip = opb_word[23:21];		// For all three poly types.
 wire eol = opb_word[28];
 
 
+// ISP/TSP Instruction Word. Bit decode, for Opaque or Translucent prims...
 reg [31:0] isp_inst;
-
-// isp_inst, for Opaque or Translucent prims...
-wire [2:0] depth_comp = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
+wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
 wire [1:0] culling_mode = isp_inst[28:27];	// 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
-wire z_write_disable = isp_inst[26];
-wire texture = isp_inst[25];
-wire offset  = isp_inst[24];
-wire gouraud = isp_inst[23];
-wire uv_16_bit = isp_inst[22];
-wire cache_bypass = isp_inst[21];
-wire dcalc_ctrl = isp_inst[20];
+wire z_write_disable    = isp_inst[26];
+wire texture            = isp_inst[25];
+wire offset             = isp_inst[24];
+wire gouraud            = isp_inst[23];
+wire uv_16_bit          = isp_inst[22];
+wire cache_bypass       = isp_inst[21];
+wire dcalc_ctrl         = isp_inst[20];
+// Bits [19:0] are reserved.
 
-// isp_inst, for Opaque Modifier Volume or Translucent Modified Volume...
+// ISP/TSP Instruction Word. Bit decode, for Opaque Modifier Volume or Translucent Modified Volume...
 wire [2:0] volume_inst = isp_inst[31:29];
 //wire [1:0] culling_mode = isp_inst[28:27];	// Same bits as above.
+// Bits [26:0] are reserved.
 
+
+// TSP Instruction Word...
 reg [31:0] tsp_inst;
 wire tex_u_flip = tsp_inst[18];
 wire tex_v_flip = tsp_inst[17];
@@ -85,13 +88,13 @@ wire [2:0] tex_u_size = tsp_inst[5:3];
 wire [2:0] tex_v_size = tsp_inst[2:0];
 
 
+// Texture Control Word...
 reg [31:0] tcw_word;
 wire mip_map = tcw_word[31];
 wire vq_comp = tcw_word[30];
-wire pix_fmt = tcw_word[29:27];
+wire [2:0] pix_fmt = tcw_word[29:27];
 wire scan_order = tcw_word[26];
 wire stride = tcw_word[25];
-wire [2:0] pix_format = tcw_word[29:27];
 
 reg [31:0] tsp2_inst;
 reg [31:0] tex2_cont;
@@ -171,7 +174,7 @@ else begin
 
 	if (isp_state > 0) begin
 		//if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47 || isp_state != 8'd48 || isp_state != 8'd49 || isp_state != 8'd50) isp_state <= isp_state + 8'd1;
-		if (isp_state < 8'd45) isp_state <= isp_state + 8'd1;
+		if (isp_state < 8'd46) isp_state <= isp_state + 8'd1;
 		if (isp_state < 8'd47) isp_vram_addr <= isp_vram_addr + 4;
 	end
 
@@ -377,8 +380,8 @@ else begin
 				mult5 <= (FDY31 * FX3);
 				mult6 <= (FDX31 * FY3);
 				
-				y_ps <= miny;		// Per-poly rendering.
-				//y_ps <= tiley*32;	// Per-tile rendering.
+				//y_ps <= miny;		// Per-poly rendering.
+				y_ps <= tiley*32;	// Per-tile rendering.
 				
 				// Lazy culling...
 				if (FX1[31] || FY1[31] || FX2[31] || FY2[31] || FX3[31] || FY3[31]
@@ -391,10 +394,10 @@ else begin
 		end
 		
 		49: begin
-			if (y_ps < miny+spany) begin	// Per-poly rendering.
-			x_ps <= minx;					// Per-poly rendering.
-			//if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
-				//x_ps <= tilex*32;			// Per-tile rendering.
+			//if (y_ps < miny+spany) begin	// Per-poly rendering.
+			//x_ps <= minx;					// Per-poly rendering.
+			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
+				x_ps <= tilex*32;			// Per-tile rendering.
 				isp_state <= isp_state + 8'd1;
 			end
 			else begin
@@ -404,8 +407,8 @@ else begin
 		end
 		
 		50: begin
-			if (x_ps < minx+spanx) begin	// Per-poly rendering.
-			//if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
+			//if (x_ps < minx+spanx) begin	// Per-poly rendering.
+			if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
 				if (inTriangle) begin
 					isp_vram_addr <= ((y_ps * 640) + x_ps) << 2;
 					isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.

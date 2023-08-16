@@ -428,8 +428,6 @@ struct MyExampleAppConsole
 		//ImGui::TextWrapped("This example implements a console with basic coloring, completion and history. A more elaborate implementation may want to store entries along with extra data such as timestamp, emitter, etc.");
 		//ImGui::TextWrapped("Enter 'HELP' for help, press TAB to use text completion.");
 
-		// TODO: display items starting from the bottom
-
 		//if (ImGui::SmallButton("Add Dummy Text")) { MyAddLog("%d some text", Items.Size); MyAddLog("some more text"); MyAddLog("display very important message here!"); } ImGui::SameLine();
 		//if (ImGui::SmallButton("Add Dummy Error")) { MyAddLog("[error] something went wrong"); } ImGui::SameLine();
 		if (ImGui::SmallButton("Clear")) { ClearLog(); } ImGui::SameLine();
@@ -841,15 +839,31 @@ void BuildTwiddleTables()
 	}
 }
 
+uint64_t read_vram_64(uint32_t addr) {		// BYTE address!
+	uint8_t byte0 = vram_ptr[ addr+0 ];
+	uint8_t byte1 = vram_ptr[ addr+1 ];
+	uint8_t byte2 = vram_ptr[ addr+2 ];
+	uint8_t byte3 = vram_ptr[ addr+3 ];
+
+	uint8_t byte4 = vram_ptr[0x400000+addr+0];
+	uint8_t byte5 = vram_ptr[0x400000+addr+1];
+	uint8_t byte6 = vram_ptr[0x400000+addr+2];
+	uint8_t byte7 = vram_ptr[0x400000+addr+3];
+
+	uint64_t data = (byte0<<56) | (byte1<<48) | (byte2<<40) | (byte3<<32) | (byte4<<24) | (byte5<<16) | (byte6<<8) | byte7;
+
+	return data;
+};
+
 void rasterize_triangle_fixed(float x1, float x2, float x3,
 							  float y1, float y2, float y3,
 							  float z1, float z2, float z3,
 							  float u1, float u2, float u3,
 							  float v1, float v2, float v3) {
-
+	
+	// Lazy culling...
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
-	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
-	if (x1<2 || x2<2 || x3<2 || y1<2 || y2<2 || y3<2) return;	// Hide some spikey bits.
+	if (x1<1 || x2<1 || x3<1 || y1<1 || y2<1 || y3<1) return;	// Hide some spikey bits.
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
@@ -896,9 +910,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	//const int FY4 = float_to_fixed(y4, FRAC_BITS);
 	
 	const int FZ1 = float_to_fixed(z1, FRAC_BITS);
-
-	uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
-	uint32_t y_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tiley * 32;
 
 	float x3_sub_x1 = x3 - x1;
 	float y2_sub_y1 = y2 - y1;
@@ -1039,13 +1050,13 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			uint32_t ui = u;
 			uint32_t vi = v;
 
-			uint16_t tex_u_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
-			uint16_t tex_v_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
+			//uint16_t tex_u_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
+			//uint16_t tex_v_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
 
 			// Decode Twiddled texture offset...
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) {
-				texel_offs = twiddle_slow((ui&0xfffffffc), vi, tex_u_size, tex_v_size);
 				//texel_offs = twop((ui&0xfffffffc)&(tex_v_size-1), vi&(tex_u_size-1), tex_v_size_raw-1, tex_u_size_raw-1);
+				texel_offs = twiddle_slow((ui&0xfffffffc), vi, tex_u_size, tex_v_size);
 			}
 			else texel_offs = (ui&0xfffffffc) + (vi * tex_u_size);	// Non-Twiddled...
 
@@ -1077,97 +1088,71 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
 				mipmap_offs = (mipmap_flag) ? MipPoint[ top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size ] : 0;
 
-				// Always use Twiddled offset for VQ?
-				//texel_offs = twiddle_slow(vi, ui, tex_v_size, tex_u_size);	// Swap VI and UI to rotate textures??
-				
-				//const uint32_t divider=PixelConvertor::xpp * PixelConvertor::ypp;
-				//const uint32_t divider = 2 * 2;	// pixelcvt_next(conv4444_TW,2,2)
-				// Swap VI and UI to rotate textures??
-				//u8* p = &p_in[ (twop(x, y, bcx, bcy)/divider) << 3 ];
-				
-				//uint32_t texel_offs = (twop(vi&(tex_v_size-1), ui&(tex_u_size-1), tex_v_size_raw-1, tex_u_size_raw-1) / divider) << 3;
-
-				//uint32_t index_start = tex_addr+2048+mipmap_offs;
-
-				// One index BYTE per each group of FOUR texels (8 CODE BOOK Bytes)!
-				//uint8_t index_byte = vram_ptr[(index_start + texel_offs) & 0x7fffff];
-
-				//uint32_t code_addr = index_byte;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
-
-				//texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
-				//uint8_t index_byte = vram_ptr[ (tex_addr + texel_offs>>2) & 0x7fffff ];
-				//uint32_t code_addr = index_byte<<3;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
-
 				//const uint32_t divider = 4;	// pixelcvt_next(conv4444_TW,2,2)
 				//const uint32_t bcx = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
 				//const uint32_t bcy = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
-				const uint32_t bcx = 4;
-				const uint32_t bcy = 4;
+				//const uint32_t bcx = 7;
+				//const uint32_t bcy = 7;
+				//uint32_t twop_addr = twop( ui&(tex_u_size-1), vi&(tex_v_size-1), bcx, bcy) / divider;
 
-				//uint32_t twop_addr = twop( ui&(tex_u_size-1), vi&(tex_v_size-1), bcx, bcy);
 				uint32_t twop_addr = twiddle_slow(ui&0xfffffffc, vi, tex_u_size, tex_v_size);
 
 				uint8_t index_byte;
-				if ((ui&1)==0) index_byte = vram_ptr[(tex_addr+2048+mipmap_offs + twop_addr /*/ divider*/) & 0x7fffff];
-				else  index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + twop_addr /*/ divider*/) & 0x7fffff];
+				switch (twop_addr&7) {
+					case 0: index_byte = vram_ptr[(tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 0) & 0x7fffff];
+					case 1: index_byte = vram_ptr[(tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 1) & 0x7fffff];
+					case 2: index_byte = vram_ptr[(tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 2) & 0x7fffff];
+					case 3: index_byte = vram_ptr[(tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 3) & 0x7fffff];
+					case 4: index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 0) & 0x7fffff];
+					case 5: index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 1) & 0x7fffff];
+					case 6: index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 2) & 0x7fffff];
+					case 7: index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 3) & 0x7fffff];
+				}
 
-				uint32_t code_addr = index_byte<<2;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
-				//printf("tex_addr: 0x%08X  x: %03d  y: %03d  bcx: %d  bcy: %d  twop: 0x%08X  divider: %d  index_byte: 0x%02X\n", tex_addr, ui, vi, bcx, bcy, twop_addr, divider, index_byte);
+				// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
+				switch (twop_addr&3) {
+				case 0: texel_pix  = vram_ptr[(tex_addr + (index_byte<<2) + 0) & 0x7fffff];
+						texel_pix |= vram_ptr[(tex_addr + (index_byte<<2) + 1) & 0x7fffff] << 8; break;
 
-				switch (ui&3) {
-					case 0: texel_pix  = vram_ptr[(tex_addr + (code_addr+0)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + (code_addr+1)) & 0x7fffff] << 8; break;
+				case 1: texel_pix  = vram_ptr[(tex_addr + (index_byte<<2) + 2) & 0x7fffff];
+						texel_pix |= vram_ptr[(tex_addr + (index_byte<<2) + 3) & 0x7fffff] << 8; break;
 
-					case 2: texel_pix  = vram_ptr[(tex_addr + (code_addr+2)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + (code_addr+3)) & 0x7fffff] << 8; break;
+				case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 0) & 0x7fffff];
+						texel_pix |= vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 1) & 0x7fffff] << 8; break;
 
-					case 1: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+0)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+1)) & 0x7fffff] << 8; break;
-
-					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+2)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+3)) & 0x7fffff] << 8; break;
+				case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 2) & 0x7fffff];
+						texel_pix |= vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 3) & 0x7fffff] << 8; break;
 				}
 
 				//printf("texel_offs: 0x%08X  index_byte: 0x%08X  code_addr: 0x%08X  texel_pix: 0x%04X \n", texel_offs, index_byte, code_addr, texel_pix);
 			}
 			else {	// Non-VQ.
 				if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {	// Mipmapped, but no VQ.
-					//sa+=MipPoint[tsp.TexU]*tex->bpp/2;
-					//texconv = tex->TW;
-					//texconv32 = tex->TW32;
-					//size=w*h*tex->bpp/8;	//size, in bytes, in vram
 					tex_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7] /* * 8*/;
-					//texel_pix = 0xf0f0;			// TESTING !! Green.
 				}
 
 				switch (ui&3) {
-					case 0: texel_pix  = vram_ptr[(tex_addr + ((texel_offs&0xfffffffe)+0)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + ((texel_offs&0xfffffffe)+1)) & 0x7fffff] << 8; break;
+					case 0: texel_pix  = vram_ptr[(tex_addr + ((texel_offs&0xfffffffc)+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + ((texel_offs&0xfffffffc)+1)) & 0x7fffff] << 8; break;
 
-					case 1: texel_pix  = vram_ptr[(tex_addr + ((texel_offs&0xfffffffe)+2)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + ((texel_offs&0xfffffffe)+3)) & 0x7fffff] << 8; break;
+					case 1: texel_pix  = vram_ptr[(tex_addr + ((texel_offs&0xfffffffc)+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + ((texel_offs&0xfffffffc)+3)) & 0x7fffff] << 8; break;
 
-					case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffe)+0)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffe)+1)) & 0x7fffff] << 8; break;
+					case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffc)+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffc)+1)) & 0x7fffff] << 8; break;
 
-					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffe)+2)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffe)+3)) & 0x7fffff] << 8; break;
+					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffc)+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffc)+3)) & 0x7fffff] << 8; break;
 				}
 			}
 
 			uint8_t pix_fmt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
 			if (pix_fmt==0 || pix_fmt==7) {
-				// ARGB 1555 (Swirl logo, etc.)...
-				//alpha = (texel_pix>>8)&0x80;
-				//rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);// Red.
-				//rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7) & 0x07);	// Green.
-				//rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2) & 0x07);	// Blue.
-
-				// Not sure why the menu seems to use pix_fmt 0 (ARGB 1555), but only looks correct when decoded as ARGB 4444 ???
-				alpha = (texel_pix>>8)&0xf0;
-				rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+				// ARGB 1555 (Swirl logo, etc.)...;
+				alpha = (texel_pix&0x8000) ? 0xff : 0x00;
+				rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);	// Red.
+				rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7)  & 0x07);	// Green.
+				rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2)  & 0x07);	// Blue.
 			}
 			else if (pix_fmt==1) {
 				// RGB 565...				// RGB 565...
@@ -1178,14 +1163,19 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			}
 			else if (pix_fmt==2) {
 				// ARGB 4444...
-				alpha = (texel_pix>>8)&0xf0;
+				alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
 				rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
 				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
 				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
 			}
+			// TODO...
+			// 3 = YUV422.
+			// 4 = Bump Map.
+			// 5 = 4 BPP Palette.
+			// 6 = 8 BPP Palette.
 			else {	// Default, to show *anything*. (until more pixel formats are handled).
 				// ARGB 4444...
-				alpha = (texel_pix>>8)&0xf0;
+				alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
 				rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
 				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
 				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
@@ -1201,7 +1191,19 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 		//uint32_t z_fixed = float_to_fixed(invW, 28);	// Convert Z from float to fixed-point.
 		if (top->vram_wr) {
-			if (z_ptr[ (top->vram_addr&0x7fffff)>>2 ] < invW) {	// Z-Compare of previous pixel/poly.
+			bool allow_write = 0;
+			switch (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__depth_comp) {
+				case 0: allow_write = 0;												  break; // Never.
+				case 1: if (invW <  z_ptr[(top->vram_addr&0x7fffff)>>2]) allow_write = 1; break; // Less.
+				case 2: if (invW == z_ptr[(top->vram_addr&0x7fffff)>>2]) allow_write = 1; break; // Equal.
+				case 3: if (invW <= z_ptr[(top->vram_addr&0x7fffff)>>2]) allow_write = 1; break; // Less or Equal
+				case 4: if (invW >  z_ptr[(top->vram_addr&0x7fffff)>>2]) allow_write = 1; break; // Greater.
+				case 5: if (invW != z_ptr[(top->vram_addr&0x7fffff)>>2]) allow_write = 1; break; // Not Equal.
+				case 6: if (invW >= z_ptr[(top->vram_addr&0x7fffff)>>2]) allow_write = 1; break; // Greater or Equal.
+				case 7: allow_write = 1;												  break; // Always
+			}
+
+			if (allow_write) {
 				if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff)>>2 ] = invW;
 				if (alpha==0xff) disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 				else {
@@ -1210,7 +1212,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 					old_pix[1] = disp_ptr[(top->vram_addr&0x7fffff)>>2] >> 8;
 					old_pix[0] = disp_ptr[(top->vram_addr&0x7fffff)>>2];
 
-					uint8_t new_pix[4];
+					uint8_t new_pix[3];
 					new_pix[2] = rgb[2];
 					new_pix[1] = rgb[1];
 					new_pix[0] = rgb[0];
@@ -1383,7 +1385,7 @@ int verilate() {
 		tex_addr = 0x2A1510;	// Foghorn background.
 		//uint16_t tex_u_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
 		//uint16_t tex_v_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
-		uint16_t tex_u_size = 256;
+		uint16_t tex_u_size = 512;
 		uint16_t tex_v_size = 256;
 		uint16_t texel_pix = 0xf000;
 
@@ -1401,28 +1403,33 @@ int verilate() {
 
 		for (int vi=0; vi<tex_v_size; vi++) {
 			for (int ui=0; ui<tex_u_size; ui++) {
-				//uint32_t twop_addr = twop( ui&(tex_u_size-1), vi&(tex_v_size-1), bcx, bcy);
 				uint32_t twop_addr = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
 
 				uint8_t index_byte;
-				if ((ui&1)==0) index_byte = vram_ptr[(tex_addr+2048+mipmap_offs + twop_addr / divider) & 0x7fffff];
-				else index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + twop_addr / divider) & 0x7fffff];
+				switch (twop_addr&7) {
+					case 0: index_byte = vram_ptr[ (tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 0) & 0x7fffff];
+					case 1: index_byte = vram_ptr[ (tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 1) & 0x7fffff];
+					case 2: index_byte = vram_ptr[ (tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 2) & 0x7fffff];
+					case 3: index_byte = vram_ptr[ (tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 3) & 0x7fffff];
+					case 4: index_byte = vram_ptr[ (tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 0) & 0x7fffff];
+					case 5: index_byte = vram_ptr[ (tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 1) & 0x7fffff];
+					case 6: index_byte = vram_ptr[ (tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 2) & 0x7fffff];
+					case 7: index_byte = vram_ptr[ (tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 3) & 0x7fffff];
+				}
 
-				uint32_t code_addr = index_byte<<2;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
-				//printf("tex_addr: 0x%08X  x: %03d  y: %03d  bcx: %d  bcy: %d  twop: 0x%08X  divider: %d  index_byte: 0x%02X\n", tex_addr, ui, vi, bcx, bcy, twop_addr, divider, index_byte);
+				// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
+				switch (twop_addr&3) {
+					case 0: texel_pix  = vram_ptr[(tex_addr + (index_byte<<2) + 0) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + (index_byte<<2) + 1) & 0x7fffff] << 8; break;
 
-				switch (ui&3) {
-				case 0: texel_pix  = vram_ptr[(tex_addr + ((code_addr&0xfffffffe)+0)) & 0x7fffff];
-						texel_pix |= vram_ptr[(tex_addr + ((code_addr&0xfffffffe)+1)) & 0x7fffff] << 8; break;
+					case 1: texel_pix  = vram_ptr[(tex_addr + (index_byte<<2) + 2) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + (index_byte<<2) + 3) & 0x7fffff] << 8; break;
 
-				case 2: texel_pix  = vram_ptr[(tex_addr + ((code_addr&0xfffffffe)+2)) & 0x7fffff];
-						texel_pix |= vram_ptr[(tex_addr + ((code_addr&0xfffffffe)+3)) & 0x7fffff] << 8; break;
+					case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 0) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 1) & 0x7fffff] << 8; break;
 
-				case 1: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((code_addr&0xfffffffe)+0)) & 0x7fffff];
-						texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((code_addr&0xfffffffe)+1)) & 0x7fffff] << 8; break;
-
-				case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((code_addr&0xfffffffe)+2)) & 0x7fffff];
-						texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((code_addr&0xfffffffe)+3)) & 0x7fffff] << 8; break;
+					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 2) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 3) & 0x7fffff] << 8; break;
 				}
 
 				// ARGB 4444...
@@ -1573,10 +1580,24 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_crazy_title", "rb");
 	//pvrfile = fopen("pvr_regs_crazy_title_2", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");
-	pvrfile = fopen("pvr_regs_mem", "rb");
+	//pvrfile = fopen("pvr_regs_mem", "rb");
 	//pvrfile = fopen("pvr_regs_hydro_title", "rb");		// Need to disable the lazy clipping, to get this to display!
 	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb");
+	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");
+	//pvrfile = fopen("pvr_regs_sonic_title", "rb");
+	pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_dead_title", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_boat", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_gargoyle", "rb");
+	//pvrfile = fopen("pvr_regs_rayman_title", "rb");
+	//pvrfile = fopen("pvr_regs_rayman_lights", "rb");
+	//pvrfile = fopen("pvr_regs_xtreme_intro", "rb");
+	//pvrfile = fopen("pvr_regs_daytona_intro", "rb");
+	//pvrfile = fopen("pvr_regs_daytona_behind", "rb");
+	//pvrfile = fopen("pvr_regs_daytona_front", "rb");
 	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
 	else { printf("\npvr_regs dump file not found!\n\n"); return 0; }
 	fseek(pvrfile, 0L, SEEK_END);
@@ -1598,10 +1619,24 @@ int main(int argc, char** argv, char** env) {
 	//vram_file = fopen("vram_crazy_title.bin", "rb");
 	//vram_file = fopen("vram_crazy_title_2.bin", "rb");
 	//vram_file = fopen("vram_sonic.bin", "rb");
-	vram_file = fopen("vram_mem.bin", "rb");
+	//vram_file = fopen("vram_mem.bin", "rb");
 	//vram_file = fopen("vram_hydro_title.bin", "rb");		// Need to disable the lazy clipping, to get this to display!
 	//vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//vram_file = fopen("vram_looney_startline.bin", "rb");
+	//vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
+	//vram_file = fopen("vram_sonic_title.bin", "rb");
+	//vram_file = fopen("vram_hotd2_title.bin", "rb");
+	vram_file = fopen("vram_hotd2_zombies.bin", "rb");
+	//vram_file = fopen("vram_hotd2_selfie.bin", "rb");
+	//vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
+	//vram_file = fopen("vram_hotd2_boat.bin", "rb");
+	//vram_file = fopen("vram_hotd2_gargoyle.bin", "rb");
+	//vram_file = fopen("vram_rayman_title.bin", "rb");
+	//vram_file = fopen("vram_rayman_lights.bin", "rb");
+	//vram_file = fopen("vram_xtreme_intro.bin", "rb");
+	//vram_file = fopen("vram_daytona_intro.bin", "rb");
+	//vram_file = fopen("vram_daytona_behind.bin", "rb");
+	//vram_file = fopen("vram_daytona_front.bin", "rb");
 	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
 	else { printf("\nvram.bin dump file not found!\n\n"); return 0; }
 	fseek(vram_file, 0L, SEEK_END);

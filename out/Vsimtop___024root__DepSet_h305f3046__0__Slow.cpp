@@ -402,7 +402,7 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
                  >> 0x1eU));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt 
-        = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
+        = (7U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
                  >> 0x1bU));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
@@ -410,9 +410,6 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
                  >> 0x19U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_format 
-        = (7U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
-                 >> 0x1bU));
     vlSelf->simtop__DOT__core__DOT__e2_lsu_fpul_wen 
         = vlSelf->simtop__DOT__core__DOT__lsu__DOT__e2_reg_fpul_wen;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__in_frl 

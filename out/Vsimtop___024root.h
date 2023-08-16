@@ -847,10 +847,9 @@ VL_MODULE(Vsimtop___024root) {
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp;
-    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride;
-    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_format;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt;
