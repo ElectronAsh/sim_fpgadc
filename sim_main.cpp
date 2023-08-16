@@ -126,6 +126,83 @@ bool multi_step = 0;
 int multi_step_amount = 256;
 
 
+uint32_t uppow2(uint32_t n) {
+	uint32_t x;
+	for (x = 31; x >= 0; x--)
+		if (n & (1 << x))
+			if ((1 << x) != n) return(x + 1);
+			else break;
+	return x;
+}
+
+static uint32_t twiddlex[1024] ={
+	0x00000000, 0x00000001, 0x00000004, 0x00000005, 0x00000010, 0x00000011, 0x00000014, 0x00000015, 0x00000040, 0x00000041, 0x00000044, 0x00000045, 0x00000050, 0x00000051, 0x00000054, 0x00000055,
+	0x00000100, 0x00000101, 0x00000104, 0x00000105, 0x00000110, 0x00000111, 0x00000114, 0x00000115, 0x00000140, 0x00000141, 0x00000144, 0x00000145, 0x00000150, 0x00000151, 0x00000154, 0x00000155,
+	0x00000400, 0x00000401, 0x00000404, 0x00000405, 0x00000410, 0x00000411, 0x00000414, 0x00000415, 0x00000440, 0x00000441, 0x00000444, 0x00000445, 0x00000450, 0x00000451, 0x00000454, 0x00000455,
+	0x00000500, 0x00000501, 0x00000504, 0x00000505, 0x00000510, 0x00000511, 0x00000514, 0x00000515, 0x00000540, 0x00000541, 0x00000544, 0x00000545, 0x00000550, 0x00000551, 0x00000554, 0x00000555,
+	0x00001000, 0x00001001, 0x00001004, 0x00001005, 0x00001010, 0x00001011, 0x00001014, 0x00001015, 0x00001040, 0x00001041, 0x00001044, 0x00001045, 0x00001050, 0x00001051, 0x00001054, 0x00001055,
+	0x00001100, 0x00001101, 0x00001104, 0x00001105, 0x00001110, 0x00001111, 0x00001114, 0x00001115, 0x00001140, 0x00001141, 0x00001144, 0x00001145, 0x00001150, 0x00001151, 0x00001154, 0x00001155,
+	0x00001400, 0x00001401, 0x00001404, 0x00001405, 0x00001410, 0x00001411, 0x00001414, 0x00001415, 0x00001440, 0x00001441, 0x00001444, 0x00001445, 0x00001450, 0x00001451, 0x00001454, 0x00001455,
+	0x00001500, 0x00001501, 0x00001504, 0x00001505, 0x00001510, 0x00001511, 0x00001514, 0x00001515, 0x00001540, 0x00001541, 0x00001544, 0x00001545, 0x00001550, 0x00001551, 0x00001554, 0x00001555,
+	0x00004000, 0x00004001, 0x00004004, 0x00004005, 0x00004010, 0x00004011, 0x00004014, 0x00004015, 0x00004040, 0x00004041, 0x00004044, 0x00004045, 0x00004050, 0x00004051, 0x00004054, 0x00004055,
+	0x00004100, 0x00004101, 0x00004104, 0x00004105, 0x00004110, 0x00004111, 0x00004114, 0x00004115, 0x00004140, 0x00004141, 0x00004144, 0x00004145, 0x00004150, 0x00004151, 0x00004154, 0x00004155,
+	0x00004400, 0x00004401, 0x00004404, 0x00004405, 0x00004410, 0x00004411, 0x00004414, 0x00004415, 0x00004440, 0x00004441, 0x00004444, 0x00004445, 0x00004450, 0x00004451, 0x00004454, 0x00004455,
+	0x00004500, 0x00004501, 0x00004504, 0x00004505, 0x00004510, 0x00004511, 0x00004514, 0x00004515, 0x00004540, 0x00004541, 0x00004544, 0x00004545, 0x00004550, 0x00004551, 0x00004554, 0x00004555,
+	0x00005000, 0x00005001, 0x00005004, 0x00005005, 0x00005010, 0x00005011, 0x00005014, 0x00005015, 0x00005040, 0x00005041, 0x00005044, 0x00005045, 0x00005050, 0x00005051, 0x00005054, 0x00005055,
+	0x00005100, 0x00005101, 0x00005104, 0x00005105, 0x00005110, 0x00005111, 0x00005114, 0x00005115, 0x00005140, 0x00005141, 0x00005144, 0x00005145, 0x00005150, 0x00005151, 0x00005154, 0x00005155,
+	0x00005400, 0x00005401, 0x00005404, 0x00005405, 0x00005410, 0x00005411, 0x00005414, 0x00005415, 0x00005440, 0x00005441, 0x00005444, 0x00005445, 0x00005450, 0x00005451, 0x00005454, 0x00005455,
+	0x00005500, 0x00005501, 0x00005504, 0x00005505, 0x00005510, 0x00005511, 0x00005514, 0x00005515, 0x00005540, 0x00005541, 0x00005544, 0x00005545, 0x00005550, 0x00005551, 0x00005554, 0x00005555,
+	0x00010000, 0x00010001, 0x00010004, 0x00010005, 0x00010010, 0x00010011, 0x00010014, 0x00010015, 0x00010040, 0x00010041, 0x00010044, 0x00010045, 0x00010050, 0x00010051, 0x00010054, 0x00010055,
+	0x00010100, 0x00010101, 0x00010104, 0x00010105, 0x00010110, 0x00010111, 0x00010114, 0x00010115, 0x00010140, 0x00010141, 0x00010144, 0x00010145, 0x00010150, 0x00010151, 0x00010154, 0x00010155,
+	0x00010400, 0x00010401, 0x00010404, 0x00010405, 0x00010410, 0x00010411, 0x00010414, 0x00010415, 0x00010440, 0x00010441, 0x00010444, 0x00010445, 0x00010450, 0x00010451, 0x00010454, 0x00010455,
+	0x00010500, 0x00010501, 0x00010504, 0x00010505, 0x00010510, 0x00010511, 0x00010514, 0x00010515, 0x00010540, 0x00010541, 0x00010544, 0x00010545, 0x00010550, 0x00010551, 0x00010554, 0x00010555,
+	0x00011000, 0x00011001, 0x00011004, 0x00011005, 0x00011010, 0x00011011, 0x00011014, 0x00011015, 0x00011040, 0x00011041, 0x00011044, 0x00011045, 0x00011050, 0x00011051, 0x00011054, 0x00011055,
+	0x00011100, 0x00011101, 0x00011104, 0x00011105, 0x00011110, 0x00011111, 0x00011114, 0x00011115, 0x00011140, 0x00011141, 0x00011144, 0x00011145, 0x00011150, 0x00011151, 0x00011154, 0x00011155,
+	0x00011400, 0x00011401, 0x00011404, 0x00011405, 0x00011410, 0x00011411, 0x00011414, 0x00011415, 0x00011440, 0x00011441, 0x00011444, 0x00011445, 0x00011450, 0x00011451, 0x00011454, 0x00011455,
+	0x00011500, 0x00011501, 0x00011504, 0x00011505, 0x00011510, 0x00011511, 0x00011514, 0x00011515, 0x00011540, 0x00011541, 0x00011544, 0x00011545, 0x00011550, 0x00011551, 0x00011554, 0x00011555,
+	0x00014000, 0x00014001, 0x00014004, 0x00014005, 0x00014010, 0x00014011, 0x00014014, 0x00014015, 0x00014040, 0x00014041, 0x00014044, 0x00014045, 0x00014050, 0x00014051, 0x00014054, 0x00014055,
+	0x00014100, 0x00014101, 0x00014104, 0x00014105, 0x00014110, 0x00014111, 0x00014114, 0x00014115, 0x00014140, 0x00014141, 0x00014144, 0x00014145, 0x00014150, 0x00014151, 0x00014154, 0x00014155,
+	0x00014400, 0x00014401, 0x00014404, 0x00014405, 0x00014410, 0x00014411, 0x00014414, 0x00014415, 0x00014440, 0x00014441, 0x00014444, 0x00014445, 0x00014450, 0x00014451, 0x00014454, 0x00014455,
+	0x00014500, 0x00014501, 0x00014504, 0x00014505, 0x00014510, 0x00014511, 0x00014514, 0x00014515, 0x00014540, 0x00014541, 0x00014544, 0x00014545, 0x00014550, 0x00014551, 0x00014554, 0x00014555,
+	0x00015000, 0x00015001, 0x00015004, 0x00015005, 0x00015010, 0x00015011, 0x00015014, 0x00015015, 0x00015040, 0x00015041, 0x00015044, 0x00015045, 0x00015050, 0x00015051, 0x00015054, 0x00015055,
+	0x00015100, 0x00015101, 0x00015104, 0x00015105, 0x00015110, 0x00015111, 0x00015114, 0x00015115, 0x00015140, 0x00015141, 0x00015144, 0x00015145, 0x00015150, 0x00015151, 0x00015154, 0x00015155,
+	0x00015400, 0x00015401, 0x00015404, 0x00015405, 0x00015410, 0x00015411, 0x00015414, 0x00015415, 0x00015440, 0x00015441, 0x00015444, 0x00015445, 0x00015450, 0x00015451, 0x00015454, 0x00015455,
+	0x00015500, 0x00015501, 0x00015504, 0x00015505, 0x00015510, 0x00015511, 0x00015514, 0x00015515, 0x00015540, 0x00015541, 0x00015544, 0x00015545, 0x00015550, 0x00015551, 0x00015554, 0x00015555,
+	0x00040000, 0x00040001, 0x00040004, 0x00040005, 0x00040010, 0x00040011, 0x00040014, 0x00040015, 0x00040040, 0x00040041, 0x00040044, 0x00040045, 0x00040050, 0x00040051, 0x00040054, 0x00040055,
+	0x00040100, 0x00040101, 0x00040104, 0x00040105, 0x00040110, 0x00040111, 0x00040114, 0x00040115, 0x00040140, 0x00040141, 0x00040144, 0x00040145, 0x00040150, 0x00040151, 0x00040154, 0x00040155,
+	0x00040400, 0x00040401, 0x00040404, 0x00040405, 0x00040410, 0x00040411, 0x00040414, 0x00040415, 0x00040440, 0x00040441, 0x00040444, 0x00040445, 0x00040450, 0x00040451, 0x00040454, 0x00040455,
+	0x00040500, 0x00040501, 0x00040504, 0x00040505, 0x00040510, 0x00040511, 0x00040514, 0x00040515, 0x00040540, 0x00040541, 0x00040544, 0x00040545, 0x00040550, 0x00040551, 0x00040554, 0x00040555,
+	0x00041000, 0x00041001, 0x00041004, 0x00041005, 0x00041010, 0x00041011, 0x00041014, 0x00041015, 0x00041040, 0x00041041, 0x00041044, 0x00041045, 0x00041050, 0x00041051, 0x00041054, 0x00041055,
+	0x00041100, 0x00041101, 0x00041104, 0x00041105, 0x00041110, 0x00041111, 0x00041114, 0x00041115, 0x00041140, 0x00041141, 0x00041144, 0x00041145, 0x00041150, 0x00041151, 0x00041154, 0x00041155,
+	0x00041400, 0x00041401, 0x00041404, 0x00041405, 0x00041410, 0x00041411, 0x00041414, 0x00041415, 0x00041440, 0x00041441, 0x00041444, 0x00041445, 0x00041450, 0x00041451, 0x00041454, 0x00041455,
+	0x00041500, 0x00041501, 0x00041504, 0x00041505, 0x00041510, 0x00041511, 0x00041514, 0x00041515, 0x00041540, 0x00041541, 0x00041544, 0x00041545, 0x00041550, 0x00041551, 0x00041554, 0x00041555,
+	0x00044000, 0x00044001, 0x00044004, 0x00044005, 0x00044010, 0x00044011, 0x00044014, 0x00044015, 0x00044040, 0x00044041, 0x00044044, 0x00044045, 0x00044050, 0x00044051, 0x00044054, 0x00044055,
+	0x00044100, 0x00044101, 0x00044104, 0x00044105, 0x00044110, 0x00044111, 0x00044114, 0x00044115, 0x00044140, 0x00044141, 0x00044144, 0x00044145, 0x00044150, 0x00044151, 0x00044154, 0x00044155,
+	0x00044400, 0x00044401, 0x00044404, 0x00044405, 0x00044410, 0x00044411, 0x00044414, 0x00044415, 0x00044440, 0x00044441, 0x00044444, 0x00044445, 0x00044450, 0x00044451, 0x00044454, 0x00044455,
+	0x00044500, 0x00044501, 0x00044504, 0x00044505, 0x00044510, 0x00044511, 0x00044514, 0x00044515, 0x00044540, 0x00044541, 0x00044544, 0x00044545, 0x00044550, 0x00044551, 0x00044554, 0x00044555,
+	0x00045000, 0x00045001, 0x00045004, 0x00045005, 0x00045010, 0x00045011, 0x00045014, 0x00045015, 0x00045040, 0x00045041, 0x00045044, 0x00045045, 0x00045050, 0x00045051, 0x00045054, 0x00045055,
+	0x00045100, 0x00045101, 0x00045104, 0x00045105, 0x00045110, 0x00045111, 0x00045114, 0x00045115, 0x00045140, 0x00045141, 0x00045144, 0x00045145, 0x00045150, 0x00045151, 0x00045154, 0x00045155,
+	0x00045400, 0x00045401, 0x00045404, 0x00045405, 0x00045410, 0x00045411, 0x00045414, 0x00045415, 0x00045440, 0x00045441, 0x00045444, 0x00045445, 0x00045450, 0x00045451, 0x00045454, 0x00045455,
+	0x00045500, 0x00045501, 0x00045504, 0x00045505, 0x00045510, 0x00045511, 0x00045514, 0x00045515, 0x00045540, 0x00045541, 0x00045544, 0x00045545, 0x00045550, 0x00045551, 0x00045554, 0x00045555,
+	0x00050000, 0x00050001, 0x00050004, 0x00050005, 0x00050010, 0x00050011, 0x00050014, 0x00050015, 0x00050040, 0x00050041, 0x00050044, 0x00050045, 0x00050050, 0x00050051, 0x00050054, 0x00050055,
+	0x00050100, 0x00050101, 0x00050104, 0x00050105, 0x00050110, 0x00050111, 0x00050114, 0x00050115, 0x00050140, 0x00050141, 0x00050144, 0x00050145, 0x00050150, 0x00050151, 0x00050154, 0x00050155,
+	0x00050400, 0x00050401, 0x00050404, 0x00050405, 0x00050410, 0x00050411, 0x00050414, 0x00050415, 0x00050440, 0x00050441, 0x00050444, 0x00050445, 0x00050450, 0x00050451, 0x00050454, 0x00050455,
+	0x00050500, 0x00050501, 0x00050504, 0x00050505, 0x00050510, 0x00050511, 0x00050514, 0x00050515, 0x00050540, 0x00050541, 0x00050544, 0x00050545, 0x00050550, 0x00050551, 0x00050554, 0x00050555,
+	0x00051000, 0x00051001, 0x00051004, 0x00051005, 0x00051010, 0x00051011, 0x00051014, 0x00051015, 0x00051040, 0x00051041, 0x00051044, 0x00051045, 0x00051050, 0x00051051, 0x00051054, 0x00051055,
+	0x00051100, 0x00051101, 0x00051104, 0x00051105, 0x00051110, 0x00051111, 0x00051114, 0x00051115, 0x00051140, 0x00051141, 0x00051144, 0x00051145, 0x00051150, 0x00051151, 0x00051154, 0x00051155,
+	0x00051400, 0x00051401, 0x00051404, 0x00051405, 0x00051410, 0x00051411, 0x00051414, 0x00051415, 0x00051440, 0x00051441, 0x00051444, 0x00051445, 0x00051450, 0x00051451, 0x00051454, 0x00051455,
+	0x00051500, 0x00051501, 0x00051504, 0x00051505, 0x00051510, 0x00051511, 0x00051514, 0x00051515, 0x00051540, 0x00051541, 0x00051544, 0x00051545, 0x00051550, 0x00051551, 0x00051554, 0x00051555,
+	0x00054000, 0x00054001, 0x00054004, 0x00054005, 0x00054010, 0x00054011, 0x00054014, 0x00054015, 0x00054040, 0x00054041, 0x00054044, 0x00054045, 0x00054050, 0x00054051, 0x00054054, 0x00054055,
+	0x00054100, 0x00054101, 0x00054104, 0x00054105, 0x00054110, 0x00054111, 0x00054114, 0x00054115, 0x00054140, 0x00054141, 0x00054144, 0x00054145, 0x00054150, 0x00054151, 0x00054154, 0x00054155,
+	0x00054400, 0x00054401, 0x00054404, 0x00054405, 0x00054410, 0x00054411, 0x00054414, 0x00054415, 0x00054440, 0x00054441, 0x00054444, 0x00054445, 0x00054450, 0x00054451, 0x00054454, 0x00054455,
+	0x00054500, 0x00054501, 0x00054504, 0x00054505, 0x00054510, 0x00054511, 0x00054514, 0x00054515, 0x00054540, 0x00054541, 0x00054544, 0x00054545, 0x00054550, 0x00054551, 0x00054554, 0x00054555,
+	0x00055000, 0x00055001, 0x00055004, 0x00055005, 0x00055010, 0x00055011, 0x00055014, 0x00055015, 0x00055040, 0x00055041, 0x00055044, 0x00055045, 0x00055050, 0x00055051, 0x00055054, 0x00055055,
+	0x00055100, 0x00055101, 0x00055104, 0x00055105, 0x00055110, 0x00055111, 0x00055114, 0x00055115, 0x00055140, 0x00055141, 0x00055144, 0x00055145, 0x00055150, 0x00055151, 0x00055154, 0x00055155,
+	0x00055400, 0x00055401, 0x00055404, 0x00055405, 0x00055410, 0x00055411, 0x00055414, 0x00055415, 0x00055440, 0x00055441, 0x00055444, 0x00055445, 0x00055450, 0x00055451, 0x00055454, 0x00055455,
+	0x00055500, 0x00055501, 0x00055504, 0x00055505, 0x00055510, 0x00055511, 0x00055514, 0x00055515, 0x00055540, 0x00055541, 0x00055544, 0x00055545, 0x00055550, 0x00055551, 0x00055554, 0x00055555
+};
+
+
 // Data
 static IDXGISwapChain*          g_pSwapChain = NULL;
 static ID3D11RenderTargetView*  g_mainRenderTargetView = NULL;
@@ -737,7 +814,7 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 	return rv;
 }
 
-uint32_t texel_addr = 0;
+uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
 #define FRAC_BITS 8
@@ -746,33 +823,33 @@ PlaneStepper3 Z;
 PlaneStepper3 U;
 PlaneStepper3 V;
 
+
+uint32_t detwiddle[2][8][1024];
+#define twop(x,y,bcx,bcy) (detwiddle[0][bcy][x]+detwiddle[1][bcx][y])
+
+void BuildTwiddleTables()
+{
+	for (uint32_t s=0; s<8; s++)
+	{
+		uint32_t x_sz=1024;
+		uint32_t y_sz=8<<s;
+		for (uint32_t i=0; i<x_sz; i++)
+		{
+			detwiddle[0][s][i]=twiddle_slow(i, 0, x_sz, y_sz);
+			detwiddle[1][s][i]=twiddle_slow(0, i, y_sz, x_sz);
+		}
+	}
+}
+
 void rasterize_triangle_fixed(float x1, float x2, float x3,
 							  float y1, float y2, float y3,
 							  float z1, float z2, float z3,
 							  float u1, float u2, float u3,
 							  float v1, float v2, float v3) {
-	// Lazy clip...
-	/*
-	if (x1<10) x1=10;
-	if (x2<10) x2=10;
-	if (x3<10) x3=10;
-
-	if (y1<10) y1=10;
-	if (y2<10) y2=10;
-	if (y3<10) y3=10;
-
-	if (x1>639) x1=639;
-	if (x2>639) x2=639;
-	if (x3>639) x3=639;
-
-	if (y1>479) y1=479;
-	if (y2>479) y2=479;
-	if (y3>479) y3=479;
-	*/
 
 	if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;
-	if (x1<5 || x2<5 || x3<5 || y1<5 || y2<5 || y3<5) return;	// Hide some spikey bits.
+	if (x1<2 || x2<2 || x3<2 || y1<2 || y2<2 || y3<2) return;	// Hide some spikey bits.
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
@@ -902,8 +979,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
 
 	// Texture size values are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
-	uint32_t tex_u_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
-	uint32_t tex_v_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
+	uint32_t tex_u_size = 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7);
+	uint32_t tex_v_size = 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size&7);
 
 	uint8_t alpha = 0xff;
 
@@ -956,20 +1033,21 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			bool pp_ClampU = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
 			bool pp_ClampV = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
 
-			// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
-			// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
-			// 
-			// An example tcw_word value for the "Play" texture on the Menu is 0x140C8E00.
-			// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
-			texel_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word&0x1fffff)<<2;	// BYTE addr.
+			//printf("flipu: %d  flipv: %d  clampu: %d  clampv: %d\n", pp_FlipU, pp_FlipV, pp_ClampU, pp_ClampV);
 
 			// Float to uint...
-			uint32_t ui = (uint32_t)u;
-			uint32_t vi = (uint32_t)v;
+			uint32_t ui = u;
+			uint32_t vi = v;
+
+			uint16_t tex_u_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
+			uint16_t tex_v_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
 
 			// Decode Twiddled texture offset...
-			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
-			else texel_offs = ui + (vi * tex_u_size);	// Non-Twiddled...
+			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) {
+				texel_offs = twiddle_slow((ui&0xfffffffc), vi, tex_u_size, tex_v_size);
+				//texel_offs = twop((ui&0xfffffffc)&(tex_v_size-1), vi&(tex_u_size-1), tex_v_size_raw-1, tex_u_size_raw-1);
+			}
+			else texel_offs = (ui&0xfffffffc) + (vi * tex_u_size);	// Non-Twiddled...
 
 			//printf("tex_u_size: %d  tex_v_size: %d\n", tex_u_size, tex_v_size);
 			//texel_offs = ClampFlip(pp_ClampU, pp_FlipU, ui, tex_u_size) + ClampFlip(pp_ClampV, pp_FlipV, vi, tex_v_size * tex_u_size);
@@ -986,44 +1064,71 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 			uint16_t texel_pix = 0x0000;
 
+			// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
+			// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
+			// 
+			// An example tcw_word value for the "Play" texture on the Menu is 0x140C8E00.
+			// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
+			tex_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word&0x1fffff) << 2;	// BYTE addr.
+
 			uint32_t mipmap_offs = 0;
 			bool mipmap_flag = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
 
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
-				if (mipmap_flag) mipmap_offs = MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size & 7];
-				else mipmap_offs = 0;
+				mipmap_offs = (mipmap_flag) ? MipPoint[ top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size ] : 0;
 
-				uint32_t index_start = texel_addr + 2048 + mipmap_offs;
+				// Always use Twiddled offset for VQ?
+				//texel_offs = twiddle_slow(vi, ui, tex_v_size, tex_u_size);	// Swap VI and UI to rotate textures??
+				
+				//const uint32_t divider=PixelConvertor::xpp * PixelConvertor::ypp;
+				//const uint32_t divider = 2 * 2;	// pixelcvt_next(conv4444_TW,2,2)
+				// Swap VI and UI to rotate textures??
+				//u8* p = &p_in[ (twop(x, y, bcx, bcy)/divider) << 3 ];
+				
+				//uint32_t texel_offs = (twop(vi&(tex_v_size-1), ui&(tex_u_size-1), tex_v_size_raw-1, tex_u_size_raw-1) / divider) << 3;
 
-				// Always use Twiddled offset for VQ? (ui and vi swapped, to rotate textures!)
+				//uint32_t index_start = tex_addr+2048+mipmap_offs;
+
+				// One index BYTE per each group of FOUR texels (8 CODE BOOK Bytes)!
+				//uint8_t index_byte = vram_ptr[(index_start + texel_offs) & 0x7fffff];
+
+				//uint32_t code_addr = index_byte;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
+
 				//texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
-				texel_offs = twiddle_slow(vi, ui, tex_v_size, tex_u_size);	// VI and UI swapped, to rotate textures??
-				uint8_t index_byte = vram_ptr[ (index_start + (texel_offs>>2)) & 0x7fffff ];	// Read the index BYTE.
+				//uint8_t index_byte = vram_ptr[ (tex_addr + texel_offs>>2) & 0x7fffff ];
+				//uint32_t code_addr = index_byte<<3;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
 
-				// Read the four CODE BOOK pixels...
-				// Each INDEX value represents FOUR 16-bit pixels (8 bytes) in the CODE BOOK.
-				uint32_t code_addr = texel_addr + index_byte;	// Group of 8 bytes (four 16-bit pixels) per index_byte.
+				//const uint32_t divider = 4;	// pixelcvt_next(conv4444_TW,2,2)
+				//const uint32_t bcx = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
+				//const uint32_t bcy = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
+				const uint32_t bcx = 4;
+				const uint32_t bcy = 4;
 
-				texel_pix3  = vram_ptr[(code_addr+0) & 0x7fffff] << 8;
-				texel_pix3 |= vram_ptr[(code_addr+1) & 0x7fffff];
+				//uint32_t twop_addr = twop( ui&(tex_u_size-1), vi&(tex_v_size-1), bcx, bcy);
+				uint32_t twop_addr = twiddle_slow(ui&0xfffffffc, vi, tex_u_size, tex_v_size);
 
-				texel_pix2  = vram_ptr[(code_addr+2) & 0x7fffff] << 8;
-				texel_pix2 |= vram_ptr[(code_addr+3) & 0x7fffff];
+				uint8_t index_byte;
+				if ((ui&1)==0) index_byte = vram_ptr[(tex_addr+2048+mipmap_offs + twop_addr /*/ divider*/) & 0x7fffff];
+				else  index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + twop_addr /*/ divider*/) & 0x7fffff];
 
-				texel_pix1  = vram_ptr[(code_addr+4) & 0x7fffff] << 8;
-				texel_pix1 |= vram_ptr[(code_addr+5) & 0x7fffff];
+				uint32_t code_addr = index_byte<<2;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
+				//printf("tex_addr: 0x%08X  x: %03d  y: %03d  bcx: %d  bcy: %d  twop: 0x%08X  divider: %d  index_byte: 0x%02X\n", tex_addr, ui, vi, bcx, bcy, twop_addr, divider, index_byte);
 
-				texel_pix0  = vram_ptr[(code_addr+6) & 0x7fffff] << 8;
-				texel_pix0 |= vram_ptr[(code_addr+7) & 0x7fffff];
+				switch (ui&3) {
+					case 0: texel_pix  = vram_ptr[(tex_addr + (code_addr+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + (code_addr+1)) & 0x7fffff] << 8; break;
 
-				//switch ( ((ui&1)<<1) + (vi&1) ) {
-				//switch ( ((texel_offs&1)<<1) + ((texel_offs&2)>>1) ) {
-				switch (texel_offs&3) {
-					case 0: texel_pix = texel_pix3; break;
-					case 1: texel_pix = texel_pix2; break;
-					case 2: texel_pix = texel_pix1; break;
-					case 3: texel_pix = texel_pix0; break;
+					case 2: texel_pix  = vram_ptr[(tex_addr + (code_addr+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + (code_addr+3)) & 0x7fffff] << 8; break;
+
+					case 1: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+1)) & 0x7fffff] << 8; break;
+
+					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+3)) & 0x7fffff] << 8; break;
 				}
+
+				//printf("texel_offs: 0x%08X  index_byte: 0x%08X  code_addr: 0x%08X  texel_pix: 0x%04X \n", texel_offs, index_byte, code_addr, texel_pix);
 			}
 			else {	// Non-VQ.
 				if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {	// Mipmapped, but no VQ.
@@ -1031,13 +1136,23 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 					//texconv = tex->TW;
 					//texconv32 = tex->TW32;
 					//size=w*h*tex->bpp/8;	//size, in bytes, in vram
-					texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7] /* * 8*/;
+					tex_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7] /* * 8*/;
 					//texel_pix = 0xf0f0;			// TESTING !! Green.
 				}
 
-				uint8_t byte1 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+1) & 0x7fffff];
-				uint8_t byte0 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+0) & 0x7fffff];
-				texel_pix = byte1<<8 | byte0;
+				switch (ui&3) {
+					case 0: texel_pix  = vram_ptr[(tex_addr + ((texel_offs&0xfffffffe)+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + ((texel_offs&0xfffffffe)+1)) & 0x7fffff] << 8; break;
+
+					case 1: texel_pix  = vram_ptr[(tex_addr + ((texel_offs&0xfffffffe)+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + ((texel_offs&0xfffffffe)+3)) & 0x7fffff] << 8; break;
+
+					case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffe)+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffe)+1)) & 0x7fffff] << 8; break;
+
+					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffe)+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffe)+3)) & 0x7fffff] << 8; break;
+				}
 			}
 
 			uint8_t pix_fmt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
@@ -1055,7 +1170,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
 			}
 			else if (pix_fmt==1) {
-				// RGB 565...
+				// RGB 565...				// RGB 565...
 				alpha = 0xff;
 				rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
 				rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
@@ -1070,7 +1185,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			}
 			else {	// Default, to show *anything*. (until more pixel formats are handled).
 				// ARGB 4444...
-				alpha = (texel_pix>>8)&0x80;
+				alpha = (texel_pix>>8)&0xf0;
 				rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
 				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
 				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
@@ -1084,231 +1199,34 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			rgb[2] = (vertex_c_col&0x000000ff);
 		}
 
-		//uint32_t z_fixed = float_to_fixed(invW, 28);		// Convert Z from float to fixed-point.
+		//uint32_t z_fixed = float_to_fixed(invW, 28);	// Convert Z from float to fixed-point.
 		if (top->vram_wr) {
 			if (z_ptr[ (top->vram_addr&0x7fffff)>>2 ] < invW) {	// Z-Compare of previous pixel/poly.
 				if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff)>>2 ] = invW;
-				//disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = top->vram_dout;
-				/*if (alpha>0)*/ disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
-			}
-		}
+				if (alpha==0xff) disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+				else {
+					uint8_t old_pix[3];
+					old_pix[2] = disp_ptr[(top->vram_addr&0x7fffff)>>2] >> 16;
+					old_pix[1] = disp_ptr[(top->vram_addr&0x7fffff)>>2] >> 8;
+					old_pix[0] = disp_ptr[(top->vram_addr&0x7fffff)>>2];
 
-		//rgb[0] = rgb[1] = rgb[2] = z_fixed>>8;
-		//disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+					uint8_t new_pix[4];
+					new_pix[2] = rgb[2];
+					new_pix[1] = rgb[1];
+					new_pix[0] = rgb[0];
 
-		//printf("sim mult1: %d  core_mult1: %d\n", (FDY12 * FX1), top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
-		//printf("sim C1: %d  core C1: %d\n\n", C1, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1);
+					uint8_t result[3];
+					result[0] = (uint8_t)( ( (alpha+1) * new_pix[0] + (256-alpha) * old_pix[0]) >> 8);
+					result[1] = (uint8_t)( ( (alpha+1) * new_pix[1] + (256-alpha) * old_pix[1]) >> 8);
+					result[2] = (uint8_t)( ( (alpha+1) * new_pix[2] + (256-alpha) * old_pix[2]) >> 8);
 
-		/*
-		for (int y = 0; y < spany; y++) {
-		//for (uint32_t y = y_start; y < (y_start+32); y++) {
-			int x_ps = minx_ps;	
-			for (int x = 0; x < spanx; x++) {
-			//for (uint32_t x = x_start; x < (x_start+32); x++) {
-				int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
-				int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
-				int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
-
-				bool inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
-
-				top->rootp->FDY12 = FDY12;
-				top->rootp->FX1 = FX1;
-				top->rootp->FDX12 = FDX12;
-				top->rootp->FY1 = FY1;
-
-				top->rootp->FDY23 = FDY23;
-				top->rootp->FX2 = FX2;
-				top->rootp->FDX23 = FDX23;
-				top->rootp->FY2 = FY2;
-
-				top->rootp->FDY31 = FDY31;
-				top->rootp->FX3 = FX3;
-				top->rootp->FDX31 = FDX31;
-				top->rootp->FY3 = FY3;
-
-				int core_c1 = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1;
-				int core_c2 = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2;
-				int core_c3 = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3;
-				//printf("sim C1: %d  core C1: %f\n",   C1, core_c1 );
-				//printf("sim C2: %d  core C2: %f\n",   C2, core_c2 );
-				//printf("sim C3: %d  core C3: %f\n\n", C3, core_c3 );
-
-				//top->rootp->x_ps = x_ps;
-				//top->rootp->y_ps = y_ps;
-
-				//printf("sim mult1: %d  core_mult1: %d\n", (FDY12 * FX1), top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
-				//if (x==0) printf("sim C1: %d  core C1: %d\n", C1, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1);
-
-				//int mult7 = MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS);
-				//printf("sim mult7: %d  core mult7: %d\n", mult7, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7 );
-
-				uint32_t old_pixel = 0;
-				uint8_t alpha = 0;
-
-				// Pause the sim when the Region Array "last entry" bit is set!
-				if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_last) run_enable = 0;
-
-				if (inTriangle) {
-					float invW = Z.Ip((float)x_ps, (float)y_ps);	// Interpolate the Z value, based on X and Y.
-					//pixelFlush(this, x_ps, y_ps, invW, cb_x, tag);
-
-					// Flat shading uses the colour from the third vertex. (DC System Bible PDF, page 204).
-					uint32_t vertex_c_col = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0;
-
-					if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
-						float u = U.Ip((float)x_ps, (float)y_ps, 1/invW );
-						float v = V.Ip((float)x_ps, (float)y_ps, 1/invW );
-
-						// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
-						// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
-						// 
-						// An example tcw_word value for the "Play" texture on the Menu is 0x140C8E00.
-						// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
-						texel_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word&0x1fffff)<<2;	// BYTE addr.
-
-						// Float to uint...
-						uint32_t ui = (uint32_t)u;
-						uint32_t vi = (uint32_t)v;
-						
-						// Decode Twiddled texture offset...
-						if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) {
-							texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
-						}
-						else {	// Non-Twiddled...
-							texel_offs = ui + (vi * tex_u_size);
-						}
-
-						//printf("tex_u_size: %d  tex_v_size: %d\n", tex_u_size, tex_v_size);
-						//texel_offs = ClampFlip(pp_ClampU, pp_FlipU, ui, tex_u_size) + ClampFlip(pp_ClampV, pp_FlipV, vi, tex_v_size * tex_u_size);
-						//printf("texel_offs: 0x%08X\n", texel_offs);
-
-						//mem128i px = ((mem128i*)vram_ptr)[offset];
-						//uint32_t offset = (ui>>8) + ((vi>>8) * tex_u_size);
-						//texel_offs = ui + ((vi>>8) * tex_u_size);
-
-						uint16_t texel_pix0 = 0x0000;
-						uint16_t texel_pix1 = 0x0000;
-						uint16_t texel_pix2 = 0x0000;
-						uint16_t texel_pix3 = 0x0000;
-
-						uint16_t texel_pix = 0x0000;
-
-						if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
-							if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map)
-								texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7];
-							
-							//texel_offs = ui + (vi * tex_u_size);	// Don't de-twiddle the offset?
-							texel_offs = twiddle_slow(ui, vi, tex_u_size, tex_v_size);	// Make sure it's using the Twiddled offset for VQ?
-							uint8_t index_byte = vram_ptr[ (texel_addr+0x800 + (texel_offs>>2) ) & 0x7fffff];	// Read the index BYTE.
-							
-							// Read the four CODE BOOK pixels...
-							// Each INDEX value represents FOUR 16-bit pixels (8 bytes) in the CODE BOOK.
-							uint32_t code_addr = (texel_addr-0x800) + index_byte;	// Four 16-bit pixels per index. 8 bytes.
-
-							texel_pix3  = vram_ptr[ (code_addr+7) & 0x7fffff ] << 8;
-							texel_pix3 |= vram_ptr[ (code_addr+6) & 0x7fffff ];
-
-							texel_pix2  = vram_ptr[ (code_addr+5) & 0x7fffff ] << 8;
-							texel_pix2 |= vram_ptr[ (code_addr+4) & 0x7fffff ];
-
-							texel_pix1  = vram_ptr[ (code_addr+3) & 0x7fffff ] << 8;
-							texel_pix1 |= vram_ptr[ (code_addr+2) & 0x7fffff ];
-
-							texel_pix0  = vram_ptr[ (code_addr+1) & 0x7fffff ] << 8;
-							texel_pix0 |= vram_ptr[ (code_addr+0) & 0x7fffff ];
-
-							//switch ( ((ui&1)<<1) + (vi&1) ) {
-							//switch ( ((texel_offs&1)<<1) + ((texel_offs&2)>>1) ) {
-							switch (texel_offs&3) {
-								case 0: texel_pix = texel_pix3; break;
-								case 1: texel_pix = texel_pix2; break;
-								case 2: texel_pix = texel_pix1; break;
-								case 3: texel_pix = texel_pix0; break;
-							}
-						}
-						else {
-							if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map) {	// Mipmapped, but no VQ.
-								//sa+=MipPoint[tsp.TexU]*tex->bpp/2;
-								//texconv = tex->TW;
-								//texconv32 = tex->TW32;
-								//size=w*h*tex->bpp/8;	//size, in bytes, in vram
-								texel_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7] * 8;
-								//texel_pix = 0xf0f0;			// TESTING !! Green.
-							}
-							uint8_t byte1 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+1) & 0x7fffff];
-							uint8_t byte0 = vram_ptr[((texel_addr + ((texel_offs>>1)*2))+0) & 0x7fffff];
-							texel_pix = byte1<<8 | byte0;
-						}
-
-						uint8_t pix_fmt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
-						if (pix_fmt==0 || pix_fmt==7) {
-							// ARGB 1555 (Swirl logo, etc.)...
-							//alpha = (texel_pix>>8)&0x80;
-							//rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);// Red.
-							//rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7) & 0x07);	// Green.
-							//rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2) & 0x07);	// Blue.
-
-							// Not sure why the menu seems to use pix_fmt 0 (ARGB 1555), but only looks correct when decoded as ARGB 4444 ???
-							alpha = (texel_pix>>8)&0xf0;
-							rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-							rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-							rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
-						}
-						else if (pix_fmt==1) {
-							// RGB 565...
-							alpha = 0xff;
-							rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
-							rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
-							rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
-						}
-						else if (pix_fmt==2) {
-							// ARGB 4444...
-							alpha = (texel_pix>>8)&0xf0;
-							rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-							rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-							rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
-						}
-						else {	// Default, to show *anything*. (until more pixel formats are handled).
-							// ARGB 4444...
-							alpha = (texel_pix>>8)&0x80;
-							rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-							rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-							rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
-						}
-					}
-					else {	// Non-textured, so use Flat-shaded for now. Gouraud stuff later.
-						alpha  = (vertex_c_col&0xff000000)>>24;
-						rgb[0] = (vertex_c_col&0x00ff0000)>>16;
-						rgb[1] = (vertex_c_col&0x0000ff00)>>8;
-						rgb[2] = (vertex_c_col&0x000000ff);
-					}
-
-					disp_addr = (y_ps * 640) + x_ps;
-
-					uint32_t z_fixed = float_to_fixed(invW, 28);		// Convert Z from float to fixed-point.
-
-					if ( z_ptr[ disp_addr&(0x3fffff>>2) ] < z_fixed ) {	// Z-Compare of previous pixel/poly.
-					//if ( z_ptr[disp_addr&(0x3fffff>>2)] < invW) {	// Z-Compare of previous pixel/poly.
-						// Overwrite value in Z-buffer if the new value is greater/closer.
-						if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ disp_addr&(0x3fffff>>2) ] = z_fixed;
-						tag_ptr[ disp_addr&(0x3fffff>>2) ] = top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr;
-						if ( (vertex_c_col&0x00ffffff) != 0x00CBCBFF ) {	// Hide the grey/purple smoke texture(s) in Crazy Taxi.
-							//rgb[0] = rgb[1] = rgb[2] = z_fixed>>8;
-							//old_pixel = disp_ptr[disp_addr&(0x3fffff>>2)];
-							//if (alpha>0)
-							disp_ptr[ (disp_addr>>2)&0x3fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
-							//disp_ptr[ (disp_addr>>2)&0x3fffff ] = 0xff<<24 | tag_ptr[ disp_addr&(0x3fffff>>2) ]&0x00ffffff;
-						}
-					}
+					disp_ptr[(top->vram_addr&0x7fffff)>>2] = 0xff<<24 | result[2]<<16 | result[1]<<8 | result[0];
 				}
-				x_ps = x_ps + 1;
 			}
-			y_ps = y_ps + 1;
-			
 		}
-		*/
 	//}
 }
+
 
 int verilate() {
 	if (!Verilated::gotFinish()) {
@@ -1419,20 +1337,20 @@ int verilate() {
 		float v1,v2,v3,v4 = 0;
 
 		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {
-			int u1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0&0xffff0000;
-			int u2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0&0xffff0000;
-			int u3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0&0xffff0000;
-			int u4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0&0xffff0000;
+			uint32_t u1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0&0xffff0000;
+			uint32_t u2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0&0xffff0000;
+			uint32_t u3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0&0xffff0000;
+			uint32_t u4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0&0xffff0000;
 			u1 = *(float*)&u1_temp;
 			u2 = *(float*)&u2_temp;
 			u3 = *(float*)&u3_temp;
 			u4 = *(float*)&u4_temp;
 
 			// U and V are BOTH taken from the u0 regs!...
-			int v1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0<<16;
-			int v2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0<<16;
-			int v3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0<<16;
-			int v4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0<<16;
+			uint32_t v1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0<<16;
+			uint32_t v2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0<<16;
+			uint32_t v3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0<<16;
+			uint32_t v4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0<<16;
 			v1 = *(float*)&v1_temp;
 			v2 = *(float*)&v2_temp;
 			v3 = *(float*)&v3_temp;
@@ -1452,13 +1370,79 @@ int verilate() {
 			v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
 		}
 
-		rasterize_triangle_fixed(x1, x2, x3, y1, y2, y3, z1, z2, z3, u1, u2, u3, v1, v2, v3);
-
 		top->clk = 1;
 		top->eval();            // Evaluate model!
 		top->clk = 0;
 		top->eval();            // Evaluate model!
 		main_time++;            // Time passes...
+
+		rasterize_triangle_fixed(x1, x2, x3, y1, y2, y3, z1, z2, z3, u1, u2, u3, v1, v2, v3);
+
+		/*
+		//tex_addr = 0x347790;	// Crazy Taxi title.
+		tex_addr = 0x2A1510;	// Foghorn background.
+		//uint16_t tex_u_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
+		//uint16_t tex_v_size = 8<<top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
+		uint16_t tex_u_size = 256;
+		uint16_t tex_v_size = 256;
+		uint16_t texel_pix = 0xf000;
+
+		const uint32_t divider = 4;	// pixelcvt_next(conv4444_TW,2,2)
+		//const uint32_t bcx = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
+		//const uint32_t bcy = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
+		const uint32_t bcx = 4;
+		const uint32_t bcy = 4;
+
+		uint32_t mipmap_offs = 0;
+		bool mipmap_flag = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
+
+		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp)
+			mipmap_offs = (mipmap_flag) ? MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size] : 0;
+
+		for (int vi=0; vi<tex_v_size; vi++) {
+			for (int ui=0; ui<tex_u_size; ui++) {
+				//uint32_t twop_addr = twop( ui&(tex_u_size-1), vi&(tex_v_size-1), bcx, bcy);
+				uint32_t twop_addr = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
+
+				uint8_t index_byte;
+				if ((ui&1)==0) index_byte = vram_ptr[(tex_addr+2048+mipmap_offs + twop_addr / divider) & 0x7fffff];
+				else index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + twop_addr / divider) & 0x7fffff];
+
+				uint32_t code_addr = index_byte<<2;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
+				//printf("tex_addr: 0x%08X  x: %03d  y: %03d  bcx: %d  bcy: %d  twop: 0x%08X  divider: %d  index_byte: 0x%02X\n", tex_addr, ui, vi, bcx, bcy, twop_addr, divider, index_byte);
+
+				switch (ui&3) {
+				case 0: texel_pix  = vram_ptr[(tex_addr + ((code_addr&0xfffffffe)+0)) & 0x7fffff];
+						texel_pix |= vram_ptr[(tex_addr + ((code_addr&0xfffffffe)+1)) & 0x7fffff] << 8; break;
+
+				case 2: texel_pix  = vram_ptr[(tex_addr + ((code_addr&0xfffffffe)+2)) & 0x7fffff];
+						texel_pix |= vram_ptr[(tex_addr + ((code_addr&0xfffffffe)+3)) & 0x7fffff] << 8; break;
+
+				case 1: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((code_addr&0xfffffffe)+0)) & 0x7fffff];
+						texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((code_addr&0xfffffffe)+1)) & 0x7fffff] << 8; break;
+
+				case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((code_addr&0xfffffffe)+2)) & 0x7fffff];
+						texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((code_addr&0xfffffffe)+3)) & 0x7fffff] << 8; break;
+				}
+
+				// ARGB 4444...
+				//uint8_t alpha = (texel_pix>>8)&0xf0;
+				//rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+				//rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+				//rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+
+				// RGB 565...
+				//uint8_t alpha = 0xff;
+				rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
+				rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
+				rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
+
+				uint32_t disp_addr = (vi * 640) + ui;
+
+				disp_ptr[ disp_addr&0x7fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+			}
+		}
+		*/
 
 		return 1;
 	}
@@ -1587,9 +1571,10 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");
 	//pvrfile = fopen("pvr_regs_crazy_title", "rb");
-	pvrfile = fopen("pvr_regs_sonic", "rb");
-	//pvrfile = fopen("pvr_regs_mem", "rb");
-	//pvrfile = fopen("pvr_regs_hydro_title", "rb");
+	//pvrfile = fopen("pvr_regs_crazy_title_2", "rb");
+	//pvrfile = fopen("pvr_regs_sonic", "rb");
+	pvrfile = fopen("pvr_regs_mem", "rb");
+	//pvrfile = fopen("pvr_regs_hydro_title", "rb");		// Need to disable the lazy clipping, to get this to display!
 	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb");
 	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
@@ -1611,9 +1596,10 @@ int main(int argc, char** argv, char** env) {
 	//vram_file = fopen("vram_taxi2.bin", "rb");
 	//vram_file = fopen("vram_taxi3.bin", "rb");
 	//vram_file = fopen("vram_crazy_title.bin", "rb");
-	vram_file = fopen("vram_sonic.bin", "rb");
-	//vram_file = fopen("vram_mem.bin", "rb");
-	//vram_file = fopen("vram_hydro_title.bin", "rb");
+	//vram_file = fopen("vram_crazy_title_2.bin", "rb");
+	//vram_file = fopen("vram_sonic.bin", "rb");
+	vram_file = fopen("vram_mem.bin", "rb");
+	//vram_file = fopen("vram_hydro_title.bin", "rb");		// Need to disable the lazy clipping, to get this to display!
 	//vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//vram_file = fopen("vram_looney_startline.bin", "rb");
 	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
@@ -1701,6 +1687,8 @@ int main(int argc, char** argv, char** env) {
 
 	static bool show_app_console = true;
 	
+	BuildTwiddleTables();
+
 	// imgui Main loop stuff...
 	MSG msg;
 	ZeroMemory(&msg, sizeof(msg));
@@ -1792,11 +1780,16 @@ int main(int argc, char** argv, char** env) {
 
 		ImGui::Begin("VRAM dump Editor");
 		mem_edit_3.Cols = 4;
-		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
-		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
-		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
-		mem_edit_3.HighlightMin = (texel_addr + texel_offs) & 0x7fffff;
-		mem_edit_3.HighlightMax = ((texel_addr + texel_offs) & 0x7fffff) + 256;
+		//mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
+
+		uint32_t vq_index = tex_addr + 2048 + (texel_offs>>2);
+
+		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
+		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		//mem_edit_3.HighlightMin = (vq_index) & 0x7fffff;
+		//mem_edit_3.HighlightMax = (vq_index+256) & 0x7fffff;
+		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr_last) & 0x7fffff;
+		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr_last+32) & 0x7fffff;
 		mem_edit_3.DrawContents(vram_ptr, vram_size, 0);
 		ImGui::End();
 
@@ -2026,6 +2019,12 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Separator();
 		uint8_t s_mask = top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__strip_mask;
 		ImGui::Text("        opb_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word);
+
+		if ( (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0x80000000)==0 )               ImGui::Text("  Triangle Strip");
+		else if ( (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)==0x80000000 ) ImGui::Text("  Triangle Array");
+		else if ( (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)==0xA0000000 ) ImGui::Text("      Quad Array");
+		else ImGui::Text("   Unknown Prim!");
+
 		ImGui::Text("      strip_mask: 0b%d%d%d%d%d%d", (s_mask&1), (s_mask&2)>>1, (s_mask&4)>>2, (s_mask&8)>>3, (s_mask&16)>>4, (s_mask&32)>>5, (s_mask&64)>>6 );
 		ImGui::Text("       num_prims: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__num_prims);
 		ImGui::Text("          shadow: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__shadow);
@@ -2033,7 +2032,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("             eol: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__eol);
 		ImGui::Separator();
 		ImGui::Text("  ra_entry_valid: %d", top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid);
-		ImGui::Text("       poly_addr: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__poly_addr);
+		ImGui::Text("       poly_addr: 0x%06X", top->rootp->simtop__DOT__pvr__DOT__poly_addr);	// 24-bit VRAM addr.
 		ImGui::Text("     render_poly: %d", top->rootp->simtop__DOT__pvr__DOT__render_poly);
 		ImGui::End();
 
@@ -2054,14 +2053,28 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("         isp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst);
 		ImGui::Text("         tsp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
 		ImGui::Text("         tcw_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
-		ImGui::Text("       texel_addr: 0x%08X", texel_addr);
+		ImGui::Text("         tex_addr: 0x%08X", tex_addr);
 		ImGui::Text("        texel_off: 0x%08X", texel_offs);
 		ImGui::Text("       tex_u_size: %d", 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7) );
 		ImGui::Text("       tex_v_size: %d", 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size&7) );
-		ImGui::Text("          texture: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture);
+		ImGui::Text("          pix_fmt: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt);
+		ImGui::SameLine();
+		switch (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt) {
+			case 0: ImGui::Text("ARGB 1555");	break; // 0  1555 value: 1 bit; RGB values: 5 bits each
+			case 7: ImGui::Text("Rsvd / 1555");	break; // 7  Reserved        Regarded as 1555
+			case 1: ImGui::Text("RGB 565");		break; // 1  565      R value: 5 bits; G value: 6 bits; B value: 5 bits
+			case 2: ImGui::Text("ARGB 4444");	break; // 2  4444 value: 4 bits; RGB values: 4 bits each
+			case 3: ImGui::Text("YUV");			break; // 3  YUV422 32 bits per 2 pixels; YUYV values: 8 bits each
+			case 4: ImGui::Text("BumpMap");		break; // 4  Bump Map 	16 bits/pixel; S value: 8 bits; R value: 8 bits
+			case 5: ImGui::Text("Pal4");		break; // 5  4 BPP Palette   Palette texture with 4 bits/pixel
+			case 6: ImGui::Text("Pal8");		break; // 6  8 BPP Palette   Palette texture with 8 bits/pixel
+		}
+
 		ImGui::Text("           offset: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__offset);
 		ImGui::Text("        uv_16_bit: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit);
-		ImGui::Text(" mipmap: %d     vq: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp);
+		ImGui::Text(" texture: %d  mipmap: %d  vq: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture,
+												top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map,
+												top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp);
 		ImGui::Text("         vert_a_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
 		ImGui::Text("         vert_a_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y);
 		ImGui::Text("         vert_a_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z);
@@ -2122,11 +2135,8 @@ int main(int argc, char** argv, char** env) {
 		//g_pSwapChain->Present(1, 0); // Present with vsync
 		g_pSwapChain->Present(0, 0); // Present without vsync
 
-		//ram_ptr[0] = 0x00000000; // Don't remember what this is for??
 
-		//my_dram = calloc(1, );
-
-		if (run_enable) for (int step = 0; step < 256; step++) {	// Simulates MUCH faster if it's done in batches.
+		if (run_enable) for (int step = 0; step < 1024; step++) {	// Simulates MUCH faster if it's done in batches.
 			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) run_enable = 0;
 			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x28e50) run_enable = 0;
 			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) run_enable = 0;

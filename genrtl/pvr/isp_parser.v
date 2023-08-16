@@ -149,6 +149,8 @@ reg [7:0] isp_state;
 reg [2:0] strip_cnt;
 reg [3:0] array_cnt;
 
+reg quad_done;
+
 reg [23:0] isp_vram_addr_last;
 
 always @(posedge clock or negedge reset_n)
@@ -157,6 +159,7 @@ if (!reset_n) begin
 	isp_vram_rd <= 1'b0;
 	isp_vram_wr <= 1'b0;
 	isp_entry_valid <= 1'b0;
+	quad_done <= 1'b1;
 	poly_drawn <= 1'b0;
 end
 else begin
@@ -191,6 +194,7 @@ else begin
 					end
 				end
 				else if (opb_word[31:29]==3'b100 || opb_word[31:29]==3'b101) begin	// Triangle Arrays or Quads.
+					if (opb_word[31:29]==3'b101) quad_done <= 1'b0;	// if a Quad.			
 					strip_cnt <= 3'd0;
 					array_cnt <= num_prims /*-1*/;
 					isp_vram_rd <= 1'b1;
@@ -213,7 +217,7 @@ else begin
 		
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
-		8:  begin vert_a_z <= isp_vram_din; /*if (array_cnt) isp_state <= 8'd16; else*/ if (!texture) isp_state <= 8'd11; end	// Skip U+V if not Textured.
+		8:  begin vert_a_z <= isp_vram_din; if (array_cnt) isp_state <= 8'd16; else if (!texture) isp_state <= 8'd11; end	// Skip U+V if not Textured.
 		9:  begin vert_a_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd11; end	// Skip v0 if 16-bit UV. 
 		10: vert_a_v0 <= isp_vram_din;
 		11: begin
@@ -233,7 +237,7 @@ else begin
 		
 		16: vert_b_x <= isp_vram_din;
 		17: vert_b_y <= isp_vram_din;
-		18: begin vert_b_z <= isp_vram_din; /*if (array_cnt) isp_state <= 8'd26; else*/ if (!texture) isp_state <= 8'd21; end	// Skip UV if not Textured.
+		18: begin vert_b_z <= isp_vram_din; if (array_cnt) isp_state <= 8'd26; else if (!texture) isp_state <= 8'd21; end	// Skip UV if not Textured.
 		19: begin vert_b_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd21; end	// Skip v0 if 16-bit UV. 
 		20: vert_b_v0 <= isp_vram_din;
 		21: begin
@@ -253,23 +257,30 @@ else begin
 		
 		26: vert_c_x <= isp_vram_din;
 		27: vert_c_y <= isp_vram_din;
-		28: begin vert_c_z <= isp_vram_din; /*if (array_cnt) isp_state <= 8'd46; else*/ if (!texture) isp_state <= 8'd31; end	// Skip UV if not Textured.
+		28: begin vert_c_z <= isp_vram_din; if (array_cnt) isp_state <= 8'd46; else if (!texture) isp_state <= 8'd31; end	// Skip UV if not Textured.
 		29: begin vert_c_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd31; end	// Skip v0 if 16-bit UV. 
 		30: vert_c_v0 <= isp_vram_din;
 		31: begin
 			vert_c_base_col_0 <= isp_vram_din;
 			if (two_volume) isp_state <= 8'd32;
 			else if (offset) isp_state <= 8'd35;
-			else /*isp_state <= 8'd36;*/ isp_state <= 8'd46;	// TESTING. Skip Vert D.
+			else if (opb_word[31:29]==3'b101) isp_state <= 8'd36;	// If a Quad.
+				else isp_state <= 8'd46;
 		end
 		
 		// if Two-volume...
 		32: vert_c_u1 <= isp_vram_din;
 		33: vert_c_v1 <= isp_vram_din;
-		34: begin vert_c_base_col_1 <= isp_vram_din; /*if (!offset) isp_state <= 8'd36; end*/ isp_state <= 8'd46; end	// TESTING. Skip Vert D.
+		34: begin vert_c_base_col_1 <= isp_vram_din; /*if (!offset) isp_state <= 8'd36; end*/
+			if (opb_word[31:29]==3'b101) isp_state <= 8'd36;	// If a Quad.
+			else isp_state <= 8'd46;
+		end
 		
 		// if Offset colour...
-		35: begin vert_c_off_col <= isp_vram_din; isp_state <= 8'd46; end	// TESTING. Skip Vert D.
+		35: begin vert_c_off_col <= isp_vram_din;
+			if (opb_word[31:29]==3'b101) isp_state <= 8'd36;	// If a Quad
+			else isp_state <= 8'd46;
+		end
 		
 		36: vert_d_x <= isp_vram_din;
 		37: vert_d_y <= isp_vram_din;
@@ -297,32 +308,60 @@ else begin
 		end
 		
 		47: begin
-			if (!opb_word[31]) begin				// Triangle Strip.
+			if (!opb_word[31]) begin		// Triangle Strip.
 				if (strip_cnt==3'd0) begin		// If TriangleStrip is done...
 					poly_drawn <= 1'b1;
 					isp_state <= 8'd0;
 				end
-				else begin	// TriangleStrip...
+				else begin	// Do TriangleStrip...
 					strip_cnt <= strip_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New. (plus one extra word, due to the isp_vram_addr++ thing).
 					isp_state <= 8'd6;
 				end
 			end
 			else
-			if (opb_word[31:29]==3'b100 || opb_word[31:29]==3'b101) begin		// Triangle Array or Quad Array.
+			//if (opb_word[31:29]==3'b100 || opb_word[31:29]==3'b101) begin		// Triangle Array or Quad Array.
 				if (array_cnt==4'd0) begin		// If Array is done...
-					poly_drawn <= 1'b1;
-					isp_state <= 8'd0;
+					if (opb_word[31:29]==3'b101) begin	// Quad Array (maybe) done.
+						if (!quad_done) begin	// Second half of Quad not done yet...
+							/*
+							vert_a_x <= vert_b_x;   vert_b_x <= vert_c_x;   vert_c_x <= vert_d_x;
+							vert_a_y <= vert_b_y;   vert_b_y <= vert_c_y;   vert_c_y <= vert_d_y;
+							vert_a_z <= vert_b_z;   vert_b_z <= vert_c_z;   vert_c_z <= vert_d_z;
+							vert_a_u0 <= vert_b_u0; vert_b_u0 <= vert_c_u0; vert_c_u0 <= vert_d_u0;
+							vert_a_v0 <= vert_b_v0; vert_b_v0 <= vert_c_v0; vert_c_v0 <= vert_d_v0;
+							*/
+							vert_a_x  <= vert_c_x;   vert_b_x <= vert_d_x;   vert_c_x <= vert_a_x;
+							vert_a_y  <= vert_c_y;   vert_b_y <= vert_d_y;   vert_c_y <= vert_a_y;
+							vert_a_z  <= vert_c_z;   vert_b_z <= vert_d_z;   vert_c_z <= vert_a_z;
+							vert_a_u0 <= vert_c_u0; vert_b_u0 <= vert_d_u0; vert_c_u0 <= vert_a_u0;
+							vert_a_v0 <= vert_c_v0; vert_b_v0 <= vert_d_v0; vert_c_v0 <= vert_a_v0;
+							isp_state <= 8'd46;		// Draw the second half of the Quad.
+							quad_done <= 1'b1;
+						end
+						else begin
+							poly_drawn <= 1'b1;	// Quad is done.
+							isp_state <= 8'd0;
+						end
+					end
+					else begin	// Triangle is done.
+						poly_drawn <= 1'b1;
+						isp_state <= 8'd0;
+					end
 				end
-				else begin
+				else begin	// Triangle Array or Quad Array not done yet...
 					array_cnt <= array_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - 4;
 					isp_state <= 8'd1;	// Jump back, to grab the next PRIM (including ISP/TSP/TCW).
 				end
-			end
+			//end
 		end
 
-		48: begin
+		48: begin				
+				// Lazy clipping...
+				//if (FX1[31]) FX1=0; if (FX2[31]) FX2=0; if (FX3[31]) FX3=0;
+				//if (FY1[31]) FY1=0; if (FY2[31]) FY2=0; if (FY3[31]) FY3=0;
+		
 				isp_vram_addr_last <= isp_vram_addr;
 		
 				// Half-edge constants (setup).
@@ -341,7 +380,14 @@ else begin
 				y_ps <= miny;		// Per-poly rendering.
 				//y_ps <= tiley*32;	// Per-tile rendering.
 				
-				isp_state <= isp_state + 8'd1;
+				// Lazy culling...
+				if (FX1[31] || FY1[31] || FX2[31] || FY2[31] || FX3[31] || FY3[31]
+					/*|| (FX1>>FRAC_BITS)>639 || (FX2>>FRAC_BITS)>639 || (FX3>>FRAC_BITS)>639
+					|| (FY1>>FRAC_BITS)>479 || (FY2>>FRAC_BITS)>479 || (FY3>>FRAC_BITS)>479*/ ) begin
+					poly_drawn <= 1'b1;
+					isp_state <= 8'd0;
+				end
+				else isp_state <= isp_state + 8'd1;
 		end
 		
 		49: begin
