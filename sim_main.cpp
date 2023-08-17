@@ -1102,25 +1102,38 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 				uint32_t twop_addr = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
 
 				uint8_t index_byte;
-				if ((twop_addr&4)==0) index_byte = vram_ptr[(tex_addr+1024+mipmap_offs + (twop_addr>>3) ) & 0x7fffff];
-				else         index_byte = vram_ptr[(tex_addr+0x400000+1024+mipmap_offs + (twop_addr>>3) ) & 0x7fffff];
+				//if ((twop_addr&4)==0) index_byte = vram_ptr[(tex_addr+1024+mipmap_offs + (twop_addr>>2) ) & 0x7fffff];
+				//else         index_byte = vram_ptr[(tex_addr+0x400000+1024+mipmap_offs + (twop_addr>>2) ) & 0x7fffff];
+				if ((twop_addr&0x8)==0) index_byte = vram_ptr[(tex_addr+1024+mipmap_offs + (twop_addr>>3)) & 0x7fffff];
+				else           index_byte = vram_ptr[(tex_addr+0x400000+1024+mipmap_offs + (twop_addr>>3)) & 0x7fffff];
 
 				uint32_t code_addr = index_byte<<2;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
 				//printf("tex_addr: 0x%08X  x: %03d  y: %03d  bcx: %d  bcy: %d  twop: 0x%08X  divider: %d  index_byte: 0x%02X\n", tex_addr, ui, vi, bcx, bcy, twop_addr, divider, index_byte);
 
-				//switch (ui&3) {
-				switch (twop_addr&3) {
+				switch ( twop_addr&3 ) {
 					case 0: texel_pix  = vram_ptr[(tex_addr + (code_addr+0)) & 0x7fffff];
 							texel_pix |= vram_ptr[(tex_addr + (code_addr+1)) & 0x7fffff] << 8; break;
 
 					case 1: texel_pix  = vram_ptr[(tex_addr + (code_addr+2)) & 0x7fffff];
 							texel_pix |= vram_ptr[(tex_addr + (code_addr+3)) & 0x7fffff] << 8; break;
 
-					case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+0)) & 0x7fffff];
+					case 2: texel_pix  = vram_ptr[(tex_addr + (code_addr+4)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + (code_addr+5)) & 0x7fffff] << 8; break;
+
+					case 3: texel_pix  = vram_ptr[(tex_addr + (code_addr+6)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + (code_addr+7)) & 0x7fffff] << 8; break;
+
+					case 4: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+0)) & 0x7fffff];
 							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+1)) & 0x7fffff] << 8; break;
 
-					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+2)) & 0x7fffff];
+					case 5: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+2)) & 0x7fffff];
 							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+3)) & 0x7fffff] << 8; break;
+
+					case 6: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+4)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+5)) & 0x7fffff] << 8; break;
+
+					case 7: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+6)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+7)) & 0x7fffff] << 8; break;
 				}
 
 				/*
@@ -1619,12 +1632,12 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_crazy_title", "rb");
 	//pvrfile = fopen("pvr_regs_crazy_title_2", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");
+	//pvrfile = fopen("pvr_regs_sonic_title", "rb");
 	//pvrfile = fopen("pvr_regs_mem", "rb");
 	//pvrfile = fopen("pvr_regs_hydro_title", "rb");		// Need to disable the lazy clipping, to get this to display!
 	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb");
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");
-	//pvrfile = fopen("pvr_regs_sonic_title", "rb");
 	pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");
@@ -1658,12 +1671,12 @@ int main(int argc, char** argv, char** env) {
 	//vram_file = fopen("vram_crazy_title.bin", "rb");
 	//vram_file = fopen("vram_crazy_title_2.bin", "rb");
 	//vram_file = fopen("vram_sonic.bin", "rb");
+	//vram_file = fopen("vram_sonic_title.bin", "rb");
 	//vram_file = fopen("vram_mem.bin", "rb");
 	//vram_file = fopen("vram_hydro_title.bin", "rb");		// Need to disable the lazy clipping, to get this to display!
 	//vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//vram_file = fopen("vram_looney_startline.bin", "rb");
 	//vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
-	//vram_file = fopen("vram_sonic_title.bin", "rb");
 	//vram_file = fopen("vram_hotd2_title.bin", "rb");
 	vram_file = fopen("vram_hotd2_zombies.bin", "rb");
 	//vram_file = fopen("vram_hotd2_selfie.bin", "rb");
