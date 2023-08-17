@@ -855,6 +855,9 @@ uint64_t read_vram_64(uint32_t addr) {		// BYTE address!
 	return data;
 };
 
+uint8_t index_byte;
+uint32_t twop_addr;
+
 void rasterize_triangle_fixed(float x1, float x2, float x3,
 							  float y1, float y2, float y3,
 							  float z1, float z2, float z3,
@@ -1026,10 +1029,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			Z.Setup(x1, x2, x3, y1, y2, y3, z1, z2, z3);
 
 			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
-			int w = tex_u_size-1;
-			int h = tex_v_size-1;
-			U.Setup(x1, x2, x3, y1, y2, y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
-			V.Setup(x1, x2, x3, y1, y2, y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
+				int w = tex_u_size-1;
+				int h = tex_v_size-1;
+				U.Setup(x1, x2, x3, y1, y2, y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
+				V.Setup(x1, x2, x3, y1, y2, y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
 			//}
 		}
 
@@ -1053,6 +1056,21 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			//uint16_t tex_u_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
 			//uint16_t tex_v_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
 
+			// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
+			// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
+			// 
+			// An example tcw_word value for the "Play" texture on the Menu is 0x140C8E00.
+			// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
+			// 
+			// NOTE: The above is kind of wrong. The "width" of the address depends on the data bus width.
+			// Textures on PVR2 are (usually) read via the full 64-bit data bus, with the lower 32-bit word in the lower 4MB,
+			// and the upper 32-bit word in the upper 4MB, AFAIK.
+			// 
+			// The 8MB VRAM on Dreamcast is split into two 32-bit wide banks. They each have their own address.
+			// So each half of VRAM can be read as 32-bit wide (for params etc.), or combined, to read as 64-bit wide for textures etc.
+			// 
+			tex_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word&0x1fffff) << 2;	// BYTE addr.
+
 			// Decode Twiddled texture offset...
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) {
 				//texel_offs = twop((ui&0xfffffffc)&(tex_v_size-1), vi&(tex_u_size-1), tex_v_size_raw-1, tex_u_size_raw-1);
@@ -1075,54 +1093,76 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 			uint16_t texel_pix = 0x0000;
 
-			// Says "64-bit word addr" on PDF page 212 of the System Architecture manual...
-			// But I think they meant 64-bit DATA, and 32-bit ADDRESS, since the textures are fetched as 64-bit data on the PVR2?
-			// 
-			// An example tcw_word value for the "Play" texture on the Menu is 0x140C8E00.
-			// The lower 21 bits masked would give 0xC8E00. This is the 32-bit WORD address of the texture...
-			tex_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word&0x1fffff) << 2;	// BYTE addr.
-
 			uint32_t mipmap_offs = 0;
 			bool mipmap_flag = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
 
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
 				mipmap_offs = (mipmap_flag) ? MipPoint[ top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size ] : 0;
 
+				uint32_t twop_addr = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
+
+				uint8_t index_byte;
+				if ((twop_addr&4)==0) index_byte = vram_ptr[(tex_addr+1024+mipmap_offs + (twop_addr>>3) ) & 0x7fffff];
+				else         index_byte = vram_ptr[(tex_addr+0x400000+1024+mipmap_offs + (twop_addr>>3) ) & 0x7fffff];
+
+				uint32_t code_addr = index_byte<<2;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
+				//printf("tex_addr: 0x%08X  x: %03d  y: %03d  bcx: %d  bcy: %d  twop: 0x%08X  divider: %d  index_byte: 0x%02X\n", tex_addr, ui, vi, bcx, bcy, twop_addr, divider, index_byte);
+
+				//switch (ui&3) {
+				switch (twop_addr&3) {
+					case 0: texel_pix  = vram_ptr[(tex_addr + (code_addr+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + (code_addr+1)) & 0x7fffff] << 8; break;
+
+					case 1: texel_pix  = vram_ptr[(tex_addr + (code_addr+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + (code_addr+3)) & 0x7fffff] << 8; break;
+
+					case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+1)) & 0x7fffff] << 8; break;
+
+					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (code_addr+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + 0x400000 + (code_addr+3)) & 0x7fffff] << 8; break;
+				}
+
+				/*
 				//const uint32_t divider = 4;	// pixelcvt_next(conv4444_TW,2,2)
 				//const uint32_t bcx = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
 				//const uint32_t bcy = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
-				//const uint32_t bcx = 7;
-				//const uint32_t bcy = 7;
-				//uint32_t twop_addr = twop( ui&(tex_u_size-1), vi&(tex_v_size-1), bcx, bcy) / divider;
+				//const uint32_t bcx = 7-3;
+				//const uint32_t bcy = 7-3;
+				//twop_addr = twop( ui&(tex_u_size-1), vi&(tex_v_size-1), bcx, bcy) / divider;
 
-				uint32_t twop_addr = twiddle_slow(ui&0xfffffffc, vi, tex_u_size, tex_v_size);
+				twop_addr = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
 
-				uint8_t index_byte;
-				switch (twop_addr&7) {
-					case 0: index_byte = vram_ptr[(tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 0) & 0x7fffff];
-					case 1: index_byte = vram_ptr[(tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 1) & 0x7fffff];
-					case 2: index_byte = vram_ptr[(tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 2) & 0x7fffff];
-					case 3: index_byte = vram_ptr[(tex_addr+         2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 3) & 0x7fffff];
-					case 4: index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 0) & 0x7fffff];
-					case 5: index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 1) & 0x7fffff];
-					case 6: index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 2) & 0x7fffff];
-					case 7: index_byte = vram_ptr[(tex_addr+0x400000+2048+mipmap_offs + ((twop_addr&0xfffffffc)>>1) + 3) & 0x7fffff];
-				}
+				// pixel: 0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+				// vraml: 0  0  0  0  1  1  1  1  2  2  2  2  3  3  3  3
+				// vramu:                                                 0  0  0  0  1  1  1  1  2  2  2  2  3  3  3  3 
+				// 								
+				// word:  01 23 45 67 01 23 45 67 01 23 45 67 01 23 45 67
+				// vram:  l  l  l  l  u  u  u  u  l  l  l  l  u  u  u  u  
+				
+				// The index table starts only 1KB from tex_addr, since each 64-bit code book word is split between the upper and lower  4MB VRAM.
+				// 
+				if ( (twop_addr&0x10)==0 ) index_byte = vram_ptr[ (tex_addr + 1024 + mipmap_offs + (twop_addr>>2) ) & 0x7fffff ];
+				else             index_byte = vram_ptr[ (tex_addr + 0x40000 + 1024 + mipmap_offs + (twop_addr>>2) ) & 0x7fffff ];
+
+				uint8_t code_lower_byte0 = vram_ptr[ (tex_addr +            (index_byte<<2) + 0) & 0x7fffff ];
+				uint8_t code_lower_byte1 = vram_ptr[ (tex_addr +            (index_byte<<2) + 1) & 0x7fffff ];
+				uint8_t code_lower_byte2 = vram_ptr[ (tex_addr +            (index_byte<<2) + 2) & 0x7fffff ];
+				uint8_t code_lower_byte3 = vram_ptr[ (tex_addr +            (index_byte<<2) + 3) & 0x7fffff ];
+
+				uint8_t code_upper_byte0 = vram_ptr[ (tex_addr + 0x400000 + (index_byte<<2) + 0) & 0x7fffff ];
+				uint8_t code_upper_byte1 = vram_ptr[ (tex_addr + 0x400000 + (index_byte<<2) + 1) & 0x7fffff ];
+				uint8_t code_upper_byte2 = vram_ptr[ (tex_addr + 0x400000 + (index_byte<<2) + 2) & 0x7fffff ];
+				uint8_t code_upper_byte3 = vram_ptr[ (tex_addr + 0x400000 + (index_byte<<2) + 3) & 0x7fffff ];
 
 				// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
-				switch (twop_addr&3) {
-				case 0: texel_pix  = vram_ptr[(tex_addr + (index_byte<<2) + 0) & 0x7fffff];
-						texel_pix |= vram_ptr[(tex_addr + (index_byte<<2) + 1) & 0x7fffff] << 8; break;
-
-				case 1: texel_pix  = vram_ptr[(tex_addr + (index_byte<<2) + 2) & 0x7fffff];
-						texel_pix |= vram_ptr[(tex_addr + (index_byte<<2) + 3) & 0x7fffff] << 8; break;
-
-				case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 0) & 0x7fffff];
-						texel_pix |= vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 1) & 0x7fffff] << 8; break;
-
-				case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 2) & 0x7fffff];
-						texel_pix |= vram_ptr[(tex_addr + 0x400000 + (index_byte<<2) + 3) & 0x7fffff] << 8; break;
+				switch ( twop_addr&3 ) {
+					case 0: texel_pix  = code_lower_byte0 | (code_lower_byte1<<8); break;
+					case 1: texel_pix  = code_lower_byte2 | (code_lower_byte3<<8); break;
+					case 2: texel_pix  = code_upper_byte0 | (code_upper_byte1<<8); break;
+					case 3: texel_pix  = code_upper_byte2 | (code_upper_byte3<<8); break;
 				}
+				*/
 
 				//printf("texel_offs: 0x%08X  index_byte: 0x%08X  code_addr: 0x%08X  texel_pix: 0x%04X \n", texel_offs, index_byte, code_addr, texel_pix);
 			}
@@ -1192,7 +1232,11 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 		//uint32_t z_fixed = float_to_fixed(invW, 28);	// Convert Z from float to fixed-point.
 		if (top->vram_wr) {
 			bool allow_write = 0;
-			switch (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__depth_comp) {
+			uint8_t depth_mode = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__depth_comp;
+			//if (render_mode == RM_PUNCHTHROUGH) depth_mode = 6;		// TODO: FIXME
+			//else if (render_mode == RM_TRANSLUCENT) depth_mode = 3;	// TODO: FIXME
+			//else if (render_mode == RM_MODIFIER) depth_mode = 6;
+			switch (depth_mode) {
 				case 0: allow_write = 0;												  break; // Never.
 				case 1: if (invW <  z_ptr[(top->vram_addr&0x7fffff)>>2]) allow_write = 1; break; // Less.
 				case 2: if (invW == z_ptr[(top->vram_addr&0x7fffff)>>2]) allow_write = 1; break; // Equal.
@@ -1212,17 +1256,12 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 					old_pix[1] = disp_ptr[(top->vram_addr&0x7fffff)>>2] >> 8;
 					old_pix[0] = disp_ptr[(top->vram_addr&0x7fffff)>>2];
 
-					uint8_t new_pix[3];
-					new_pix[2] = rgb[2];
-					new_pix[1] = rgb[1];
-					new_pix[0] = rgb[0];
-
 					uint8_t result[3];
-					result[0] = (uint8_t)( ( (alpha+1) * new_pix[0] + (256-alpha) * old_pix[0]) >> 8);
-					result[1] = (uint8_t)( ( (alpha+1) * new_pix[1] + (256-alpha) * old_pix[1]) >> 8);
-					result[2] = (uint8_t)( ( (alpha+1) * new_pix[2] + (256-alpha) * old_pix[2]) >> 8);
+					result[0] = (uint8_t)( ( (alpha+1) * rgb[0] + (256-alpha) * old_pix[0]) >> 8);
+					result[1] = (uint8_t)( ( (alpha+1) * rgb[1] + (256-alpha) * old_pix[1]) >> 8);
+					result[2] = (uint8_t)( ( (alpha+1) * rgb[2] + (256-alpha) * old_pix[2]) >> 8);
 
-					disp_ptr[(top->vram_addr&0x7fffff)>>2] = 0xff<<24 | result[2]<<16 | result[1]<<8 | result[0];
+					disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | result[2]<<16 | result[1]<<8 | result[0];
 				}
 			}
 		}
@@ -1587,7 +1626,7 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");
 	//pvrfile = fopen("pvr_regs_sonic_title", "rb");
 	pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_dead_title", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_boat", "rb");
@@ -1817,10 +1856,13 @@ int main(int argc, char** argv, char** env) {
 		mem_edit_3.Cols = 4;
 		//mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
 
-		uint32_t vq_index = tex_addr + 2048 + (texel_offs>>2);
+		//uint32_t vq_index = tex_addr + 2048 + (texel_offs>>2);
 
-		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
-		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
+		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
+		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		mem_edit_3.HighlightMin = tex_addr + (index_byte<<2);
+		mem_edit_3.HighlightMax = tex_addr + (index_byte<<2) + 4;
 		//mem_edit_3.HighlightMin = (vq_index) & 0x7fffff;
 		//mem_edit_3.HighlightMax = (vq_index+256) & 0x7fffff;
 		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr_last) & 0x7fffff;
