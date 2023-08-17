@@ -361,65 +361,64 @@ else begin
 		end
 
 		48: begin				
-				// Lazy clipping...
-				//if (FX1[31]) FX1=0; if (FX2[31]) FX2=0; if (FX3[31]) FX3=0;
-				//if (FY1[31]) FY1=0; if (FY2[31]) FY2=0; if (FY3[31]) FY3=0;
-		
-				isp_vram_addr_last <= isp_vram_addr;
-		
-				// Half-edge constants (setup).
-				//int C1 = FDY12 * FX1 - FDX12 * FY1;
-				mult1 <= (FDY12 * FX1);
-				mult2 <= (FDX12 * FY1);
+			// Lazy clipping...
+			//if (FX1[31]) FX1=0; if (FX2[31]) FX2=0; if (FX3[31]) FX3=0;
+			//if (FY1[31]) FY1=0; if (FY2[31]) FY2=0; if (FY3[31]) FY3=0;
+	
+			isp_vram_addr_last <= isp_vram_addr;
+	
+			// Half-edge constants (setup).
+			//int C1 = FDY12 * FX1 - FDX12 * FY1;
+			mult1 <= (FDY12 * FX1);
+			mult2 <= (FDX12 * FY1);
 
-				//int C2 = FDY23 * FX2 - FDX23 * FY2;
-				mult3 <= (FDY23 * FX2);
-				mult4 <= (FDX23 * FY2);
+			//int C2 = FDY23 * FX2 - FDX23 * FY2;
+			mult3 <= (FDY23 * FX2);
+			mult4 <= (FDX23 * FY2);
 
-				//int C3 = FDY31 * FX3 - FDX31 * FY3;
-				mult5 <= (FDY31 * FX3);
-				mult6 <= (FDX31 * FY3);
-				
-				//y_ps <= miny;		// Per-poly rendering.
-				y_ps <= tiley*32;	// Per-tile rendering.
-				
-				// Lazy culling...
-				if (FX1[31] || FY1[31] || FX2[31] || FY2[31] || FX3[31] || FY3[31]
-					/*|| (FX1>>FRAC_BITS)>639 || (FX2>>FRAC_BITS)>639 || (FX3>>FRAC_BITS)>639
-					|| (FY1>>FRAC_BITS)>479 || (FY2>>FRAC_BITS)>479 || (FY3>>FRAC_BITS)>479*/ ) begin
-					poly_drawn <= 1'b1;
-					isp_state <= 8'd0;
-				end
-				else isp_state <= isp_state + 8'd1;
+			//int C3 = FDY31 * FX3 - FDX31 * FY3;
+			mult5 <= (FDY31 * FX3);
+			mult6 <= (FDX31 * FY3);
+			
+			//y_ps <= miny;		// Per-poly rendering.
+			y_ps <= tiley*32;	// Per-tile rendering.
+			
+			// Lazy culling...
+			if (FX1[31] || FY1[31] || FX2[31] || FY2[31] || FX3[31] || FY3[31]
+				/*|| (FX1>>FRAC_BITS)>639 || (FX2>>FRAC_BITS)>639 || (FX3>>FRAC_BITS)>639
+				|| (FY1>>FRAC_BITS)>479 || (FY2>>FRAC_BITS)>479 || (FY3>>FRAC_BITS)>479*/ ) begin
+				poly_drawn <= 1'b1;
+				isp_state <= 8'd0;
+			end
+			else begin
+				//x_ps <= minx;				// Per-poly rendering.
+				x_ps <= tilex*32;			// Per-tile rendering.
+				isp_state <= isp_state + 8'd1;
+			end
 		end
 		
 		49: begin
 			//if (y_ps < miny+spany) begin	// Per-poly rendering.
-			//x_ps <= minx;					// Per-poly rendering.
 			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
-				x_ps <= tilex*32;			// Per-tile rendering.
-				isp_state <= isp_state + 8'd1;
+				//if (x_ps < minx+spanx) begin	// Per-poly rendering.
+				if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
+					if (inTriangle) begin
+						isp_vram_addr <= ((y_ps * 640) + x_ps) << 2;
+						isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.
+						//isp_vram_dout <= {8'hff, vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, Alpha boosted.
+						isp_vram_wr <= 1'b1;
+					end
+					x_ps <= x_ps + 12'd1;
+				end
+				else begin
+					y_ps <= y_ps + 12'd1;
+					//x_ps <= minx;				// Per-poly rendering.
+					x_ps <= tilex*32;			// Per-tile rendering.
+				end
 			end
 			else begin
 				isp_vram_addr <= isp_vram_addr_last;
 				isp_state <= 8'd47;
-			end
-		end
-		
-		50: begin
-			//if (x_ps < minx+spanx) begin	// Per-poly rendering.
-			if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
-				if (inTriangle) begin
-					isp_vram_addr <= ((y_ps * 640) + x_ps) << 2;
-					isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.
-					//isp_vram_dout <= {8'hff, vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, Alpha boosted.
-					isp_vram_wr <= 1'b1;
-				end
-				x_ps <= x_ps + 12'd1;
-			end
-			else begin
-				y_ps <= y_ps + 12'd1;
-				isp_state <= 8'd49;
 			end
 		end
 
@@ -447,30 +446,30 @@ parameter FRAC_BITS = 8;
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
 reg signed [47:0] mult1;
 reg signed [47:0] mult2;
-wire signed [31:0] C1 = (mult1 - mult2) / (1<<FRAC_BITS);
+wire signed [31:0] C1 = (mult1 - mult2) >>FRAC_BITS;
 
 //int C2 = FDY23 * FX2 - FDX23 * FY2;
 reg signed [47:0] mult3;
 reg signed [47:0] mult4;
-wire signed [31:0] C2 = (mult3 - mult4) / (1<<FRAC_BITS);
+wire signed [31:0] C2 = (mult3 - mult4) >>FRAC_BITS;
 
 //int C3 = FDY31 * FX3 - FDX31 * FY3;
 reg signed [47:0] mult5;
 reg signed [47:0] mult6;
-wire signed [31:0] C3 = (mult5 - mult6) / (1<<FRAC_BITS);
+wire signed [31:0] C3 = (mult5 - mult6) >>FRAC_BITS;
 
 
 //int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
-wire signed [47:0] mult7  = (FDX12 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
-wire signed [47:0] mult8  = (FDY12 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult7  = (FDX12 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult8  = (FDY12 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
 
-wire signed [47:0] mult9  = (FDX23 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
-wire signed [47:0] mult10 = (FDY23 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult9  = (FDX23 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult10 = (FDY23 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
 
-wire signed [47:0] mult11 = (FDX31 * (y_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
-wire signed [47:0] mult12 = (FDY31 * (x_ps<<FRAC_BITS) ) / (1<<FRAC_BITS);
+wire signed [47:0] mult11 = (FDX31 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult12 = (FDY31 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
 
 wire signed [31:0] Xhs12 = C1 + (mult7  - mult8 );
 wire signed [31:0] Xhs23 = C2 + (mult9  - mult10);

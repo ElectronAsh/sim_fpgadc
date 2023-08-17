@@ -441,20 +441,17 @@ VL_ATTR_COLD void Vsimtop___024root___settle__TOP__0(Vsimtop___024root* vlSelf) 
                >> 4U));
     vlSelf->simtop__DOT__core__DOT__fpu_out_t_wen = 0U;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1 
-        = (IData)((0xffffffffffffULL & VL_DIVS_QQQ(48, 
-                                                   (0xffffffffffffULL 
-                                                    & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 
-                                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult2)), 0x100ULL)));
+        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 
+                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult2) 
+                                      >> 8U)));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2 
-        = (IData)((0xffffffffffffULL & VL_DIVS_QQQ(48, 
-                                                   (0xffffffffffffULL 
-                                                    & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult3 
-                                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult4)), 0x100ULL)));
+        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult3 
+                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult4) 
+                                      >> 8U)));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3 
-        = (IData)((0xffffffffffffULL & VL_DIVS_QQQ(48, 
-                                                   (0xffffffffffffULL 
-                                                    & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult5 
-                                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult6)), 0x100ULL)));
+        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult5 
+                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult6) 
+                                      >> 8U)));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7 
         = (0xffffffffffULL & (((QData)((IData)(vlSelf->FDX12)) 
                                * (0xffffffffffffULL 
