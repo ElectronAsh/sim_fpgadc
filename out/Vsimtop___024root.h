@@ -815,6 +815,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*2:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__skip;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__eol;
     CData/*7:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__draw_last_tile;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__clock;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__reset_n;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly;

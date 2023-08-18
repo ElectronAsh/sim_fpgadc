@@ -339,6 +339,7 @@ else begin
 							vert_a_z  <= vert_c_z;   vert_b_z <= vert_d_z;   vert_c_z <= vert_a_z;
 							vert_a_u0 <= vert_c_u0; vert_b_u0 <= vert_d_u0; vert_c_u0 <= vert_a_u0;
 							vert_a_v0 <= vert_c_v0; vert_b_v0 <= vert_d_v0; vert_c_v0 <= vert_a_v0;
+							isp_entry_valid <= 1'b1;	// To tell the C code to latch the params again
 							isp_state <= 8'd46;		// Draw the second half of the Quad.
 							quad_done <= 1'b1;
 						end

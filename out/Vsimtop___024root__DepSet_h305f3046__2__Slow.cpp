@@ -1460,6 +1460,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__skip = VL_RAND_RESET_I(3);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__eol = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes = VL_RAND_RESET_I(8);
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__draw_last_tile = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__clock = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__reset_n = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__opb_word = VL_RAND_RESET_I(32);

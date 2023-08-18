@@ -70,6 +70,8 @@ wire eol = opb_word[28];				// End Of List.
 
 reg [7:0] ol_jump_bytes;
 
+reg draw_last_tile;
+
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
 	ra_state <= 8'd0;
@@ -88,6 +90,7 @@ else begin
 
 	case (ra_state)
 		0: begin
+			draw_last_tile <= 1'b0;
 			if (ra_trig) begin
 				ra_state <= ra_state + 8'd1;
 			end
@@ -220,24 +223,26 @@ else begin
 		end
 		
 		13: begin
-			if (ra_cont_last) ra_state <= 8'd0;
-			else if (poly_drawn) begin
+			if (poly_drawn) begin
+				if (ra_cont_last) draw_last_tile <= 1'b1;
 				ra_vram_addr <= ra_vram_addr + 4;	// Go to next WORD in OL.
 				ra_state <= 11;
 			end
 		end
 		
 		14: begin
-			if (ra_cont_last) ra_state <= 8'd0;
-			else if (opb_word[31:29]==3'b111 || poly_drawn) begin
+			if (opb_word[31:29]==3'b111 || poly_drawn) begin
 				ra_state <= 8'd9;	// Check next Object prim TYPE.
 			end
 		end
 		
 		15: begin	// All prim TYPES in this Object have been processed!
-			ra_vram_addr <= next_region;	// Check the next Region Array block.
-			ra_vram_rd <= 1'b1;
-			ra_state <= 8'd2;
+			if (ra_cont_last) ra_state <= 8'd0;
+			else begin
+				ra_vram_addr <= next_region;	// Check the next Region Array block.
+				ra_vram_rd <= 1'b1;
+				ra_state <= 8'd2;
+			end
 		end
 		
 		default: ;
