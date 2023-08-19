@@ -748,9 +748,9 @@ void BuildTwiddleTables()
 
 uint32_t read_vram_32(uint32_t addr) {		// BYTE address!
 	uint8_t byte0 = vram_ptr[ (addr+0)&0x7fffff ];
-	uint8_t byte1 = vram_ptr[ (addr+1)&0x7fffff];
-	uint8_t byte2 = vram_ptr[ (addr+2)&0x7fffff];
-	uint8_t byte3 = vram_ptr[ (addr+3)&0x7fffff];
+	uint8_t byte1 = vram_ptr[ (addr+1)&0x7fffff ];
+	uint8_t byte2 = vram_ptr[ (addr+2)&0x7fffff ];
+	uint8_t byte3 = vram_ptr[ (addr+3)&0x7fffff ];
 
 	uint32_t data =  (byte3<<24) | (byte2<<16) | (byte1<<8) | byte0;
 
@@ -771,7 +771,7 @@ uint64_t read_vram_64(uint32_t addr) {		// BYTE address!
 	uint32_t upper_word = (byte7<<24) | (byte6<<16) | (byte5<<8) | (byte4);
 	uint32_t lower_word = (byte3<<24) | (byte2<<16) | (byte1<<8) | (byte0);
 
-	uint64_t data = (upper_word<<32) | lower_word;
+	uint64_t data = (uint64_t)((upper_word<<32) | lower_word);
 
 	return data;
 };
@@ -787,8 +787,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 							  float v1, float v2, float v3) {
 	
 	// Lazy culling...
-	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
-	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;	// Hide some spikey bits.
+	//if (x1>640 || x2>640 || x3>640 || y1>480 || y2>480 || y3>480) return;	// Hydro Thunder title wouldn't display when this was >639 and >480 ??
+	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide some spikey bits / neg values.
 
 	// Check for NaN...
 	/*
@@ -1037,7 +1037,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			// Decode Twiddled texture offset...
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order==0) {
 				//texel_offs = twop((ui&0xfffffffc)&(tex_v_size-1), vi&(tex_u_size-1), tex_v_size_raw-1, tex_u_size_raw-1);
-				texel_offs = twiddle_slow((ui&0xfffffffc), vi, tex_u_size, tex_v_size);
+				texel_offs = twiddle_slow((ui/*&0xfffffffc*/), vi, tex_u_size, tex_v_size);
 			}
 			else texel_offs = (ui&0xfffffffc) + (vi * tex_u_size);	// Non-Twiddled...
 
@@ -1056,11 +1056,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 			uint16_t texel_pix = 0x0000;
 
-			
 			bool mipmap_flag = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
 
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
-				uint32_t mipmap_offs = (mipmap_flag) ? (MipPoint[ top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size ]>>1) : 0;
+				uint32_t mipmap_offs = (mipmap_flag) ? (MipPoint[ top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size ])>>1 : 0;
 
 				// pixel: 0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f  10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
 				// vraml: 0  0  0  0  1  1  1  1  2  2  2  2  3  3  3  3
@@ -1069,50 +1068,46 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 				// word:  01 23 45 67 01 23 45 67 01 23 45 67 01 23 45 67
 				// vram:  l  l  l  l  u  u  u  u  l  l  l  l  u  u  u  u  
 
-				uint32_t twop_addr = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
+				ui = ClampFlip(pp_ClampU, pp_FlipU, ui, tex_u_size);
+				vi = ClampFlip(pp_ClampV, pp_FlipV, vi, tex_v_size);
+
+				//uint32_t twop_addr = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
 				//uint32_t twop_addr = twop(ui&(tex_v_size-1), vi&(tex_u_size-1), tex_v_size_raw, tex_u_size_raw);
+				uint32_t twop_addr = twop(ui, vi, tex_v_size_raw, tex_u_size_raw);
 
 				// Looks like twop address basically hops to each 64-bit wide word.
 				// So it needs an extra shift, to address each 32-bit wide word in each half of VRAM??
-				//
-				tex_index = tex_addr+mipmap_offs+1024 + ((twop_addr)>>3);
-				uint8_t index_byte;
-				if ( (twop_addr&8) ) index_byte = vram_ptr[ (tex_index) &0x7fffff ];
-				else        index_byte = vram_ptr[ (0x400000+tex_index) &0x7fffff ];
+				if ( !(twop_addr&4) ) tex_index = tex_addr+mipmap_offs+1024 + ((twop_addr)>>3);
+				else         tex_index = tex_addr+mipmap_offs+0x400000+1024 + ((twop_addr)>>3);
 
-				uint32_t code_addr = index_byte<<2;	// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
-													// (but we only shift by <<2 here, because we read a 32-bit word from both the lower and upper 4MB VRAM.)
+				uint8_t index_byte = vram_ptr[ (tex_index)&0x7fffff ];
 
-				//printf("tex_addr: 0x%08X  x: %03d  y: %03d  bcx: %d  bcy: %d  twop: 0x%08X  divider: %d  index_byte: 0x%02X\n", tex_addr, ui, vi, bcx, bcy, twop_addr, divider, index_byte);
-
-				uint32_t lower_word = read_vram_32(tex_addr + 0x000000 + (code_addr) );
-				uint32_t upper_word = read_vram_32(tex_addr + 0x400000 + (code_addr) );
-
-				switch ( (twop_addr>>2)&3 ) {	// Shift >>2 looks best so far?
-					case 0: texel_pix = lower_word;		break;
-					case 1: texel_pix = lower_word>>16; break;
-					case 3: texel_pix = upper_word;		break;
-					case 2: texel_pix = upper_word>>16; break;
+				// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
+				// (but we only shift by <<2 here, because we read a 32-bit word from both the lower and upper 4MB VRAM.)
+				switch ( (twop_addr>>2)&3 ) {
+					case 0: texel_pix = read_vram_32( tex_addr + 0x000000 + (index_byte<<2) ) >> 16; break;
+					case 1: texel_pix = read_vram_32( tex_addr + 0x000000 + (index_byte<<2) ) & 0xffff; break;
+					case 2: texel_pix = read_vram_32( tex_addr + 0x400000 + (index_byte<<2) ) >> 16; break;
+					case 3: texel_pix = read_vram_32( tex_addr + 0x400000 + (index_byte<<2) ) & 0xffff; break;
 				}
 
 				//printf("texel_offs: 0x%08X  index_byte: 0x%08X  code_addr: 0x%08X  texel_pix: 0x%04X \n", texel_offs, index_byte, code_addr, texel_pix);
 			}
 			else {	// Non-VQ.
-				if (mipmap_flag) tex_addr += MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size];	// Mipmapped, but no VQ.
+				uint32_t mipmap_offs = (mipmap_flag) ? (MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size]) : 0;	// Mipmapped, but no VQ.
 
 				switch ( ui&3 ) {
-				//switch ( ((ui&1)<<1) | (vi&1) ) {
-					case 0: texel_pix  = vram_ptr[(tex_addr + ((texel_offs&0xfffffffc)+0)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + ((texel_offs&0xfffffffc)+1)) & 0x7fffff] << 8; break;
+					case 0: texel_pix  = vram_ptr[(tex_addr + mipmap_offs + ((texel_offs&0xfffffffc)+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + mipmap_offs + ((texel_offs&0xfffffffc)+1)) & 0x7fffff] << 8; break;
 
-					case 1: texel_pix  = vram_ptr[(tex_addr + ((texel_offs&0xfffffffc)+2)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + ((texel_offs&0xfffffffc)+3)) & 0x7fffff] << 8; break;
+					case 1: texel_pix  = vram_ptr[(tex_addr + mipmap_offs + ((texel_offs&0xfffffffc)+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + mipmap_offs + ((texel_offs&0xfffffffc)+3)) & 0x7fffff] << 8; break;
 
-					case 2: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffc)+0)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffc)+1)) & 0x7fffff] << 8; break;
+					case 2: texel_pix  = vram_ptr[(tex_addr + mipmap_offs + 0x400000 + ((texel_offs&0xfffffffc)+0)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + mipmap_offs + 0x400000 + ((texel_offs&0xfffffffc)+1)) & 0x7fffff] << 8; break;
 
-					case 3: texel_pix  = vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffc)+2)) & 0x7fffff];
-							texel_pix |= vram_ptr[(tex_addr + 0x400000 + ((texel_offs&0xfffffffc)+3)) & 0x7fffff] << 8; break;
+					case 3: texel_pix  = vram_ptr[(tex_addr + mipmap_offs + 0x400000 + ((texel_offs&0xfffffffc)+2)) & 0x7fffff];
+							texel_pix |= vram_ptr[(tex_addr + mipmap_offs + 0x400000 + ((texel_offs&0xfffffffc)+3)) & 0x7fffff] << 8; break;
 				}
 			}
 
@@ -1305,6 +1300,16 @@ int verilate() {
 		z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
 		z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
 		z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
+
+		//if (z2 > 1.0) run_enable = 0;
+		//if (z3 > 1.0) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x13720 &&
+			//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt==1) run_enable = 0;
+
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x26e4c) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x23c44) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x23f3c) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x47e024) run_enable = 0;
 
 		float u1,u2,u3,u4 = 0;
 		float v1,v2,v3,v4 = 0;
@@ -1499,17 +1504,9 @@ int main(int argc, char** argv, char** env) {
 
 	//uint32_t value = 0xff222222;
 	uint32_t value = 0xff000000;
-	for (uint32_t i = 0; i < disp_size/2; i+=4 ) {
-		memcpy(((char*)disp_ptr) + i, &value, 4);
-	}
-
-	for (uint32_t i = 0; i < z_size; i++) {
-		z_ptr[ i ] = 0;
-	}
-
-	for (uint32_t i = 0; i < tag_size; i++) {
-		tag_ptr[i] = 0;
-	}
+	for (uint32_t i = 0; i < disp_size/2; i+=4 ) memcpy(((char*)disp_ptr) + i, &value, 4);
+	for (uint32_t i = 0; i < z_size; i++) z_ptr[ i ] = 0;
+	for (uint32_t i = 0; i < tag_size; i++) tag_ptr[i] = 0;
 
 	memset(ram_ptr, 0x00, ram_size);
 
@@ -1528,36 +1525,37 @@ int main(int argc, char** argv, char** env) {
 	fread(rom_ptr, 1, rom_size, biosfile);
 
 	FILE* pvrfile;
-	//pvrfile = fopen("pvr_regs_logo", "rb");
-	//pvrfile = fopen("pvr_regs_menu", "rb");
-	//pvrfile = fopen("pvr_regs_menu2", "rb");
-	//pvrfile = fopen("pvr_regs_taxi", "rb");
-	//pvrfile = fopen("pvr_regs_taxi2", "rb");
-	//pvrfile = fopen("pvr_regs_taxi3", "rb");
-	//pvrfile = fopen("pvr_regs_taxi4", "rb");
-	//pvrfile = fopen("pvr_regs_crazy_title", "rb");
-	//pvrfile = fopen("pvr_regs_crazy_title_2", "rb");
-	//pvrfile = fopen("pvr_regs_sonic", "rb");
-	//pvrfile = fopen("pvr_regs_sonic_title", "rb");
-	//pvrfile = fopen("pvr_regs_mem", "rb");
-	//pvrfile = fopen("pvr_regs_hydro_title", "rb");		// Need to disable the lazy clipping, to get this to display!
-	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");
-	//pvrfile = fopen("pvr_regs_looney_startline", "rb");
-	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");
-	pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_boat", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_gargoyle", "rb");
-	//pvrfile = fopen("pvr_regs_rayman_title", "rb");
-	//pvrfile = fopen("pvr_regs_rayman_lights", "rb");
-	//pvrfile = fopen("pvr_regs_xtreme_intro", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_intro", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_behind", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_front", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_sanic", "rb");
-	//pvrfile = fopen("pvr_regs_toy_front", "rb");
+	FILE* vram_file;
+	//pvrfile = fopen("pvr_regs_logo", "rb");			  vram_file = fopen("vram_logo.bin", "rb");
+	//pvrfile = fopen("pvr_regs_menu", "rb");			  vram_file = fopen("vram_menu.bin", "rb");
+	//pvrfile = fopen("pvr_regs_menu2", "rb");			  vram_file = fopen("vram_menu2.bin", "rb");
+	//pvrfile = fopen("pvr_regs_taxi", "rb");			  vram_file = fopen("vram_taxi.bin", "rb");
+	//pvrfile = fopen("pvr_regs_taxi2", "rb");			  vram_file = fopen("vram_taxi2.bin", "rb");
+	//pvrfile = fopen("pvr_regs_taxi3", "rb");			  vram_file = fopen("vram_taxi3.bin", "rb");
+	//pvrfile = fopen("pvr_regs_taxi4", "rb");			  vram_file = fopen("vram_taxi4.bin", "rb");
+	//pvrfile = fopen("pvr_regs_crazy_title", "rb");	  vram_file = fopen("vram_crazy_title.bin", "rb");
+	//pvrfile = fopen("pvr_regs_crazy_title_2", "rb");	  vram_file = fopen("vram_crazy_title_2.bin", "rb");
+	//pvrfile = fopen("pvr_regs_sonic", "rb");			  vram_file = fopen("vram_sonic.bin", "rb");
+	//pvrfile = fopen("pvr_regs_sonic_title", "rb");	  vram_file = fopen("vram_sonic_title.bin", "rb");
+	//pvrfile = fopen("pvr_regs_mem", "rb");			  vram_file = fopen("vram_mem.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hydro_title", "rb");	  vram_file = fopen("vram_hydro_title.bin", "rb");	// Disable lazy culling, to get this to show!
+	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
+	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
+	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
+	pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");	  vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_boat", "rb");		  vram_file = fopen("vram_hotd2_boat.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_gargoyle", "rb");	  vram_file = fopen("vram_hotd2_gargoyle.bin", "rb");
+	//pvrfile = fopen("pvr_regs_rayman_title", "rb");	  vram_file = fopen("vram_rayman_title.bin", "rb");
+	//pvrfile = fopen("pvr_regs_rayman_lights", "rb");	  vram_file = fopen("vram_rayman_lights.bin", "rb");
+	//pvrfile = fopen("pvr_regs_xtreme_intro", "rb");	  vram_file = fopen("vram_xtreme_intro.bin", "rb");
+	//pvrfile = fopen("pvr_regs_daytona_intro", "rb");	  vram_file = fopen("vram_daytona_intro.bin", "rb");
+	//pvrfile = fopen("pvr_regs_daytona_behind", "rb");	  vram_file = fopen("vram_daytona_behind.bin", "rb");
+	//pvrfile = fopen("pvr_regs_daytona_front", "rb");	  vram_file = fopen("vram_daytona_front.bin", "rb");
+	//pvrfile = fopen("pvr_regs_daytona_sanic", "rb");	  vram_file = fopen("vram_daytona_sanic.bin", "rb");
+	//pvrfile = fopen("pvr_regs_toy_front", "rb");		  vram_file = fopen("vram_toy_front.bin", "rb");
 
 	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
 	else { printf("\npvr_regs dump file not found!\n\n"); return 0; }
@@ -1569,38 +1567,6 @@ int main(int argc, char** argv, char** env) {
 	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = pvr_ptr[ 0x140>>2 ];
 	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE   = pvr_ptr[ 0x02C>>2 ];
 	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE    = pvr_ptr[ 0x020>>2 ];
-
-	FILE* vram_file;
-	//vram_file = fopen("vram_logo.bin", "rb");
-	//vram_file = fopen("vram_menu.bin", "rb");
-	//vram_file = fopen("vram_menu2.bin", "rb");
-	//vram_file = fopen("vram_taxi.bin", "rb");
-	//vram_file = fopen("vram_taxi2.bin", "rb");
-	//vram_file = fopen("vram_taxi3.bin", "rb");
-	//vram_file = fopen("vram_taxi4.bin", "rb");
-	//vram_file = fopen("vram_crazy_title.bin", "rb");
-	//vram_file = fopen("vram_crazy_title_2.bin", "rb");
-	//vram_file = fopen("vram_sonic.bin", "rb");
-	//vram_file = fopen("vram_sonic_title.bin", "rb");
-	//vram_file = fopen("vram_mem.bin", "rb");
-	//vram_file = fopen("vram_hydro_title.bin", "rb");		// Need to disable the lazy clipping, to get this to display!
-	//vram_file = fopen("vram_looney_foghorn.bin", "rb");
-	//vram_file = fopen("vram_looney_startline.bin", "rb");
-	//vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
-	//vram_file = fopen("vram_hotd2_title.bin", "rb");
-	vram_file = fopen("vram_hotd2_zombies.bin", "rb");
-	//vram_file = fopen("vram_hotd2_selfie.bin", "rb");
-	//vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
-	//vram_file = fopen("vram_hotd2_boat.bin", "rb");
-	//vram_file = fopen("vram_hotd2_gargoyle.bin", "rb");
-	//vram_file = fopen("vram_rayman_title.bin", "rb");
-	//vram_file = fopen("vram_rayman_lights.bin", "rb");
-	//vram_file = fopen("vram_xtreme_intro.bin", "rb");
-	//vram_file = fopen("vram_daytona_intro.bin", "rb");
-	//vram_file = fopen("vram_daytona_behind.bin", "rb");
-	//vram_file = fopen("vram_daytona_front.bin", "rb");
-	//vram_file = fopen("vram_daytona_sanic.bin", "rb");
-	//vram_file = fopen("vram_toy_front.bin", "rb");
 
 	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
 	else { printf("\nvram.bin dump file not found!\n\n"); return 0; }
@@ -1713,7 +1679,8 @@ int main(int argc, char** argv, char** env) {
 
 		//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		//ImGui::PlotLines("Lines", values, IM_ARRAYSIZE(values), values_offset, "sample", -1.0f, 1.0f, ImVec2(0, 80));
-		if (ImGui::Button("RESET")) {
+		bool key_f3 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F3));
+		if (ImGui::Button("RESET") || key_f3) {
 			main_time = 0;
 			ra_running = 0;
 
@@ -1774,10 +1741,10 @@ int main(int argc, char** argv, char** env) {
 		//uint32_t vq_index = tex_addr + 2048 + (texel_offs>>2);
 
 		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
-		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
-		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
-		mem_edit_3.HighlightMin = tex_index;
-		mem_edit_3.HighlightMax = tex_index + 1;
+		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
+		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		//mem_edit_3.HighlightMin = tex_index;
+		//mem_edit_3.HighlightMax = tex_index + 1;
 		//mem_edit_3.HighlightMin = (vq_index) & 0x7fffff;
 		//mem_edit_3.HighlightMax = (vq_index+256) & 0x7fffff;
 		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr_last) & 0x7fffff;
@@ -2066,6 +2033,8 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("        uv_16_bit: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit);
 		ImGui::SameLine();
 		ImGui::Text(" offset: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__offset);
+		ImGui::SameLine();
+		ImGui::Text(" stride: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride);
 		ImGui::Text("          texture: %d  mipmap: %d  vq: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture,
 												top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map,
 												top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp);
@@ -2129,20 +2098,25 @@ int main(int argc, char** argv, char** env) {
 		//g_pSwapChain->Present(1, 0); // Present with vsync
 		g_pSwapChain->Present(0, 0); // Present without vsync
 
-
 		if (run_enable) for (int step = 0; step < 1024; step++) {	// Simulates MUCH faster if it's done in batches.
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) run_enable = 0;
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x28e50) run_enable = 0;
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) run_enable = 0;
-			
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state==1 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) run_enable = 0;
-			/*if (top->rootp->simtop__DOT__pvr__DOT__vram_addr==0x428234) run_enable = 0;
-			else*/ verilate();
-			/*if (main_time==391280) run_enable = 0;
-			else verilate();*/
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) {run_enable = 0; break;}
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x28e50) {run_enable = 0; break;}
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {run_enable = 0; break;}
+			//if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr==0x35620) {run_enable = 0; break;}
+			//if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr==0x429224) {run_enable = 0; break;}
+			//if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr==0xB2D0) {run_enable = 0; break;}
+			//if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr==0x266cc) {run_enable = 0; break;}
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride) {run_enable = 0; break; }
+			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow) {run_enable = 0; break; }
+			if (run_enable) verilate(); else break;
 		}
 		else {														// But, that will affect the GUI update rate / value fetch.
-			if (single_step) verilate();
+			bool key_f5 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F5));
+			bool key_f11 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F11));
+			if (key_f5) run_enable = 1;
+			if (key_f11) run_enable = 0;
+
+			if (single_step || key_f11) verilate();
 			if (multi_step) for (int step = 0; step < multi_step_amount; step++) verilate();
 		}
 	}

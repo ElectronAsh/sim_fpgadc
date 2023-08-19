@@ -1586,12 +1586,12 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult8 = VL_RAND_RESET_Q(48);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10 = VL_RAND_RESET_Q(48);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12 = VL_RAND_RESET_Q(48);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = VL_RAND_RESET_I(1);
     vlSelf->__Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state = VL_RAND_RESET_I(8);

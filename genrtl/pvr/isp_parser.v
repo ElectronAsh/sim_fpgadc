@@ -190,7 +190,7 @@ else begin
 						poly_drawn <= 1'b1;
 					end
 					else begin
-						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) + 1;
+						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) +1;
 						array_cnt <= 4'd0;	// Sanity check.
 						isp_vram_rd <= 1'b1;
 						isp_state <= 8'd1;
@@ -220,7 +220,15 @@ else begin
 		
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
-		8:  begin vert_a_z <= isp_vram_din; if (array_cnt) isp_state <= 8'd16; else if (!texture) isp_state <= 8'd11; end	// Skip U+V if not Textured.
+		8:  begin vert_a_z <= isp_vram_din;
+			if (array_cnt) begin		// Triangle Array or Quad Array...
+				if (!texture) begin
+					if (tsp_inst==32'h00000000) isp_state <= 8'd16;	// Skip Colour and UV??
+					else isp_state <= 8'd11;	// Skip U+V if not Textured.
+				end
+			end
+			else if (!texture) isp_state <= 8'd11;	// Triangle Strip (probably).
+		end
 		9:  begin vert_a_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd11; end	// Skip v0 if 16-bit UV. 
 		10: vert_a_v0 <= isp_vram_din;
 		11: begin
@@ -240,7 +248,15 @@ else begin
 		
 		16: vert_b_x <= isp_vram_din;
 		17: vert_b_y <= isp_vram_din;
-		18: begin vert_b_z <= isp_vram_din; if (array_cnt) isp_state <= 8'd26; else if (!texture) isp_state <= 8'd21; end	// Skip UV if not Textured.
+		18: begin vert_b_z <= isp_vram_din;
+			if (array_cnt) begin		// Triangle Array...
+				if (!texture) begin
+					if (tsp_inst==32'h00000000) isp_state <= 8'd26;	// Skip Colour and UV??
+					else isp_state <= 8'd21;	// Skip U+V if not Textured.
+				end
+			end
+			else if (!texture) isp_state <= 8'd21;	// Triangle Strip (probably).
+		end
 		19: begin vert_b_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd21; end	// Skip v0 if 16-bit UV. 
 		20: vert_b_v0 <= isp_vram_din;
 		21: begin
@@ -260,7 +276,18 @@ else begin
 		
 		26: vert_c_x <= isp_vram_din;
 		27: vert_c_y <= isp_vram_din;
-		28: begin vert_c_z <= isp_vram_din; if (array_cnt) isp_state <= 8'd46; else if (!texture) isp_state <= 8'd31; end	// Skip UV if not Textured.
+		28: begin vert_c_z <= isp_vram_din;
+			if (array_cnt) begin		// Triangle Array...
+				if (!texture) begin
+					if (tsp_inst==32'h00000000) begin
+						if (opb_word[31:29]==3'b101) isp_state <= 8'd36;	// Skip Colour and UV if a Quad.
+						else isp_state <= 8'd46;							// Else (not a Quad), skip to render.
+					end
+					else isp_state <= 8'd31;	// Skip U+V if not Textured.
+				end
+			end
+			else if (!texture) isp_state <= 8'd31;	// Triangle Strip (probably).
+		end
 		29: begin vert_c_u0 <= isp_vram_din; if (uv_16_bit) isp_state <= 8'd31; end	// Skip v0 if 16-bit UV. 
 		30: vert_c_v0 <= isp_vram_din;
 		31: begin
@@ -274,13 +301,13 @@ else begin
 		// if Two-volume...
 		32: vert_c_u1 <= isp_vram_din;
 		33: vert_c_v1 <= isp_vram_din;
-		34: begin vert_c_base_col_1 <= isp_vram_din; /*if (!offset) isp_state <= 8'd36; end*/
-			if (opb_word[31:29]==3'b101) isp_state <= 8'd36;	// If a Quad.
+		34: begin vert_c_base_col_1 <= isp_vram_din;
+			if (offset) isp_state <= 8'd35;
 			else isp_state <= 8'd46;
 		end
 		
 		// if Offset colour...
-		35: begin vert_c_off_col <= isp_vram_din;
+		35: begin vert_c_off_col <= isp_vram_din;				// if Offset colour.
 			if (opb_word[31:29]==3'b101) isp_state <= 8'd36;	// If a Quad
 			else isp_state <= 8'd46;
 		end
@@ -303,10 +330,11 @@ else begin
 		44: begin vert_d_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd46; end
 		
 		// if Offset colour...
-		45: vert_d_off_col <= isp_vram_din;
+		45: vert_d_off_col <= isp_vram_din;				// if Offset colour.
 		
 		46: begin
 			isp_entry_valid <= 1'b1;
+			strip_cnt <= strip_cnt - 3'd1;
 			isp_state <= 8'd48;
 		end
 		
@@ -317,7 +345,7 @@ else begin
 					isp_state <= 8'd0;
 				end
 				else begin	// Do TriangleStrip...
-					strip_cnt <= strip_cnt - 3'd1;
+					//strip_cnt <= strip_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New. (plus one extra word, due to the isp_vram_addr++ thing).
 					isp_state <= 8'd6;
 				end
@@ -336,7 +364,7 @@ else begin
 							*/
 							vert_a_x  <= vert_c_x;   vert_b_x <= vert_d_x;   vert_c_x <= vert_a_x;
 							vert_a_y  <= vert_c_y;   vert_b_y <= vert_d_y;   vert_c_y <= vert_a_y;
-							vert_a_z  <= vert_c_z;   vert_b_z <= vert_d_z;   vert_c_z <= vert_a_z;
+							vert_a_z  <= vert_c_z;   /*vert_b_z <= vert_d_z;*/   vert_c_z <= vert_a_z;
 							vert_a_u0 <= vert_c_u0; vert_b_u0 <= vert_d_u0; vert_c_u0 <= vert_a_u0;
 							vert_a_v0 <= vert_c_v0; vert_b_v0 <= vert_d_v0; vert_c_v0 <= vert_a_v0;
 							isp_entry_valid <= 1'b1;	// To tell the C code to latch the params again
@@ -385,13 +413,13 @@ else begin
 			y_ps <= tiley*32;	// Per-tile rendering.
 			
 			// Lazy culling...
-			if (FX1[31] || FY1[31] || FX2[31] || FY2[31] || FX3[31] || FY3[31]
+			//if (FX1[31] || FY1[31] || FX2[31] || FY2[31] || FX3[31] || FY3[31]
 				/*|| (FX1>>FRAC_BITS)>639 || (FX2>>FRAC_BITS)>639 || (FX3>>FRAC_BITS)>639
-				|| (FY1>>FRAC_BITS)>479 || (FY2>>FRAC_BITS)>479 || (FY3>>FRAC_BITS)>479*/ ) begin
-				poly_drawn <= 1'b1;
-				isp_state <= 8'd0;
-			end
-			else begin
+				|| (FY1>>FRAC_BITS)>479 || (FY2>>FRAC_BITS)>479 || (FY3>>FRAC_BITS)>479*/ //) begin
+				//poly_drawn <= 1'b1;
+				//isp_state <= 8'd0;
+			//end
+			/*else*/ begin
 				//x_ps <= minx;				// Per-poly rendering.
 				x_ps <= tilex*32;			// Per-tile rendering.
 				isp_state <= isp_state + 8'd1;
@@ -405,9 +433,9 @@ else begin
 				if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
 					if (inTriangle) begin
 						isp_vram_addr <= ((y_ps * 640) + x_ps) << 2;
+						isp_vram_wr <= 1'b1;
 						isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.
 						//isp_vram_dout <= {8'hff, vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, Alpha boosted.
-						isp_vram_wr <= 1'b1;
 					end
 					x_ps <= x_ps + 12'd1;
 				end
@@ -438,8 +466,8 @@ wire [22:0] man = test_float[22:00];
 wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
 									   {1'b1, man}>>(127-exp);
 
-reg [11:0] x_ps;
-reg [11:0] y_ps;
+reg signed [11:0] x_ps;
+reg signed [11:0] y_ps;
 
 parameter FRAC_BITS = 8;
 
@@ -463,17 +491,16 @@ wire signed [31:0] C3 = (mult5 - mult6) >>FRAC_BITS;
 //int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
-wire signed [47:0] mult7  = (FDX12 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
-wire signed [47:0] mult8  = (FDY12 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
-
-wire signed [47:0] mult9  = (FDX23 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
-wire signed [47:0] mult10 = (FDY23 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
-
-wire signed [47:0] mult11 = (FDX31 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
-wire signed [47:0] mult12 = (FDY31 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
-
+wire signed [47:0] mult7  = (FDX12 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+wire signed [47:0] mult8  = (FDY12 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
 wire signed [31:0] Xhs12 = C1 + (mult7  - mult8 );
+
+wire signed [47:0] mult9  = (FDX23 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+wire signed [47:0] mult10 = (FDY23 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
 wire signed [31:0] Xhs23 = C2 + (mult9  - mult10);
+
+wire signed [47:0] mult11 = (FDX31 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+wire signed [47:0] mult12 = (FDY31 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
 wire signed [31:0] Xhs31 = C3 + (mult11 - mult12);
 
 wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
