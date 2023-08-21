@@ -4,14 +4,13 @@
 #include "Vsimtop__Syms.h"
 #include "Vsimtop.h"
 #include "Vsimtop___024root.h"
-#include "Vsimtop___024unit.h"
 
 // FUNCTIONS
 Vsimtop__Syms::~Vsimtop__Syms()
 {
 }
 
-Vsimtop__Syms::Vsimtop__Syms(VerilatedContext* contextp, const char* namep,Vsimtop* modelp)
+Vsimtop__Syms::Vsimtop__Syms(VerilatedContext* contextp, const char* namep, Vsimtop* modelp)
     : VerilatedSyms{contextp}
     // Setup internal state of the Syms class
     , __Vm_modelp{modelp}

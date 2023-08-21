@@ -5,6 +5,7 @@
 #include "verilated.h"
 
 #include "Vsimtop__Syms.h"
+#include "Vsimtop__Syms.h"
 #include "Vsimtop___024root.h"
 
 // Parameter definitions for Vsimtop___024root
@@ -101,8 +102,8 @@ constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__isp_parser_ins
 
 void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf);
 
-Vsimtop___024root::Vsimtop___024root(Vsimtop__Syms* symsp, const char* name)
-    : VerilatedModule{name}
+Vsimtop___024root::Vsimtop___024root(Vsimtop__Syms* symsp, const char* v__name)
+    : VerilatedModule{v__name}
     , vlSymsp{symsp}
  {
     // Reset structure values

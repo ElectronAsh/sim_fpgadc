@@ -14,7 +14,7 @@ class Vsimtop__Syms;
 class Vsimtop___024root;
 
 // This class is the main interface to the Verilated model
-class Vsimtop VL_NOT_FINAL {
+class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel {
   private:
     // Symbol table holding complete model state (owned by this class)
     Vsimtop__Syms* const vlSymsp;
@@ -25,8 +25,8 @@ class Vsimtop VL_NOT_FINAL {
     // The application code writes and reads these signals to
     // propagate new values into/out from the Verilated model.
     VL_IN8(&clk,0,0);
-    VL_IN8(&rst,0,0);
     VL_OUT8(&im_req_valid,0,0);
+    VL_IN8(&rst,0,0);
     VL_IN8(&im_resp_valid,0,0);
     VL_OUT8(&dm_req_wmask,7,0);
     VL_OUT8(&dm_req_wen,0,0);
@@ -85,6 +85,7 @@ class Vsimtop VL_NOT_FINAL {
     VL_IN(&miny,31,0);
     VL_IN(&spanx,31,0);
     VL_IN(&spany,31,0);
+    VL_OUT(&twop,19,0);
     VL_OUT64(&dm_req_wdata,63,0);
     VL_IN64(&dm_resp_rdata,63,0);
 
@@ -119,11 +120,17 @@ class Vsimtop VL_NOT_FINAL {
     void eval_end_step() {}
     /// Simulation complete, run final blocks.  Application must call on completion.
     void final();
-    /// Return current simulation context for this model.
-    /// Used to get to e.g. simulation time via contextp()->time()
-    VerilatedContext* contextp() const;
+    /// Are there scheduled events to handle?
+    bool eventsPending();
+    /// Returns time at next time slot. Aborts if !eventsPending()
+    uint64_t nextTimeSlot();
     /// Retrieve name of this model instance (as passed to constructor).
     const char* name() const;
-} VL_ATTR_ALIGNED(VL_CACHE_LINE_BYTES);
+
+    // Abstract methods from VerilatedModel
+    const char* hierName() const override final;
+    const char* modelName() const override final;
+    unsigned threads() const override final;
+};
 
 #endif  // guard

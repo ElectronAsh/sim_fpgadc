@@ -8,10 +8,11 @@
 // Constructors
 
 Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
-    : vlSymsp{new Vsimtop__Syms(_vcontextp__, _vcname__, this)}
+    : VerilatedModel{*_vcontextp__}
+    , vlSymsp{new Vsimtop__Syms(contextp(), _vcname__, this)}
     , clk{vlSymsp->TOP.clk}
-    , rst{vlSymsp->TOP.rst}
     , im_req_valid{vlSymsp->TOP.im_req_valid}
+    , rst{vlSymsp->TOP.rst}
     , im_resp_valid{vlSymsp->TOP.im_resp_valid}
     , dm_req_wmask{vlSymsp->TOP.dm_req_wmask}
     , dm_req_wen{vlSymsp->TOP.dm_req_wen}
@@ -70,14 +71,17 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , miny{vlSymsp->TOP.miny}
     , spanx{vlSymsp->TOP.spanx}
     , spany{vlSymsp->TOP.spany}
+    , twop{vlSymsp->TOP.twop}
     , dm_req_wdata{vlSymsp->TOP.dm_req_wdata}
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
     , rootp{&(vlSymsp->TOP)}
 {
+    // Register model with the context
+    contextp()->addModel(this);
 }
 
 Vsimtop::Vsimtop(const char* _vcname__)
-    : Vsimtop(nullptr, _vcname__)
+    : Vsimtop(Verilated::threadContextp(), _vcname__)
 {
 }
 
@@ -89,42 +93,15 @@ Vsimtop::~Vsimtop() {
 }
 
 //============================================================
-// Evaluation loop
+// Evaluation function
 
-void Vsimtop___024root___eval_initial(Vsimtop___024root* vlSelf);
-void Vsimtop___024root___eval_settle(Vsimtop___024root* vlSelf);
-void Vsimtop___024root___eval(Vsimtop___024root* vlSelf);
-QData Vsimtop___024root___change_request(Vsimtop___024root* vlSelf);
 #ifdef VL_DEBUG
 void Vsimtop___024root___eval_debug_assertions(Vsimtop___024root* vlSelf);
 #endif  // VL_DEBUG
-void Vsimtop___024root___final(Vsimtop___024root* vlSelf);
-
-static void _eval_initial_loop(Vsimtop__Syms* __restrict vlSymsp) {
-    vlSymsp->__Vm_didInit = true;
-    Vsimtop___024root___eval_initial(&(vlSymsp->TOP));
-    // Evaluate till stable
-    int __VclockLoop = 0;
-    QData __Vchange = 1;
-    do {
-        VL_DEBUG_IF(VL_DBG_MSGF("+ Initial loop\n"););
-        Vsimtop___024root___eval_settle(&(vlSymsp->TOP));
-        Vsimtop___024root___eval(&(vlSymsp->TOP));
-        if (VL_UNLIKELY(++__VclockLoop > 2000)) {
-            // About to fail, so enable debug to see what's not settling.
-            // Note you must run make with OPT=-DVL_DEBUG for debug prints.
-            int __Vsaved_debug = Verilated::debug();
-            Verilated::debug(1);
-            __Vchange = Vsimtop___024root___change_request(&(vlSymsp->TOP));
-            Verilated::debug(__Vsaved_debug);
-            VL_FATAL_MT("genrtl/simtop.v", 27, "",
-                "Verilated model didn't DC converge\n"
-                "- See https://verilator.org/warn/DIDNOTCONVERGE");
-        } else {
-            __Vchange = Vsimtop___024root___change_request(&(vlSymsp->TOP));
-        }
-    } while (VL_UNLIKELY(__Vchange));
-}
+void Vsimtop___024root___eval_static(Vsimtop___024root* vlSelf);
+void Vsimtop___024root___eval_initial(Vsimtop___024root* vlSelf);
+void Vsimtop___024root___eval_settle(Vsimtop___024root* vlSelf);
+void Vsimtop___024root___eval(Vsimtop___024root* vlSelf);
 
 void Vsimtop::eval_step() {
     VL_DEBUG_IF(VL_DBG_MSGF("+++++TOP Evaluate Vsimtop::eval_step\n"); );
@@ -132,37 +109,35 @@ void Vsimtop::eval_step() {
     // Debug assertions
     Vsimtop___024root___eval_debug_assertions(&(vlSymsp->TOP));
 #endif  // VL_DEBUG
-    // Initialize
-    if (VL_UNLIKELY(!vlSymsp->__Vm_didInit)) _eval_initial_loop(vlSymsp);
-    // Evaluate till stable
-    int __VclockLoop = 0;
-    QData __Vchange = 1;
-    do {
-        VL_DEBUG_IF(VL_DBG_MSGF("+ Clock loop\n"););
-        Vsimtop___024root___eval(&(vlSymsp->TOP));
-        if (VL_UNLIKELY(++__VclockLoop > 2000)) {
-            // About to fail, so enable debug to see what's not settling.
-            // Note you must run make with OPT=-DVL_DEBUG for debug prints.
-            int __Vsaved_debug = Verilated::debug();
-            Verilated::debug(1);
-            __Vchange = Vsimtop___024root___change_request(&(vlSymsp->TOP));
-            Verilated::debug(__Vsaved_debug);
-            VL_FATAL_MT("genrtl/simtop.v", 27, "",
-                "Verilated model didn't converge\n"
-                "- See https://verilator.org/warn/DIDNOTCONVERGE");
-        } else {
-            __Vchange = Vsimtop___024root___change_request(&(vlSymsp->TOP));
-        }
-    } while (VL_UNLIKELY(__Vchange));
+    vlSymsp->__Vm_deleter.deleteAll();
+    if (VL_UNLIKELY(!vlSymsp->__Vm_didInit)) {
+        vlSymsp->__Vm_didInit = true;
+        VL_DEBUG_IF(VL_DBG_MSGF("+ Initial\n"););
+        Vsimtop___024root___eval_static(&(vlSymsp->TOP));
+        Vsimtop___024root___eval_initial(&(vlSymsp->TOP));
+        Vsimtop___024root___eval_settle(&(vlSymsp->TOP));
+    }
+    // MTask 0 start
+    VL_DEBUG_IF(VL_DBG_MSGF("MTask0 starting\n"););
+    Verilated::mtaskId(0);
+    VL_DEBUG_IF(VL_DBG_MSGF("+ Eval\n"););
+    Vsimtop___024root___eval(&(vlSymsp->TOP));
     // Evaluate cleanup
+    Verilated::endOfThreadMTask(vlSymsp->__Vm_evalMsgQp);
+    Verilated::endOfEval(vlSymsp->__Vm_evalMsgQp);
+}
+
+//============================================================
+// Events and timing
+bool Vsimtop::eventsPending() { return false; }
+
+uint64_t Vsimtop::nextTimeSlot() {
+    VL_FATAL_MT(__FILE__, __LINE__, "", "%Error: No delays in the design");
+    return 0;
 }
 
 //============================================================
 // Utilities
-
-VerilatedContext* Vsimtop::contextp() const {
-    return vlSymsp->_vm_contextp__;
-}
 
 const char* Vsimtop::name() const {
     return vlSymsp->name();
@@ -171,6 +146,15 @@ const char* Vsimtop::name() const {
 //============================================================
 // Invoke final blocks
 
+void Vsimtop___024root___eval_final(Vsimtop___024root* vlSelf);
+
 VL_ATTR_COLD void Vsimtop::final() {
-    Vsimtop___024root___final(&(vlSymsp->TOP));
+    Vsimtop___024root___eval_final(&(vlSymsp->TOP));
 }
+
+//============================================================
+// Implementations of abstract methods from VerilatedModel
+
+const char* Vsimtop::hierName() const { return vlSymsp->name(); }
+const char* Vsimtop::modelName() const { return "Vsimtop"; }
+unsigned Vsimtop::threads() const { return 1; }

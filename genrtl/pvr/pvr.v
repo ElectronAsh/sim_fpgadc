@@ -68,10 +68,9 @@ module pvr (
 	input signed [31:0] miny,
 	
 	input signed [31:0] spanx,
-	input signed [31:0] spany
+	input signed [31:0] spany,
 	
-	//input signed [31:0] x_ps,
-	//input signed [31:0] y_ps
+	output wire [19:0] twop
 );
 
 
@@ -512,6 +511,8 @@ wire [31:0] opb_word;
 wire [23:0] poly_addr;
 wire render_poly;
 
+wire [2:0] type_cnt;
+
 ra_parser ra_parser_inst (
 	.clock( clock ),		// input  clock
 	.reset_n( reset_n ),	// input  reset_n
@@ -531,6 +532,8 @@ ra_parser ra_parser_inst (
 	.ra_cont_flush( ra_cont_flush ),	// output ra_cont_flush
 	.ra_cont_tiley( ra_cont_tiley ),	// output [5:0]  ra_cont_tiley
 	.ra_cont_tilex( ra_cont_tilex ),	// output [5:0]  ra_cont_tilex
+
+	.type_cnt( type_cnt ),				// output [2:0]  type_cnt
 
 	.ra_opaque( ra_opaque ),			// output [31:0]  ra_opaque
 	.ra_opaque_mod( ra_opaque_mod ),	// output [31:0]  ra_opaque_mod
@@ -555,8 +558,8 @@ wire isp_vram_rd;
 wire isp_vram_wr;
 wire [23:0] isp_vram_addr;
 
-wire [31:0] isp_vram_din;
-wire [31:0] isp_vram_dout;
+wire [63:0] isp_vram_din;
+wire [63:0] isp_vram_dout;
 assign isp_vram_din = vram_din;
 
 wire isp_entry_valid;
@@ -585,14 +588,16 @@ isp_parser isp_parser_inst (
 	
 	.opb_word( opb_word ),				// input [31:0]  opb_word
 	
+	.type_cnt( type_cnt ),				// input [2:0]  type_cnt
+	
 	.poly_addr( poly_addr ),			// input [23:0]  poly_addr
 	.render_poly( render_poly ),		// input  render_poly
 	
 	.isp_vram_rd( isp_vram_rd ),		// output  isp_vram_rd
 	.isp_vram_wr( isp_vram_wr ),		// output  isp_vram_wr
 	.isp_vram_addr( isp_vram_addr ),	// output [23:0]  isp_vram_addr
-	.isp_vram_din( isp_vram_din ),		// input  [31:0]  isp_vram_din
-	.isp_vram_dout( isp_vram_dout ),	// output  [31:0]  isp_vram_dout
+	.isp_vram_din( isp_vram_din ),		// input  [63:0]  isp_vram_din
+	.isp_vram_dout( isp_vram_dout ),	// output  [63:0]  isp_vram_dout
 	
 	.isp_entry_valid( isp_entry_valid ),// output  isp_entry_valid
 	
@@ -602,31 +607,30 @@ isp_parser isp_parser_inst (
 	.tiley( ra_cont_tiley ),
 	
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
-	.FDY12( FDY12 ),		// input sign [31:0]   
-	.FX1( FX1 ),			// input sign [31:0]  
-	.FDX12( FDX12 ),		// input sign [31:0]  
-	.FY1( FY1 ),			// input sign [31:0]  
+	.FDY12( FDY12 ),		// input signed [31:0]   
+	.FX1( FX1 ),			// input signed [31:0]  
+	.FDX12( FDX12 ),		// input signed [31:0]  
+	.FY1( FY1 ),			// input signed [31:0]  
 	
 	//int C2 = FDY23 * FX2 - FDX23 * FY2;
-	.FDY23( FDY23 ),		// input sign [31:0]  
-	.FX2( FX2 ),			// input sign [31:0]  
-	.FDX23( FDX23 ),		// input sign [31:0]  
-	.FY2( FY2 ),			// input sign [31:0]  
+	.FDY23( FDY23 ),		// input signed [31:0]  
+	.FX2( FX2 ),			// input signed [31:0]  
+	.FDX23( FDX23 ),		// input signed [31:0]  
+	.FY2( FY2 ),			// input signed [31:0]  
 	
 	//int C3 = FDY31 * FX3 - FDX31 * FY3;
-	.FDY31( FDY31 ),		// input sign [31:0]  
-	.FX3( FX3 ),			// input sign [31:0]  
-	.FDX31( FDX31 ),		// input sign [31:0]  
-	.FY3( FY3 ),			// input sign [31:0]  
+	.FDY31( FDY31 ),		// input signed [31:0]  
+	.FX3( FX3 ),			// input signed [31:0]  
+	.FDX31( FDX31 ),		// input signed [31:0]  
+	.FY3( FY3 ),			// input signed [31:0]  
 	
 	.minx( minx ),
 	.miny( miny ),
 	
 	.spanx( spanx ),
-	.spany( spany )
+	.spany( spany ),
 	
-	//.x_ps( x_ps ),
-	//.y_ps( y_ps )
+	.twop( twop )
 );
 
 
@@ -956,7 +960,7 @@ wire sgn = !area[31];
 
 endmodule
 
-
+/*
 module fifo #(
   parameter PACKET_WIDTH = 32,
   parameter FIFO_DEPTH   = 256, 
@@ -1012,5 +1016,4 @@ function [31:0] FLUSH_NAN;
 																	in;	// Else, return the input value.
 	end
 endfunction
-
-  
+*/

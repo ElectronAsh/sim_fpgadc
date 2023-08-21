@@ -24,6 +24,8 @@ module ra_parser (
 	output wire [5:0] ra_cont_tiley,
 	output wire [5:0] ra_cont_tilex,
 
+	output reg [2:0] type_cnt,
+
 	output reg [31:0] ra_opaque,
 	output reg [31:0] ra_opaque_mod,
 	output reg [31:0] ra_trans,
@@ -59,7 +61,7 @@ assign ra_cont_tilex  = ra_control[7:2];
 
 
 // OL Word parsing...
-reg [2:0] type_cnt;
+//reg [2:0] type_cnt;
 
 // OL Word bit decodes...
 wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.

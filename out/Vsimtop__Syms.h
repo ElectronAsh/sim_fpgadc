@@ -15,13 +15,13 @@
 
 // INCLUDE MODULE CLASSES
 #include "Vsimtop___024root.h"
-#include "Vsimtop___024unit.h"
 
 // SYMS CLASS (contains all model state)
-class Vsimtop__Syms final : public VerilatedSyms {
+class alignas(VL_CACHE_LINE_BYTES)Vsimtop__Syms final : public VerilatedSyms {
   public:
     // INTERNAL STATE
     Vsimtop* const __Vm_modelp;
+    VlDeleter __Vm_deleter;
     bool __Vm_didInit = false;
 
     // MODULE INSTANCE STATE
@@ -36,6 +36,6 @@ class Vsimtop__Syms final : public VerilatedSyms {
 
     // METHODS
     const char* name() { return TOP.name(); }
-} VL_ATTR_ALIGNED(VL_CACHE_LINE_BYTES);
+};
 
 #endif  // guard

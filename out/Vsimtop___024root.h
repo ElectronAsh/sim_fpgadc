@@ -7,15 +7,16 @@
 
 #include "verilated.h"
 
+
 class Vsimtop__Syms;
-VL_MODULE(Vsimtop___024root) {
+
+class alignas(VL_CACHE_LINE_BYTES) Vsimtop___024root final : public VerilatedModule {
   public:
 
     // DESIGN SPECIFIC STATE
     VL_IN8(clk,0,0);
-    CData/*0:0*/ simtop__DOT____Vcellinp__pvr__reset_n;
-    VL_IN8(rst,0,0);
     VL_OUT8(im_req_valid,0,0);
+    VL_IN8(rst,0,0);
     VL_IN8(im_resp_valid,0,0);
     VL_OUT8(dm_req_wmask,7,0);
     VL_OUT8(dm_req_wen,0,0);
@@ -331,6 +332,18 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__core__DOT__e2_p1_waltbank;
     CData/*3:0*/ simtop__DOT__core__DOT__e2_csr_wdst;
     CData/*0:0*/ simtop__DOT__core__DOT__e2_csr_wen;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h6cfdb3c1__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h29b8f1bc__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h6ce33f07__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h29ae45fa__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h7333f59e__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h297f0f65__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h6cdcc83b__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h299a5b06__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h2883dc79__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h3b4896c3__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h30afbd87__0;
+    CData/*0:0*/ simtop__DOT__core__DOT____VdfgTmp_h6ab68d09__0;
     CData/*0:0*/ simtop__DOT__core__DOT__rf__DOT__clk;
     CData/*0:0*/ simtop__DOT__core__DOT__rf__DOT__rst;
     CData/*3:0*/ simtop__DOT__core__DOT__rf__DOT__rf_rsrc0;
@@ -455,6 +468,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__core__DOT__mtu0__DOT__lt;
     CData/*0:0*/ simtop__DOT__core__DOT__mtu0__DOT__ltu;
     CData/*0:0*/ simtop__DOT__core__DOT__mtu0__DOT__eq;
+    CData/*0:0*/ simtop__DOT__core__DOT__mtu0__DOT____VdfgTmp_h9fa499bc__0;
     CData/*0:0*/ simtop__DOT__core__DOT__mtu1__DOT__in_valid;
     CData/*0:0*/ simtop__DOT__core__DOT__mtu1__DOT__out_t;
     CData/*0:0*/ simtop__DOT__core__DOT__mtu1__DOT__out_wen;
@@ -463,6 +477,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__core__DOT__mtu1__DOT__lt;
     CData/*0:0*/ simtop__DOT__core__DOT__mtu1__DOT__ltu;
     CData/*0:0*/ simtop__DOT__core__DOT__mtu1__DOT__eq;
+    CData/*0:0*/ simtop__DOT__core__DOT__mtu1__DOT____VdfgTmp_h9fa499bc__0;
     CData/*0:0*/ simtop__DOT__core__DOT__lsu__DOT__clk;
     CData/*0:0*/ simtop__DOT__core__DOT__lsu__DOT__rst;
     CData/*0:0*/ simtop__DOT__core__DOT__lsu__DOT__e1_flush;
@@ -698,6 +713,8 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__a_is_snan;
     CData/*0:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__b_is_snan;
     CData/*0:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__invalid_int;
+    CData/*0:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT____VdfgTmp_hecdd0ec1__0;
+    CData/*0:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT____VdfgTmp_hf5adef39__0;
     CData/*0:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__ven;
     CData/*0:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__i_valid;
     CData/*4:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__i_tag;
@@ -783,6 +800,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*5:0*/ simtop__DOT__pvr__DOT__ra_cont_tilex;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_entry_valid;
     CData/*0:0*/ simtop__DOT__pvr__DOT__render_poly;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__type_cnt;
     CData/*0:0*/ simtop__DOT__pvr__DOT__poly_drawn;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_vram_rd;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_vram_wr;
@@ -798,6 +816,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_flush;
     CData/*5:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_tiley;
     CData/*5:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_tilex;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_entry_valid;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__render_poly;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_drawn;
@@ -808,7 +827,6 @@ VL_MODULE(Vsimtop___024root) {
     CData/*1:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb;
     CData/*1:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__o_opb;
     CData/*7:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state;
-    CData/*2:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt;
     CData/*5:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__strip_mask;
     CData/*3:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__num_prims;
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__shadow;
@@ -818,6 +836,7 @@ VL_MODULE(Vsimtop___024root) {
     CData/*0:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__draw_last_tile;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__clock;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__reset_n;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__type_cnt;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__render_poly;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_rd;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_wr;
@@ -851,21 +870,43 @@ VL_MODULE(Vsimtop___024root) {
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride;
+    CData/*5:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pal_selector;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__two_volume;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt;
     CData/*3:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__quad_done;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_words;
-    CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle;
-    CData/*7:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state;
-    CData/*2:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt;
-    CData/*0:0*/ __Vdly__simtop__DOT__pvr__DOT__poly_drawn;
-    CData/*0:0*/ __VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n;
-    CData/*0:0*/ __Vclklast__TOP__clk;
-    CData/*0:0*/ __Vclklast__TOP____VinpClk__TOP__simtop__DOT____Vcellinp__pvr__reset_n;
-    CData/*0:0*/ __Vchglast__TOP__simtop__DOT____Vcellinp__pvr__reset_n;
+    CData/*1:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pal_pix_fmt;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__clock;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__reset_n;
+    CData/*1:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_pix_fmt;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__depth_comp;
+    CData/*1:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__culling_mode;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__z_write_disable;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__texture;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__offset;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__gouraud;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__uv_16_bit;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__cache_bypass;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__dcalc_ctrl;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__volume_inst;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_u_flip;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_v_flip;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_u_clamp;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_v_clamp;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_u_size;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_v_size;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mip_map;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vq_comp;
+    CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_fmt;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__scan_order;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride;
+    CData/*5:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector;
+    CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;
+    CData/*0:0*/ __Vtrigprevexpr___TOP__im_req_valid__0;
+    CData/*0:0*/ __VactContinue;
     VL_OUT16(trace_instr0,15,0);
     VL_OUT16(trace_instr1,15,0);
     SData/*15:0*/ simtop__DOT__trace_instr0;
@@ -933,8 +974,14 @@ VL_MODULE(Vsimtop___024root) {
     SData/*10:0*/ simtop__DOT__core__DOT__fpu__DOT__fma_round__DOT__i_exp;
     SData/*11:0*/ simtop__DOT__core__DOT__fpu__DOT__fma_round__DOT__exp_biased;
     SData/*15:0*/ simtop__DOT__pvr__DOT__pvr_addr;
-    SData/*11:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
-    SData/*11:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
+    SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
+    SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
+    SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__ui;
+    SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vi;
+    SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui;
+    SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi;
+    SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui_masked;
+    SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi_masked;
     VL_IN(boot_vector,31,0);
     VL_OUT(im_req_addr,31,0);
     VL_IN(im_resp_rdata,31,0);
@@ -978,6 +1025,7 @@ VL_MODULE(Vsimtop___024root) {
     VL_IN(miny,31,0);
     VL_IN(spanx,31,0);
     VL_IN(spany,31,0);
+    VL_OUT(twop,19,0);
     IData/*31:0*/ simtop__DOT__boot_vector;
     IData/*31:0*/ simtop__DOT__im_req_addr;
     IData/*31:0*/ simtop__DOT__im_resp_rdata;
@@ -1021,6 +1069,7 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__miny;
     IData/*31:0*/ simtop__DOT__spanx;
     IData/*31:0*/ simtop__DOT__spany;
+    IData/*19:0*/ simtop__DOT__twop;
     IData/*28:0*/ simtop__DOT__req_addr;
     IData/*31:0*/ simtop__DOT____Vcellout__pvr__pvr_dout;
     IData/*31:0*/ simtop__DOT__core__DOT__boot_vector;
@@ -1313,6 +1362,7 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__miny;
     IData/*31:0*/ simtop__DOT__pvr__DOT__spanx;
     IData/*31:0*/ simtop__DOT__pvr__DOT__spany;
+    IData/*19:0*/ simtop__DOT__pvr__DOT__twop;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ID;
     IData/*31:0*/ simtop__DOT__pvr__DOT__REVISION;
     IData/*31:0*/ simtop__DOT__pvr__DOT__SOFTRESET;
@@ -1398,8 +1448,6 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__opb_word;
     IData/*23:0*/ simtop__DOT__pvr__DOT__poly_addr;
     IData/*23:0*/ simtop__DOT__pvr__DOT__isp_vram_addr;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_vram_din;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_vram_dout;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE;
@@ -1418,8 +1466,6 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__opb_word;
     IData/*23:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr;
     IData/*23:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__FDY12;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__FX1;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__FDX12;
@@ -1436,9 +1482,12 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany;
+    IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__twop;
+    IData/*20:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_addr_64;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word;
+    IData/*20:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_start_addr;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp2_inst;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex2_cont;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
@@ -1482,23 +1531,26 @@ VL_MODULE(Vsimtop___024root) {
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_base_col_1;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_off_col;
     IData/*23:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr_last;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float;
-    IData/*22:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31;
-    IData/*23:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_vram_addr;
-    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_opaque;
-    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_opaque_mod;
-    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_trans;
-    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_trans_mod;
-    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_puncht;
-    IData/*23:0*/ __Vdly__simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region;
-    IData/*31:0*/ __Vdly__simtop__DOT__pvr__DOT__opb_word;
+    IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__twop_out;
+    IData/*20:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texel_argb;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__isp_inst;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tsp_inst;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tcw_word;
+    IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop;
+    IData/*20:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__texel_argb;
+    IData/*20:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_start_addr;
+    IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_full;
+    IData/*31:0*/ __VstlIterCount;
+    IData/*31:0*/ __VicoIterCount;
+    IData/*31:0*/ __VactIterCount;
     VL_OUT64(dm_req_wdata,63,0);
     VL_IN64(dm_resp_rdata,63,0);
     QData/*63:0*/ simtop__DOT__dm_req_wdata;
@@ -1520,6 +1572,10 @@ VL_MODULE(Vsimtop___024root) {
     QData/*46:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__o_frac;
     QData/*47:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__x_frac;
     QData/*46:0*/ simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__x_frac_norm;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_vram_din;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_vram_dout;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout;
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1;
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult2;
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult3;
@@ -1532,6 +1588,11 @@ VL_MODULE(Vsimtop___024root) {
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10;
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11;
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_din;
+    VlTriggerVec<1> __VstlTriggered;
+    VlTriggerVec<1> __VicoTriggered;
+    VlTriggerVec<2> __VactTriggered;
+    VlTriggerVec<2> __VnbaTriggered;
     VlUnpacked<CData/*3:0*/, 5> simtop__DOT__core__DOT__rf_rsrc;
     VlUnpacked<IData/*31:0*/, 5> simtop__DOT__core__DOT__rf_rdata;
     VlUnpacked<IData/*31:0*/, 5> simtop__DOT__core__DOT__id_instr_rs;
@@ -1639,13 +1700,13 @@ VL_MODULE(Vsimtop___024root) {
     static constexpr IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__FRAC_BITS = 8U;
 
     // CONSTRUCTORS
-    Vsimtop___024root(Vsimtop__Syms* symsp, const char* name);
+    Vsimtop___024root(Vsimtop__Syms* symsp, const char* v__name);
     ~Vsimtop___024root();
     VL_UNCOPYABLE(Vsimtop___024root);
 
     // INTERNAL METHODS
     void __Vconfigure(bool first);
-} VL_ATTR_ALIGNED(VL_CACHE_LINE_BYTES);
+};
 
 
 #endif  // guard

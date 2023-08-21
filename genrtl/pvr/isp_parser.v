@@ -7,14 +7,16 @@ module isp_parser (
 	
 	input [31:0] opb_word,
 	
+	input [2:0] type_cnt,
+	
 	input [23:0] poly_addr,
 	input render_poly,
 	
 	output reg isp_vram_rd,
 	output reg isp_vram_wr,
 	output reg [23:0] isp_vram_addr,
-	input [31:0] isp_vram_din,
-	output reg [31:0] isp_vram_dout,
+	input [63:0] isp_vram_din,
+	output reg [63:0] isp_vram_dout,
 	
 	output reg isp_entry_valid,
 	
@@ -41,15 +43,27 @@ module isp_parser (
 	input signed [31:0] FDX31,
 	input signed [31:0] FY3,
 	
-	//input signed [31:0] x_ps,
-	//input signed [31:0] y_ps,
-	
 	input signed [31:0] minx,
 	input signed [31:0] miny,
 	
 	input signed [31:0] spanx,
-	input signed [31:0] spany
+	input signed [31:0] spany,
+	
+	output wire [19:0] twop
 );
+
+
+/*
+reg [31:0] FX1;
+reg [31:0] FX2;
+reg [31:0] FX3;
+
+reg [31:0] FY1;
+reg [31:0] FY2;
+reg [31:0] FY3;
+*/
+
+reg [20:0] tex_addr_64;
 
 // OL Word bit decodes...
 wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.
@@ -95,6 +109,9 @@ wire vq_comp = tcw_word[30];
 wire [2:0] pix_fmt = tcw_word[29:27];
 wire scan_order = tcw_word[26];
 wire stride = tcw_word[25];
+wire [5:0] pal_selector = tcw_word[26:21];		// Used for 4BPP or 8BPP palette textures.
+wire [20:0] tex_start_addr = tcw_word[20:0];	// 64-bit WORD address!
+
 
 reg [31:0] tsp2_inst;
 reg [31:0] tex2_cont;
@@ -210,9 +227,11 @@ else begin
 				end
 			end
 		end
-		1: begin isp_inst <= isp_vram_din; /*if (strip_cnt==7) strip_cnt <= 3'd0;*/ end
-		2:  tsp_inst <= isp_vram_din;
-		3:  begin tcw_word <= isp_vram_din; /*if (shadow) isp_state <= 8'd4; else*/ isp_state <= 8'd6; end	// Shadow still breaks everything?
+		1: isp_inst <= isp_vram_din;
+		2: tsp_inst <= isp_vram_din;
+		3: begin tcw_word <= isp_vram_din;
+			/*if (type_cnt==1 | type_cnt==3) isp_state <= 8'd4; else*/ isp_state <= 8'd6;	// type_cnt: 0=opaque, 1=opaque_mod, 2=transp, 3=transp_mod, 4=puncht.
+		end
 		
 		// if (shadow)...
 		4:  tsp2_inst <= isp_vram_din;
@@ -334,8 +353,20 @@ else begin
 		
 		46: begin
 			isp_entry_valid <= 1'b1;
-			strip_cnt <= strip_cnt - 3'd1;
-			isp_state <= 8'd48;
+			
+			/*FX1 <= float_to_fixed(vert_a_x);
+			FX2 <= float_to_fixed(vert_b_x);
+			FX3 <= float_to_fixed(vert_c_x);
+			
+			FY1 <= float_to_fixed(vert_a_y);
+			FY2 <= float_to_fixed(vert_b_y);
+			FY3 <= float_to_fixed(vert_c_y);			
+			
+			if (vert_a_x[31] | vert_b_x[31] | vert_c_x[31] | vert_a_y[31] | vert_b_y[31] | vert_c_y[31]) begin	// Ditch negative values (for now).
+				poly_drawn <= 1'b1;
+				isp_state <= 8'd0;
+			end
+			else*/ isp_state <= 8'd48;
 		end
 		
 		47: begin
@@ -345,7 +376,7 @@ else begin
 					isp_state <= 8'd0;
 				end
 				else begin	// Do TriangleStrip...
-					//strip_cnt <= strip_cnt - 3'd1;
+					strip_cnt <= strip_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New. (plus one extra word, due to the isp_vram_addr++ thing).
 					isp_state <= 8'd6;
 				end
@@ -394,6 +425,18 @@ else begin
 			//if (FX1[31]) FX1=0; if (FX2[31]) FX2=0; if (FX3[31]) FX3=0;
 			//if (FY1[31]) FY1=0; if (FY2[31]) FY2=0; if (FY3[31]) FY3=0;
 	
+			/*
+			if (FX1[31] | FX2[31] | FX3[31] | FY1[31] | FY2[31] | FY3[31]) begin
+				poly_drawn <= 1'b1;
+				isp_state <= 8'd0;
+			end
+			*/
+			
+			if ( (FX1>>FRAC_BITS)>639 | (FX2>>FRAC_BITS)>639 | (FX3>>FRAC_BITS)>639 | (FY1>>FRAC_BITS)>479 | (FY2>>FRAC_BITS)>479 | (FY3>>FRAC_BITS)>479 ) begin
+				poly_drawn <= 1'b1;
+				isp_state <= 8'd0;
+			end
+
 			isp_vram_addr_last <= isp_vram_addr;
 	
 			// Half-edge constants (setup).
@@ -458,16 +501,17 @@ end
 wire [7:0] vert_words = ((two_volume&shadow) ? ((skip*2)+3) : (skip+3)) /*+ offset*/;
 
 
-wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
+//wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
+//wire [31:0] test_float = 32'h438E7E18;	// 284.985107421875
+//wire [31:0] test_float = 32'hC2375BCF;	// -45.839656829833984375
+//wire [31:0] test_float = 32'h449D852C;	// 1260.16162109375
+//wire [31:0] test_float = 32'h47F4C274;	// 125316.90625
+						  
+//wire [31:0] fixed = float_to_fixed(test_float);
 
-wire [7:0]  exp = test_float[30:23];
-wire [22:0] man = test_float[22:00];
+reg [9:0] x_ps;
+reg [9:0] y_ps;
 
-wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
-									   {1'b1, man}>>(127-exp);
-
-reg signed [11:0] x_ps;
-reg signed [11:0] y_ps;
 
 parameter FRAC_BITS = 8;
 
@@ -504,6 +548,38 @@ wire signed [47:0] mult12 = (FDY31 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
 wire signed [31:0] Xhs31 = C3 + (mult11 - mult12);
 
 wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
+
+
+texture_address  texture_address_inst (
+	.clock( clock ),
+	.reset_n( reset_n ),
+	
+	.isp_inst( isp_inst ),	// input [31:0]  isp_inst.
+	.tsp_inst( tsp_inst ),	// input [31:0]  tsp_inst.
+	.tcw_word( tcw_word ),	// input [31:0]  tcw_word.
+	
+	.pal_pix_fmt( pal_pix_fmt ),	// input [1:0] pal_pix_fmt. From PAL_RAM_CTRL[1:0].
+		
+	.ui( ui ),						// input [9:0]  ui. From rasterizer/interp...
+	.vi( vi ),						// input [9:0]  ui.
+	
+	.twop( twop ),					// output [19:0]  twop.
+		
+	.vram_tex_addr( vram_tex_addr ),// output [20:0]  vram_tex_addr. 64-bit WORD address!
+	.vram_din( isp_vram_din ),		// input [63:0]  vram_din. Full 64-bit data for texture reads.
+	
+	.texel_argb( texel_argb )		// output [31:0]  texel_argb. Final texel ARGB 8888 output.
+);
+
+reg [9:0] ui;
+reg [9:0] vi;
+
+wire [1:0] pal_pix_fmt = 2'b0;
+wire [19:0] twop_out;
+
+wire [20:0] vram_tex_addr;
+wire [31:0] texel_argb;
+
 
 
 // Aa = ((v3_a - v1_a) * (v2_y - v1_y) - (v2_a - v1_a) * (v3_y - v1_y));
@@ -591,5 +667,147 @@ edge_calc  edge_calc_c3 (
 );
 */
 
+// Negative values shall not pass! (Gandalf, 2002).
+/*
+function [31:0] float_to_fixed;
+	input [31:0] float;
+	
+	reg [7:0] exp   = float[30:23];
+	reg [22:0] man  = float[22:00];
+	reg [63:0] norm = (exp>127) ? {1'b1, man} << (exp-127) :
+								  {1'b1, man} >> (127-exp);
+	
+	reg [31:0] fixed = norm >> (23-FRAC_BITS);
+	
+	float_to_fixed = fixed;	// Clamp neg values to 0.
+endfunction
+*/
 
 endmodule
+
+
+module texture_address (
+	input clock,
+	input reset_n,
+	
+	input [31:0] isp_inst,
+	input [31:0] tsp_inst,
+	input [31:0] tcw_word,
+	
+	input [1:0] pal_pix_fmt,	// From PAL_RAM_CTRL[1:0].
+		
+	input [9:0] ui,				// From rasterizer/interp...
+	input [9:0] vi,
+	
+	output reg [19:0] twop,
+		
+	output [20:0] vram_tex_addr,	// 64-bit WORD address!
+	input [63:0] vram_din,			// Full 64-bit data for texture reads.
+	
+	output [31:0] texel_argb		// Final texel ARGB 8888 output.
+);
+
+
+// ISP Instruction Word.
+wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
+wire [1:0] culling_mode = isp_inst[28:27];	// 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
+wire z_write_disable    = isp_inst[26];
+wire texture            = isp_inst[25];
+wire offset             = isp_inst[24];
+wire gouraud            = isp_inst[23];
+wire uv_16_bit          = isp_inst[22];
+wire cache_bypass       = isp_inst[21];
+wire dcalc_ctrl         = isp_inst[20];
+// Bits [19:0] are reserved.
+
+// ISP/TSP Instruction Word. Bit decode, for Opaque Modifier Volume or Translucent Modified Volume...
+// (those prim types use the same culling_mode bits as above.)
+wire [2:0] volume_inst = isp_inst[31:29];
+
+
+// TSP Instruction Word...
+wire tex_u_flip = tsp_inst[18];
+wire tex_v_flip = tsp_inst[17];
+wire tex_u_clamp = tsp_inst[16];
+wire tex_v_clamp = tsp_inst[15];
+wire [2:0] tex_u_size = tsp_inst[5:3];
+wire [2:0] tex_v_size = tsp_inst[2:0];
+
+
+// Texture Control Word...
+wire mip_map = tcw_word[31];
+wire vq_comp = tcw_word[30];
+wire [2:0] pix_fmt = tcw_word[29:27];
+wire scan_order = tcw_word[26];
+wire stride = tcw_word[25];
+wire [5:0] pal_selector = tcw_word[26:21];		// Used for 4BPP or 8BPP palette textures.
+wire [20:0] tex_start_addr = tcw_word[20:0];	// 64-bit WORD address!
+
+// tex_u_size and tex_v_size (raw value)...
+// 0=8
+// 1=16
+// 2=32
+// 3=64
+// 4=128
+// 5=256
+// 6=512
+// 7=1024
+
+
+wire [19:0] twop_full = {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
+
+wire [9:0] ui_masked = ui & ((8<<tex_u_size)-1);
+wire [9:0] vi_masked = vi & ((8<<tex_v_size)-1);
+
+always @(posedge clock or negedge reset_n)
+if (!reset_n) begin
+
+end
+else begin
+	if (tex_u_size > tex_v_size) begin		// Rectangular texture. U size greater than V size.
+		case (tex_v_size)
+			0: twop <= {ui[9:3] ,twop_full[5:0]};	// V size 8 
+			1: twop <= {ui[9:4] ,twop_full[7:0]};	// V size 16
+			2: twop <= {ui[9:5] ,twop_full[9:0]};	// V size 32
+			3: twop <= {ui[9:6] ,twop_full[11:0]};	// V size 64
+			4: twop <= {ui[9:7] ,twop_full[13:0]};	// V size 128
+			5: twop <= {ui[9:8] ,twop_full[15:0]};	// V size 256
+			6: twop <= {ui[9]   ,twop_full[17:0]};	// V size 512
+			7: twop <= twop_full[19:0];				// V size 1024
+			default:;
+		endcase
+	end
+	else if (tex_v_size > tex_u_size) begin // Rectangular. V size greater than U size.
+		case (tex_u_size)
+			0: twop <= {vi[9:3] ,twop_full[5:0]};	// U size 8
+			1: twop <= {vi[9:4] ,twop_full[7:0]};	// U size 16
+			2: twop <= {vi[9:5] ,twop_full[9:0]};	// U size 32
+			3: twop <= {vi[9:6] ,twop_full[11:0]};	// U size 64
+			4: twop <= {vi[9:7] ,twop_full[13:0]};	// U size 128
+			5: twop <= {vi[9:8] ,twop_full[15:0]};	// U size 256
+			6: twop <= {vi[9]   ,twop_full[17:0]};	// U size 512
+			7: twop <= twop_full[19:0];				// U size 1024
+			default:;
+		endcase
+	end
+	else if (tex_u_size==tex_v_size) begin		// Square texture.
+		case (tex_u_size)	// Using tex_u_size here. Doesn't really matter which one we use.
+			0: twop <= twop_full[5:0];	// 8x8
+			1: twop <= twop_full[7:0];	// 16x16
+			2: twop <= twop_full[9:0];	// 32x32
+			3: twop <= twop_full[11:0];	// 64x64
+			4: twop <= twop_full[13:0];	// 128x128
+			7: twop <= twop_full[15:0];	// 256x256
+			6: twop <= twop_full[17:0];	// 512x512
+			7: twop <= twop_full[19:0];	// 1024x1024
+			default: twop <= twop_full[19:0];
+		endcase
+	end
+	//else		// <- Shouldn't be possible to end up here.
+	
+	//$display("ui: %d  vi: %d  tex_u_size (raw): %d  tex_v_size (raw): %d  twop 0x%08X  twop_full: 0x%08X", ui, vi, tex_u_size, tex_v_size, twop, twop_full);
+end
+
+
+endmodule
+
