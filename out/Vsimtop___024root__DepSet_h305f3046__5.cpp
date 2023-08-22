@@ -4913,12 +4913,9 @@ VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__0(Vsimtop___024root* vl
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector 
         = (0x3fU & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
                     >> 0x15U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride 
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride_flag 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
                  >> 0x19U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order 
-        = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
-                 >> 0x1aU));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_addr_word 
         = (0x1fffffU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp 
@@ -6085,22 +6082,6 @@ VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__0(Vsimtop___024root* vl
                                                                     (vlSelf->dm_req_addr 
                                                                      >> 3U)))) {
                                                                 if (
-                                                                    (4U 
-                                                                     & vlSelf->dm_req_addr)) {
-                                                                    if (
-                                                                        (1U 
-                                                                         & (~ 
-                                                                            (vlSelf->dm_req_addr 
-                                                                             >> 1U)))) {
-                                                                        if (
-                                                                            (1U 
-                                                                             & (~ vlSelf->dm_req_addr))) {
-                                                                            vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL 
-                                                                                = (IData)(vlSelf->dm_req_wdata);
-                                                                        }
-                                                                    }
-                                                                }
-                                                                if (
                                                                     (1U 
                                                                      & (~ 
                                                                         (vlSelf->dm_req_addr 
@@ -6114,6 +6095,22 @@ VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__0(Vsimtop___024root* vl
                                                                             (1U 
                                                                              & (~ vlSelf->dm_req_addr))) {
                                                                             vlSelf->simtop__DOT__pvr__DOT__SPG_WIDTH 
+                                                                                = (IData)(vlSelf->dm_req_wdata);
+                                                                        }
+                                                                    }
+                                                                }
+                                                                if (
+                                                                    (4U 
+                                                                     & vlSelf->dm_req_addr)) {
+                                                                    if (
+                                                                        (1U 
+                                                                         & (~ 
+                                                                            (vlSelf->dm_req_addr 
+                                                                             >> 1U)))) {
+                                                                        if (
+                                                                            (1U 
+                                                                             & (~ vlSelf->dm_req_addr))) {
+                                                                            vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL 
                                                                                 = (IData)(vlSelf->dm_req_wdata);
                                                                         }
                                                                     }
@@ -7059,6 +7056,19 @@ VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__0(Vsimtop___024root* vl
         vlSelf->simtop__DOT__pvr__DOT__poly_addr = 0U;
         vlSelf->simtop__DOT__pvr__DOT__render_poly = 0U;
     }
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__code_book_endian 
+        = (1U & (vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL 
+                 >> 0x11U));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__index_endian 
+        = (1U & (vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL 
+                 >> 0x10U));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__bank_bit 
+        = (0x1fU & (vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL 
+                    >> 8U));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__TEXT_CONTROL 
+        = vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride 
+        = (0x1fU & vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL);
     vlSelf->simtop__DOT__vram_wr = vlSelf->vram_wr;
     vlSelf->simtop__DOT__vram_dout = vlSelf->vram_dout;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 
@@ -7103,10 +7113,8 @@ VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__0(Vsimtop___024root* vl
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_v_clamp 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride 
-        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__scan_order 
-        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride_flag 
+        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride_flag;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vq_comp 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_fmt 
@@ -7124,6 +7132,10 @@ VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__0(Vsimtop___024root* vl
     vlSelf->simtop__DOT__pvr__DOT__poly_drawn = __Vdly__simtop__DOT__pvr__DOT__poly_drawn;
     vlSelf->simtop__DOT__pvr__DOT__ra_vram_addr = __Vdly__simtop__DOT__pvr__DOT__ra_vram_addr;
     vlSelf->simtop__DOT__pvr__DOT__opb_word = __Vdly__simtop__DOT__pvr__DOT__opb_word;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__TEXT_CONTROL 
+        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__TEXT_CONTROL;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride_full 
+        = (0xfffffffffULL & (0x10ULL << (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride)));
     vlSelf->simtop__DOT__pvr__DOT__vram_wr = vlSelf->simtop__DOT__vram_wr;
     vlSelf->simtop__DOT__pvr__DOT__vram_dout = vlSelf->simtop__DOT__vram_dout;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle 
@@ -9275,7 +9287,8 @@ VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__3(Vsimtop___024root* vl
     // Body
     if ((((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size) 
           == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size)) 
-         | (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map))) {
+         | ((~ (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order)) 
+            & (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map)))) {
         if (((((((((0U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size)) 
                    | (1U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size))) 
                   | (2U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size))) 

@@ -629,7 +629,9 @@ isp_parser isp_parser_inst (
 	.miny( miny ),
 	
 	.spanx( spanx ),
-	.spany( spany )
+	.spany( spany ),
+	
+	.TEXT_CONTROL( TEXT_CONTROL )	// From TEXT_CONTROL reg. (0xE4 in PVR regs).
 );
 
 

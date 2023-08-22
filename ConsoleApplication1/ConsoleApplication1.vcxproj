@@ -203,7 +203,6 @@
     <ClInclude Include="..\..\verilator\include\verilatedos.h" />
     <ClInclude Include="..\..\verilator\include\verilated_config.h" />
     <ClInclude Include="..\..\verilator\include\verilated_funcs.h" />
-    <ClInclude Include="..\..\verilator\include\verilated_heavy.h" />
     <ClInclude Include="..\..\verilator\include\verilated_imp.h" />
     <ClInclude Include="..\..\verilator\include\verilated_intrinsics.h" />
     <ClInclude Include="..\..\verilator\include\verilated_sc.h" />
