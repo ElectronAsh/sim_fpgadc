@@ -1084,7 +1084,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			// 
 			// NOTE: The above is kind of wrong. The "width" of the address depends on the data bus width.
 			// Textures on PVR2 are (usually) read via the full 64-bit data bus, with the lower 32-bit word in the lower 4MB,
-			// and the upper 32-bit word in the upper 4MB, AFAIK.
+			// and the upper 32-bit word in the upper 4MB (the words are interleaved).
 			// 
 			// The 8MB VRAM on Dreamcast is split into two 32-bit wide banks. They each have their own address.
 			// So each half of VRAM can be read as 32-bit wide (for params etc.), or combined, to read as 64-bit wide for textures etc.
@@ -1107,7 +1107,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			uint32_t vram_tex_addr_core = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr;
 			uint32_t twop_core          = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop;
 
-			uint32_t mipmap_offs = (mipmap_flag) ? (mipmap_byte_offset_vq[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size+3])>>1 : 0;
+			uint32_t mipmap_offs = (mipmap_flag) ? (mipmap_byte_offset_vq[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size+3]) : 0;
 
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
 				// Looks like twop address basically hops to each 64-bit wide word.
@@ -1638,10 +1638,10 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_sonic", "rb");			  vram_file = fopen("vram_sonic.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sonic_title", "rb");	  vram_file = fopen("vram_sonic_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hydro_title", "rb");	  vram_file = fopen("vram_hydro_title.bin", "rb");	// Disable lazy culling, to get this to show!
-	pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
+	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
+	pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");	  vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
@@ -2118,7 +2118,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("         tex_addr: 0x%08X", tex_addr);
 		ImGui::Text("        texel_off: 0x%08X", texel_offs);
 		ImGui::Text("        tex_index: 0x%08X", tex_index);
-		ImGui::Text("vram_tex_addr sim (byte): 0x%08X", vram_tex_addr<<3);
+		//ImGui::Text("vram_tex_addr sim (byte): 0x%08X", vram_tex_addr<<3);
 		ImGui::Text("   twop_full core: 0x%05X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_full);
 		ImGui::Text("        twop core: 0x%05X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop);
 		ImGui::Text("vram_tex_addr cor: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr);
