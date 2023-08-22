@@ -7273,7 +7273,6 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->miny = VL_RAND_RESET_I(32);
     vlSelf->spanx = VL_RAND_RESET_I(32);
     vlSelf->spany = VL_RAND_RESET_I(32);
-    vlSelf->twop = VL_RAND_RESET_I(20);
     vlSelf->simtop__DOT__clk = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__rst = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__boot_vector = VL_RAND_RESET_I(32);
@@ -7337,7 +7336,6 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__miny = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__spanx = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__spany = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__twop = VL_RAND_RESET_I(20);
     vlSelf->simtop__DOT__rst_reg = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__req_addr = VL_RAND_RESET_I(29);
     vlSelf->simtop__DOT__bios_cs = VL_RAND_RESET_I(1);
@@ -8483,7 +8481,6 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__miny = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__spanx = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__spany = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__twop = VL_RAND_RESET_I(20);
     vlSelf->simtop__DOT__pvr__DOT__ID = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__REVISION = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__SOFTRESET = VL_RAND_RESET_I(32);
@@ -8664,8 +8661,6 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__twop = VL_RAND_RESET_I(20);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_addr_64 = VL_RAND_RESET_I(21);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_mask = VL_RAND_RESET_I(6);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__num_prims = VL_RAND_RESET_I(4);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow = VL_RAND_RESET_I(1);
@@ -8695,8 +8690,6 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt = VL_RAND_RESET_I(3);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride = VL_RAND_RESET_I(1);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pal_selector = VL_RAND_RESET_I(6);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_start_addr = VL_RAND_RESET_I(21);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp2_inst = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex2_cont = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x = VL_RAND_RESET_I(32);
@@ -8746,8 +8739,12 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__quad_done = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr_last = VL_RAND_RESET_I(24);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_words = VL_RAND_RESET_I(8);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps = VL_RAND_RESET_I(10);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps = VL_RAND_RESET_I(10);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp = VL_RAND_RESET_I(8);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man = VL_RAND_RESET_I(23);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps = VL_RAND_RESET_I(12);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps = VL_RAND_RESET_I(12);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult2 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1 = VL_RAND_RESET_I(32);
@@ -8768,7 +8765,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pal_pix_fmt = VL_RAND_RESET_I(2);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__twop_out = VL_RAND_RESET_I(20);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__twop = VL_RAND_RESET_I(20);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr = VL_RAND_RESET_I(24);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texel_argb = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__clock = VL_RAND_RESET_I(1);
@@ -8810,7 +8807,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui_masked = VL_RAND_RESET_I(10);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi_masked = VL_RAND_RESET_I(10);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__norm_or_vq_offs = VL_RAND_RESET_I(20);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_start_offs = VL_RAND_RESET_I(20);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs = VL_RAND_RESET_I(20);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_norm = VL_RAND_RESET_I(20);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_vq = VL_RAND_RESET_I(20);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_pal = VL_RAND_RESET_I(20);

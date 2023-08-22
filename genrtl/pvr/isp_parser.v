@@ -43,27 +43,15 @@ module isp_parser (
 	input signed [31:0] FDX31,
 	input signed [31:0] FY3,
 	
+	//input signed [31:0] x_ps,
+	//input signed [31:0] y_ps,
+	
 	input signed [31:0] minx,
 	input signed [31:0] miny,
 	
 	input signed [31:0] spanx,
-	input signed [31:0] spany,
-	
-	output wire [19:0] twop
+	input signed [31:0] spany
 );
-
-
-/*
-reg [31:0] FX1;
-reg [31:0] FX2;
-reg [31:0] FX3;
-
-reg [31:0] FY1;
-reg [31:0] FY2;
-reg [31:0] FY3;
-*/
-
-reg [20:0] tex_addr_64;
 
 // OL Word bit decodes...
 wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.
@@ -109,9 +97,6 @@ wire vq_comp = tcw_word[30];
 wire [2:0] pix_fmt = tcw_word[29:27];
 wire scan_order = tcw_word[26];
 wire stride = tcw_word[25];
-wire [5:0] pal_selector = tcw_word[26:21];		// Used for 4BPP or 8BPP palette textures.
-wire [20:0] tex_start_addr = tcw_word[20:0];	// 64-bit WORD address!
-
 
 reg [31:0] tsp2_inst;
 reg [31:0] tex2_cont;
@@ -201,13 +186,13 @@ else begin
 				isp_vram_addr <= poly_addr;
 				
 				if (!opb_word[31]) begin	// TriangleStrips.
-					if (strip_mask==6'b000000) begin	// Nothing to draw for this strip.
+					if (!strip_mask) begin	// Nothing to draw for this strip.
 						strip_cnt <= 3'd0;	// Sanity check.
 						array_cnt <= 4'd0;	// Sanity check.
 						poly_drawn <= 1'b1;
 					end
 					else begin
-						strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5] + 1;
+						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) +1;
 						array_cnt <= 4'd0;	// Sanity check.
 						isp_vram_rd <= 1'b1;
 						isp_state <= 8'd1;
@@ -227,11 +212,9 @@ else begin
 				end
 			end
 		end
-		1: isp_inst <= isp_vram_din;
-		2: tsp_inst <= isp_vram_din;
-		3: begin tcw_word <= isp_vram_din;
-			/*if (type_cnt==1 | type_cnt==3) isp_state <= 8'd4; else*/ isp_state <= 8'd6;	// type_cnt: 0=opaque, 1=opaque_mod, 2=transp, 3=transp_mod, 4=puncht.
-		end
+		1: begin isp_inst <= isp_vram_din; /*if (strip_cnt==7) strip_cnt <= 3'd0;*/ end
+		2:  tsp_inst <= isp_vram_din;
+		3:  begin tcw_word <= isp_vram_din; /*if (shadow) isp_state <= 8'd4; else*/ isp_state <= 8'd6; end	// Shadow still breaks everything?
 		
 		// if (shadow)...
 		4:  tsp2_inst <= isp_vram_din;
@@ -240,7 +223,7 @@ else begin
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
 		8:  begin vert_a_z <= isp_vram_din;
-			if (array_cnt>4'd0) begin		// Triangle Array or Quad Array...
+			if (array_cnt) begin		// Triangle Array or Quad Array...
 				if (!texture) begin
 					if (tsp_inst==32'h00000000) isp_state <= 8'd16;	// Skip Colour and UV??
 					else isp_state <= 8'd11;	// Skip U+V if not Textured.
@@ -268,7 +251,7 @@ else begin
 		16: vert_b_x <= isp_vram_din;
 		17: vert_b_y <= isp_vram_din;
 		18: begin vert_b_z <= isp_vram_din;
-			if (array_cnt>4'd0) begin		// Triangle Array...
+			if (array_cnt) begin		// Triangle Array...
 				if (!texture) begin
 					if (tsp_inst==32'h00000000) isp_state <= 8'd26;	// Skip Colour and UV??
 					else isp_state <= 8'd21;	// Skip U+V if not Textured.
@@ -296,7 +279,7 @@ else begin
 		26: vert_c_x <= isp_vram_din;
 		27: vert_c_y <= isp_vram_din;
 		28: begin vert_c_z <= isp_vram_din;
-			if (array_cnt>4'd0) begin		// Triangle Array...
+			if (array_cnt) begin		// Triangle Array...
 				if (!texture) begin
 					if (tsp_inst==32'h00000000) begin
 						if (opb_word[31:29]==3'b101) isp_state <= 8'd36;	// Skip Colour and UV if a Quad.
@@ -353,20 +336,8 @@ else begin
 		
 		46: begin
 			isp_entry_valid <= 1'b1;
-			
-			/*FX1 <= float_to_fixed(vert_a_x);
-			FX2 <= float_to_fixed(vert_b_x);
-			FX3 <= float_to_fixed(vert_c_x);
-			
-			FY1 <= float_to_fixed(vert_a_y);
-			FY2 <= float_to_fixed(vert_b_y);
-			FY3 <= float_to_fixed(vert_c_y);			
-			
-			if (vert_a_x[31] | vert_b_x[31] | vert_c_x[31] | vert_a_y[31] | vert_b_y[31] | vert_c_y[31]) begin	// Ditch negative values (for now).
-				poly_drawn <= 1'b1;
-				isp_state <= 8'd0;
-			end
-			else*/ isp_state <= 8'd48;
+			strip_cnt <= strip_cnt - 3'd1;
+			isp_state <= 8'd48;
 		end
 		
 		47: begin
@@ -376,7 +347,7 @@ else begin
 					isp_state <= 8'd0;
 				end
 				else begin	// Do TriangleStrip...
-					strip_cnt <= strip_cnt - 3'd1;
+					//strip_cnt <= strip_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New. (plus one extra word, due to the isp_vram_addr++ thing).
 					isp_state <= 8'd6;
 				end
@@ -413,7 +384,7 @@ else begin
 					end
 				end
 				else begin	// Triangle Array or Quad Array not done yet...
-					array_cnt <= array_cnt - 4'd1;
+					array_cnt <= array_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - 4;
 					isp_state <= 8'd1;	// Jump back, to grab the next PRIM (including ISP/TSP/TCW).
 				end
@@ -425,18 +396,6 @@ else begin
 			//if (FX1[31]) FX1=0; if (FX2[31]) FX2=0; if (FX3[31]) FX3=0;
 			//if (FY1[31]) FY1=0; if (FY2[31]) FY2=0; if (FY3[31]) FY3=0;
 	
-			/*
-			if (FX1[31] | FX2[31] | FX3[31] | FY1[31] | FY2[31] | FY3[31]) begin
-				poly_drawn <= 1'b1;
-				isp_state <= 8'd0;
-			end
-			*/
-			
-			if ( (FX1>>FRAC_BITS)>639 | (FX2>>FRAC_BITS)>639 | (FX3>>FRAC_BITS)>639 | (FY1>>FRAC_BITS)>479 | (FY2>>FRAC_BITS)>479 | (FY3>>FRAC_BITS)>479 ) begin
-				poly_drawn <= 1'b1;
-				isp_state <= 8'd0;
-			end
-
 			isp_vram_addr_last <= isp_vram_addr;
 	
 			// Half-edge constants (setup).
@@ -480,10 +439,10 @@ else begin
 						isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.
 						//isp_vram_dout <= {8'hff, vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, Alpha boosted.
 					end
-					x_ps <= x_ps + 10'd1;
+					x_ps <= x_ps + 12'd1;
 				end
 				else begin
-					y_ps <= y_ps + 10'd1;
+					y_ps <= y_ps + 12'd1;
 					//x_ps <= minx;				// Per-poly rendering.
 					x_ps <= tilex*32;			// Per-tile rendering.
 				end
@@ -501,17 +460,16 @@ end
 wire [7:0] vert_words = ((two_volume&shadow) ? ((skip*2)+3) : (skip+3)) /*+ offset*/;
 
 
-//wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
-//wire [31:0] test_float = 32'h438E7E18;	// 284.985107421875
-//wire [31:0] test_float = 32'hC2375BCF;	// -45.839656829833984375
-//wire [31:0] test_float = 32'h449D852C;	// 1260.16162109375
-//wire [31:0] test_float = 32'h47F4C274;	// 125316.90625
-						  
-//wire [31:0] fixed = float_to_fixed(test_float);
+wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
 
-reg [9:0] x_ps;
-reg [9:0] y_ps;
+wire [7:0]  exp = test_float[30:23];
+wire [22:0] man = test_float[22:00];
 
+wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
+									   {1'b1, man}>>(127-exp);
+
+reg signed [11:0] x_ps;
+reg signed [11:0] y_ps;
 
 parameter FRAC_BITS = 8;
 
@@ -575,11 +533,10 @@ texture_address  texture_address_inst (
 //reg [9:0] vi;
 
 wire [1:0] pal_pix_fmt = 2'b0;
-wire [19:0] twop_out;
+wire [19:0] twop;
 
 wire [23:0] vram_tex_addr;
 wire [31:0] texel_argb;
-
 
 
 // Aa = ((v3_a - v1_a) * (v2_y - v1_y) - (v2_a - v1_a) * (v3_y - v1_y));
@@ -665,22 +622,6 @@ edge_calc  edge_calc_c3 (
 	.y( y ),
 	.interp( interp )
 );
-*/
-
-// Negative values shall not pass! (Gandalf, 2002).
-/*
-function [31:0] float_to_fixed;
-	input [31:0] float;
-	
-	reg [7:0] exp   = float[30:23];
-	reg [22:0] man  = float[22:00];
-	reg [63:0] norm = (exp>127) ? {1'b1, man} << (exp-127) :
-								  {1'b1, man} >> (127-exp);
-	
-	reg [31:0] fixed = norm >> (23-FRAC_BITS);
-	
-	float_to_fixed = fixed;	// Clamp neg values to 0.
-endfunction
 */
 
 endmodule
@@ -807,14 +748,14 @@ always @(clock) begin
 	//$display("ui: %d  vi: %d  tex_u_size (raw): %d  tex_v_size (raw): %d  twop 0x%08X  twop_full: 0x%08X", ui, vi, tex_u_size, tex_v_size, twop, twop_full);
 
 	case (pix_fmt)
-		0: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// ARGB 1555. (16BPP).
-		1: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// RGB  565.  (16BPP).
-		2: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// ARGB 4444. (16BPP).
-		3: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// YUV422.    (16BPP, sort of).
-		4: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// Bump Map.  (16BPP. S value + R value).
-		5: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>4*/;	// 4 BPP Palette.
-		6: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>3*/;	// 8 BPP Palette.
-		7: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// Reserved. Considered the same as pix_fmt 0 (ARGB 1555).
+		0: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// ARGB 1555. (16BPP).
+		1: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// RGB  565.  (16BPP).
+		2: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// ARGB 4444. (16BPP).
+		3: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// YUV422.    (16BPP, sort of).
+		4: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// Bump Map.  (16BPP. S value + R value).
+		5: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>4*/;	// 4 BPP Palette.
+		6: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>3*/;	// 8 BPP Palette.
+		7: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// Reserved. Considered the same as pix_fmt 0 (ARGB 1555).
 		default:;
 	endcase
 end
@@ -823,7 +764,7 @@ wire [19:0] norm_or_vq_offs = (vq_comp) ? mipmap_byte_offs_vq :
 										  mipmap_byte_offs_norm;
 
 
-wire [19:0] mipmap_start_offs = (pix_fmt==3'd0) ? norm_or_vq_offs :
+wire [19:0] mipmap_byte_offs = (pix_fmt==3'd0) ? norm_or_vq_offs :
 								(pix_fmt==3'd1) ? norm_or_vq_offs :
 								(pix_fmt==3'd2) ? norm_or_vq_offs :
 								(pix_fmt==3'd3) ? norm_or_vq_offs :

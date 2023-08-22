@@ -1091,15 +1091,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			// 
 			tex_addr = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word&0x1fffff) << 2;	// BYTE addr.
 
-			//mem128i px = ((mem128i*)vram_ptr)[offset];
-			//uint32_t offset = (ui>>8) + ((vi>>8) * tex_u_size);
-			//texel_offs = ui + ((vi>>8) * tex_u_size);
-
 			uint16_t texel_pix0 = 0x0000;
 			uint16_t texel_pix1 = 0x0000;
 			uint16_t texel_pix2 = 0x0000;
 			uint16_t texel_pix3 = 0x0000;
-
 			uint16_t texel_pix = 0x0000;
 
 			// Shove ui and vi into the core...
@@ -1107,16 +1102,16 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi = vi;
 
 			// Read the values from the core (I realize this will be delayed by one verilog eval cycle, but it's good enough for testing).
-			uint32_t tex_addr_core      = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_addr_word << 2;
-			uint32_t mipmap_offs_core	= top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_start_offs;
+			uint32_t tex_addr_core		= top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_addr_word << 2; // Make into BYTE address!
+			uint32_t mipmap_byte_offs_core	= top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs;
 			uint32_t vram_tex_addr_core = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr;
 			uint32_t twop_core          = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop;
 
+			uint32_t mipmap_offs = (mipmap_flag) ? (mipmap_byte_offset_vq[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size+3])>>1 : 0;
+
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
-				uint32_t mipmap_offs = (mipmap_flag) ? (mipmap_byte_offset_vq[ top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size+3 ])>>1 : 0;
-				//uint32_t twop_addr = twiddle_slow(ui, vi, tex_u_size, tex_v_size);
 				// Looks like twop address basically hops to each 64-bit wide word.
-				// So it needs an extra shift, to address each 32-bit wide word in each half of VRAM??
+				// But we needs the extra shift, to address each 32-bit wide word in each half of VRAM...
 				if ( !(twop_core&4) ) tex_index = 0x000000+1024+tex_addr_core+mipmap_offs + (twop_core>>3);
 				else                  tex_index = 0x400000+1024+tex_addr_core+mipmap_offs + (twop_core>>3);
 
@@ -1124,7 +1119,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 				// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
 				// (but we only shift by <<2 here, because we read a 32-bit word from both the lower and upper 4MB VRAM.)
-				switch ((index_byte)&3) {
+				switch ((twop_core)&3) {
 					case 0: texel_pix = read_vram_32( 0x000000 + tex_addr_core + (index_byte<<2) ) >> 16;    break;
 					case 1: texel_pix = read_vram_32( 0x000000 + tex_addr_core + (index_byte<<2) ) & 0xffff; break;
 					case 2: texel_pix = read_vram_32( 0x400000 + tex_addr_core + (index_byte<<2) ) >> 16;    break;
@@ -1132,18 +1127,18 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 				}
 			}
 			else {	// Non-VQ / Uncompressed.
-				switch ( ui&3 ) {
-					case 0: texel_pix  = vram_ptr[ ((vram_tex_addr<<2) + ((texel_offs&0xfffffffc)+0)) & 0x7fffff ];
-							texel_pix |= vram_ptr[ ((vram_tex_addr<<2) + ((texel_offs&0xfffffffc)+1)) & 0x7fffff ] << 8; break;
+				switch (twop_core&3) {
+					case 0: texel_pix  = vram_ptr[ 0x000000 + ((tex_addr_core+mipmap_offs) + ((twop_core&0xfffffffc)+0)) & 0x7fffff ];
+							texel_pix |= vram_ptr[ 0x000000 + ((tex_addr_core+mipmap_offs) + ((twop_core&0xfffffffc)+1)) & 0x7fffff ] << 8; break;
 
-					case 1: texel_pix  = vram_ptr[ ((vram_tex_addr<<2) + ((texel_offs&0xfffffffc)+2)) & 0x7fffff ];
-							texel_pix |= vram_ptr[ ((vram_tex_addr<<2) + ((texel_offs&0xfffffffc)+3)) & 0x7fffff ] << 8; break;
+					case 1: texel_pix  = vram_ptr[ 0x000000 + ((tex_addr_core+mipmap_offs) + ((twop_core&0xfffffffc)+2)) & 0x7fffff ];
+							texel_pix |= vram_ptr[ 0x000000 + ((tex_addr_core+mipmap_offs) + ((twop_core&0xfffffffc)+3)) & 0x7fffff ] << 8; break;
 
-					case 2: texel_pix  = vram_ptr[ ((vram_tex_addr<<2) + 0x400000 + ((texel_offs&0xfffffffc)+0)) & 0x7fffff ];
-							texel_pix |= vram_ptr[ ((vram_tex_addr<<2) + 0x400000 + ((texel_offs&0xfffffffc)+1)) & 0x7fffff ] << 8; break;
+					case 2: texel_pix  = vram_ptr[ 0x400000 + ((tex_addr_core+mipmap_offs) + ((twop_core&0xfffffffc)+0)) & 0x7fffff ];
+							texel_pix |= vram_ptr[ 0x400000 + ((tex_addr_core+mipmap_offs) + ((twop_core&0xfffffffc)+1)) & 0x7fffff ] << 8; break;
 
-					case 3: texel_pix  = vram_ptr[ ((vram_tex_addr<<2) + 0x400000 + ((texel_offs&0xfffffffc)+2)) & 0x7fffff ];
-							texel_pix |= vram_ptr[ ((vram_tex_addr<<2) + 0x400000 + ((texel_offs&0xfffffffc)+3)) & 0x7fffff ] << 8; break;
+					case 3: texel_pix  = vram_ptr[ 0x400000 + ((tex_addr_core+mipmap_offs) + ((twop_core&0xfffffffc)+2)) & 0x7fffff ];
+							texel_pix |= vram_ptr[ 0x400000 + ((tex_addr_core+mipmap_offs) + ((twop_core&0xfffffffc)+3)) & 0x7fffff ] << 8; break;
 				}
 			}
 
@@ -1169,13 +1164,34 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
 				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
 			}
-			else if (pix_fmt==5) {
+			else if (pix_fmt==5 || pix_fmt==6) {	// TESTING !!! Using this for both PAL4 and PAL8 atm.
 				// PAL4
-				uint8_t vram_byte  = !(texel_offs&2) ? vram_ptr[ (vram_tex_addr<<2)+(texel_offs>>2) ] : vram_ptr[ 0x400000+(vram_tex_addr<<2)+(texel_offs>>2)];
-				uint8_t pal_nibble = !(texel_offs&1) ? (vram_byte>>4)&0xf : (vram_byte&0xf);
+				
+				uint8_t vram_byte  = !(twop_core&2) ? vram_ptr[ 0x000000+(tex_addr_core+mipmap_offs)+(twop_core>>2) ] :
+													  vram_ptr[ 0x400000+(tex_addr_core+mipmap_offs)+(twop_core>>2) ];
 
-				uint16_t pal_lut = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pal_selector<<4) | pal_nibble;
-				texel_pix = pvr_ptr[(0x1000>>2) + pal_lut] & 0xffff;	// Read from Palette RAM (part of the PVR regs).
+				uint8_t pal_nibble = !(twop_core&1) ? (vram_byte>>4) & 0xf :
+													  (vram_byte>>0) & 0xf;
+				
+				/*
+				uint32_t vram_word = !(twop_core&4) ? read_vram_32( 0x000000+(tex_addr_core+mipmap_offs)+((twop_core>>2)<<0) ) :
+													  read_vram_32( 0x400000+(tex_addr_core+mipmap_offs)+((twop_core>>2)<<0) );
+
+				uint8_t pal_nibble;
+				switch ( twop_core&7 ) {
+					case 0: pal_nibble = (vram_word>>0)  & 0xf;
+					case 1: pal_nibble = (vram_word>>4)  & 0xf;
+					case 2: pal_nibble = (vram_word>>8)  & 0xf;
+					case 3: pal_nibble = (vram_word>>12) & 0xf;
+					case 4: pal_nibble = (vram_word>>16) & 0xf;
+					case 5: pal_nibble = (vram_word>>20) & 0xf;
+					case 6: pal_nibble = (vram_word>>24) & 0xf;
+					case 7: pal_nibble = (vram_word>>28) & 0xf;
+				}
+				*/
+
+				uint16_t pal_lut = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector<<4) | pal_nibble;
+				texel_pix = pvr_ptr[ (0x1000>>2) + pal_lut ] & 0xffff;	// Read from Palette RAM (part of the PVR regs).
 
 				// ARGB 1555 (Swirl logo, etc.)...;
 				uint8_t pal_fmt = pvr_ptr[(0x108>>2)]&03;
@@ -1612,6 +1628,7 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_logo", "rb");			  vram_file = fopen("vram_logo.bin", "rb");
 	//pvrfile = fopen("pvr_regs_menu", "rb");			  vram_file = fopen("vram_menu.bin", "rb");
 	//pvrfile = fopen("pvr_regs_menu2", "rb");			  vram_file = fopen("vram_menu2.bin", "rb");
+	//pvrfile = fopen("pvr_regs_mem", "rb");			  vram_file = fopen("vram_mem.bin", "rb");
 	//pvrfile = fopen("pvr_regs_taxi", "rb");			  vram_file = fopen("vram_taxi.bin", "rb");
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");			  vram_file = fopen("vram_taxi2.bin", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");			  vram_file = fopen("vram_taxi3.bin", "rb");
@@ -1620,7 +1637,6 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_crazy_title_2", "rb");	  vram_file = fopen("vram_crazy_title_2.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");			  vram_file = fopen("vram_sonic.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sonic_title", "rb");	  vram_file = fopen("vram_sonic_title.bin", "rb");
-	//pvrfile = fopen("pvr_regs_mem", "rb");			  vram_file = fopen("vram_mem.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hydro_title", "rb");	  vram_file = fopen("vram_hydro_title.bin", "rb");	// Disable lazy culling, to get this to show!
 	pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");

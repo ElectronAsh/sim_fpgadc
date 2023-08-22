@@ -70,9 +70,7 @@ module pvr (
 	input signed [31:0] miny,
 	
 	input signed [31:0] spanx,
-	input signed [31:0] spany,
-	
-	output wire [19:0] twop
+	input signed [31:0] spany
 );
 
 
@@ -631,9 +629,7 @@ isp_parser isp_parser_inst (
 	.miny( miny ),
 	
 	.spanx( spanx ),
-	.spany( spany ),
-	
-	.twop( twop )
+	.spany( spany )
 );
 
 

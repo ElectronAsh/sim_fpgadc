@@ -69,7 +69,6 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , miny{vlSymsp->TOP.miny}
     , spanx{vlSymsp->TOP.spanx}
     , spany{vlSymsp->TOP.spany}
-    , twop{vlSymsp->TOP.twop}
     , dm_req_wdata{vlSymsp->TOP.dm_req_wdata}
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
     , vram_din{vlSymsp->TOP.vram_din}

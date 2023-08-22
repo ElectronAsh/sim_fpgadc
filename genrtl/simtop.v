@@ -110,9 +110,7 @@ module simtop (
 	input signed [31:0] miny,
 	
 	input signed [31:0] spanx,
-	input signed [31:0] spany,
-	
-	output wire [19:0] twop
+	input signed [31:0] spany
 	
 	//input signed [31:0] x_ps,
 	//input signed [31:0] y_ps
@@ -296,9 +294,7 @@ pvr pvr (
 	.miny( miny ),
 	
 	.spanx( spanx ),
-	.spany( spany ),
-	
-	.twop( twop )
+	.spany( spany )
 	
 	//.x_ps( x_ps ),			// input signed [31:0]  x_ps
 	//.y_ps( y_ps )			// input signed [31:0]  y_ps

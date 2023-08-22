@@ -83,7 +83,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel 
     VL_IN(&miny,31,0);
     VL_IN(&spanx,31,0);
     VL_IN(&spany,31,0);
-    VL_OUT(&twop,19,0);
     VL_OUT64(&dm_req_wdata,63,0);
     VL_IN64(&dm_resp_rdata,63,0);
     VL_IN64(&vram_din,63,0);
