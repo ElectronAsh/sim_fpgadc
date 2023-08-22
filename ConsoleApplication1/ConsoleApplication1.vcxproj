@@ -182,6 +182,7 @@
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__2.cpp" />
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__2__Slow.cpp" />
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__3.cpp" />
+    <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__3__Slow.cpp" />
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__4.cpp" />
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__5.cpp" />
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__6.cpp" />

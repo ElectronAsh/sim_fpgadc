@@ -1542,11 +1542,11 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop___024root final : public VerilatedMod
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__texel_argb;
     IData/*20:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_addr_word;
     IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_full;
-    IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__norm_or_vq_offs;
-    IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs;
     IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_norm;
     IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_vq;
     IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_pal;
+    IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_norm_or_vq_offs;
+    IData/*19:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs;
     IData/*31:0*/ __VstlIterCount;
     IData/*31:0*/ __VicoIterCount;
     IData/*31:0*/ __VactIterCount;

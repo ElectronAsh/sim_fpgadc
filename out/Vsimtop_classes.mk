@@ -44,6 +44,7 @@ VM_CLASSES_SLOW += \
 	Vsimtop___024root__DepSet_h305f3046__0__Slow \
 	Vsimtop___024root__DepSet_h305f3046__1__Slow \
 	Vsimtop___024root__DepSet_h305f3046__2__Slow \
+	Vsimtop___024root__DepSet_h305f3046__3__Slow \
 
 # Generated support classes, fast-path, compile with highest optimization
 VM_SUPPORT_FAST += \

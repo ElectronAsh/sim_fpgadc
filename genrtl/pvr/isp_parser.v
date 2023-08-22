@@ -704,111 +704,125 @@ wire [9:0] vi_masked = vi & ((8<<tex_v_size)-1);
 always @(clock) begin
 	twop_full <= {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
 
-	if (tex_u_size > tex_v_size) begin		// Rectangular texture. U size greater than V size.
-		case (tex_v_size)
-			0: twop <= {7'b0, ui_masked[9:3] ,twop_full[5:0]};		// V size 8 
-			1: twop <= {6'b0, ui_masked[9:4] ,twop_full[7:0]};		// V size 16
-			2: twop <= {5'b0, ui_masked[9:5] ,twop_full[9:0]};		// V size 32
-			3: twop <= {4'b0, ui_masked[9:6] ,twop_full[11:0]};		// V size 64
-			4: twop <= {3'b0, ui_masked[9:7] ,twop_full[13:0]};		// V size 128
-			5: twop <= {2'b0, ui_masked[9:8] ,twop_full[15:0]};		// V size 256
-			6: twop <= {1'b0, ui_masked[9]   ,twop_full[17:0]};		// V size 512
-			7: twop <= twop_full[19:0];								// V size 1024
-		default:;
-		endcase
-	end
-	else if (tex_v_size > tex_u_size) begin // Rectangular. V size greater than U size.
-		case (tex_u_size)
-			0: twop <= {7'b0, vi_masked[9:3] ,twop_full[5:0]};		// U size 8
-			1: twop <= {6'b0, vi_masked[9:4] ,twop_full[7:0]};		// U size 16
-			2: twop <= {5'b0, vi_masked[9:5] ,twop_full[9:0]};		// U size 32
-			3: twop <= {4'b0, vi_masked[9:6] ,twop_full[11:0]};		// U size 64
-			4: twop <= {3'b0, vi_masked[9:7] ,twop_full[13:0]};		// U size 128
-			5: twop <= {2'b0, vi_masked[9:8] ,twop_full[15:0]};		// U size 256
-			6: twop <= {1'b0, vi_masked[9]   ,twop_full[17:0]};		// U size 512
-			7: twop <= twop_full[19:0];								// U size 1024
-		default:;
-		endcase
-	end
-	else begin		// Square texture.
-		case (tex_u_size)	// Using tex_u_size here. Doesn't really matter which one we use.
+	if ((tex_u_size==tex_v_size) || mip_map) begin	// Square texture. (VQ textures are always square, then tex_v_size is ignored).
+		case (tex_u_size)	// Using tex_u_size here. Doesn't really matter which one we use?
 			0: twop <= {14'b0, twop_full[5:0]};		// 8x8
 			1: twop <= {12'b0, twop_full[7:0]};		// 16x16
 			2: twop <= {10'b0, twop_full[9:0]};		// 32x32
 			3: twop <= {8'b0, twop_full[11:0]};		// 64x64
 			4: twop <= {6'b0, twop_full[13:0]};		// 128x128
-			7: twop <= {4'b0, twop_full[15:0]};		// 256x256
+			5: twop <= {4'b0, twop_full[15:0]};		// 256x256
 			6: twop <= {2'b0, twop_full[17:0]};		// 512x512
 			7: twop <= twop_full[19:0];				// 1024x1024
-		default:;
 		endcase
 	end
-	//else		// <- Shouldn't be possible to end up here.
-	
+	else if (tex_u_size > tex_v_size) begin		// Rectangular texture. U size greater than V size.
+		case (tex_v_size)
+			0: twop <= {7'b0, ui[9:3] ,twop_full[5:0]};		// V size 8 
+			1: twop <= {6'b0, ui[9:4] ,twop_full[7:0]};		// V size 16
+			2: twop <= {5'b0, ui[9:5] ,twop_full[9:0]};		// V size 32
+			3: twop <= {4'b0, ui[9:6] ,twop_full[11:0]};	// V size 64
+			4: twop <= {3'b0, ui[9:7] ,twop_full[13:0]};	// V size 128
+			5: twop <= {2'b0, ui[9:8] ,twop_full[15:0]};	// V size 256
+			6: twop <= {1'b0, ui[9]   ,twop_full[17:0]};	// V size 512
+			7: twop <= twop_full[19:0];						// V size 1024
+		endcase
+	end
+	else if (tex_v_size > tex_u_size) begin // Rectangular. V size greater than U size.
+		case (tex_u_size)
+			0: twop <= {7'b0, vi[9:3] ,twop_full[5:0]};		// U size 8
+			1: twop <= {6'b0, vi[9:4] ,twop_full[7:0]};		// U size 16
+			2: twop <= {5'b0, vi[9:5] ,twop_full[9:0]};		// U size 32
+			3: twop <= {4'b0, vi[9:6] ,twop_full[11:0]};	// U size 64
+			4: twop <= {3'b0, vi[9:7] ,twop_full[13:0]};	// U size 128
+			5: twop <= {2'b0, vi[9:8] ,twop_full[15:0]};	// U size 256
+			6: twop <= {1'b0, vi[9]   ,twop_full[17:0]};	// U size 512
+			7: twop <= twop_full[19:0];						// U size 1024
+		endcase
+	end
+
 	//$display("ui: %d  vi: %d  tex_u_size (raw): %d  tex_v_size (raw): %d  twop 0x%08X  twop_full: 0x%08X", ui, vi, tex_u_size, tex_v_size, twop, twop_full);
+end
+
+
+reg [19:0] mipmap_byte_offs_norm;
+reg [19:0] mipmap_byte_offs_vq;
+reg [19:0] mipmap_byte_offs_pal;
+
+reg [19:0] mipmap_norm_or_vq_offs;
+
+reg [19:0] mipmap_byte_offs;
+
+always @* begin
+	// NOTE: Need to add 3 to tex_u_size in all of these LUTs, because the mipmap table starts at a 1x1 texture size, but tex_u_size==0 is the 8x8 texture size.
+	case (tex_u_size+3)
+		0:  mipmap_byte_offs_norm = 20'h6; 		// 1 texels
+		1:  mipmap_byte_offs_norm = 20'h8; 		// 2 texels
+		2:  mipmap_byte_offs_norm = 20'h10; 	// 4 texels
+		3:  mipmap_byte_offs_norm = 20'h30; 	// 8 texels
+		4:  mipmap_byte_offs_norm = 20'hb0; 	// 16 texels
+		5:  mipmap_byte_offs_norm = 20'h2b0; 	// 32 texels
+		6:  mipmap_byte_offs_norm = 20'hab0; 	// 64 texels
+		7:  mipmap_byte_offs_norm = 20'h2ab0; 	// 128 texels
+		8:  mipmap_byte_offs_norm = 20'haab0; 	// 256 texels
+		9:  mipmap_byte_offs_norm = 20'h2aab0; 	// 512 texels
+		10: mipmap_byte_offs_norm = 20'haaab0; 	// 1024 texels
+	endcase
+
+	case (tex_u_size+3)
+		0:  mipmap_byte_offs_vq = 20'h0; 		// 1 texels
+		1:  mipmap_byte_offs_vq = 20'h1; 		// 2 texels
+		2:  mipmap_byte_offs_vq = 20'h2; 		// 4 texels
+		3:  mipmap_byte_offs_vq = 20'h6; 		// 8 texels
+		4:  mipmap_byte_offs_vq = 20'h16; 		// 16 texels
+		5:  mipmap_byte_offs_vq = 20'h56; 		// 32 texels
+		6:  mipmap_byte_offs_vq = 20'h156; 		// 64 texels
+		7:  mipmap_byte_offs_vq = 20'h556; 		// 128 texels
+		8:  mipmap_byte_offs_vq = 20'h1556; 	// 256 texels
+		9:  mipmap_byte_offs_vq = 20'h5556; 	// 512 texels
+		10: mipmap_byte_offs_vq = 20'h15556; 	// 1024 texels
+	endcase
+
+	case (tex_u_size+3)
+		0:  mipmap_byte_offs_pal = 20'h3; 		// 1 texels
+		1:  mipmap_byte_offs_pal = 20'h4; 		// 2 texels
+		2:  mipmap_byte_offs_pal = 20'h8; 		// 4 texels
+		3:  mipmap_byte_offs_pal = 20'h18; 		// 8 texels
+		4:  mipmap_byte_offs_pal = 20'h58; 		// 16 texels
+		5:  mipmap_byte_offs_pal = 20'h158; 	// 32 texels
+		6:  mipmap_byte_offs_pal = 20'h558; 	// 64 texels
+		7:  mipmap_byte_offs_pal = 20'h1558; 	// 128 texels
+		8:  mipmap_byte_offs_pal = 20'h5558; 	// 256 texels
+		9:  mipmap_byte_offs_pal = 20'h15558; 	// 512 texels
+		10: mipmap_byte_offs_pal = 20'h55558; 	// 1024 texels
+	endcase
+
+	mipmap_norm_or_vq_offs = (vq_comp) ? mipmap_byte_offs_vq :
+										 mipmap_byte_offs_norm;
 
 	case (pix_fmt)
-		0: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// ARGB 1555. (16BPP).
-		1: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// RGB  565.  (16BPP).
-		2: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// ARGB 4444. (16BPP).
-		3: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// YUV422.    (16BPP, sort of).
-		4: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// Bump Map.  (16BPP. S value + R value).
-		5: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>4*/;	// 4 BPP Palette.
-		6: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>3*/;	// 8 BPP Palette.
-		7: vram_tex_addr <= (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// Reserved. Considered the same as pix_fmt 0 (ARGB 1555).
-		default:;
+		0: mipmap_byte_offs = (mip_map) ? mipmap_norm_or_vq_offs : 0;	// ARGB 1555. (16BPP).
+		1: mipmap_byte_offs = (mip_map) ? mipmap_norm_or_vq_offs : 0;	// RGB  565.  (16BPP).
+		2: mipmap_byte_offs = (mip_map) ? mipmap_norm_or_vq_offs : 0;	// ARGB 4444. (16BPP).
+		3: mipmap_byte_offs = (mip_map) ? mipmap_norm_or_vq_offs : 0;	// YUV422.    (16BPP, sort of).
+		4: mipmap_byte_offs = (mip_map) ? mipmap_norm_or_vq_offs : 0;	// Bump Map.  (16BPP. S value + R value).
+		5: mipmap_byte_offs = (mip_map) ? mipmap_byte_offs_pal   : 0;	// 4 BPP Palette.
+		6: mipmap_byte_offs = (mip_map) ? mipmap_byte_offs_pal   : 0;	// 8 BPP Palette.
+		7: mipmap_byte_offs = (mip_map) ? mipmap_norm_or_vq_offs : 0;	// Reserved. Considered the same as pix_fmt 0 (ARGB 1555).
+	endcase
+	
+	case (pix_fmt)
+		0: vram_tex_addr = (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// ARGB 1555. (16BPP).
+		1: vram_tex_addr = (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// RGB  565.  (16BPP).
+		2: vram_tex_addr = (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// ARGB 4444. (16BPP).
+		3: vram_tex_addr = (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// YUV422.    (16BPP, sort of).
+		4: vram_tex_addr = (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// Bump Map.  (16BPP. S value + R value).
+		5: vram_tex_addr = (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>4*/;	// 4 BPP Palette.
+		6: vram_tex_addr = (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>3*/;	// 8 BPP Palette.
+		7: vram_tex_addr = (tex_addr_word<<2) + mipmap_byte_offs/* + twop)>>2*/;	// Reserved. Considered the same as pix_fmt 0 (ARGB 1555).
 	endcase
 end
 
-wire [19:0] norm_or_vq_offs = (vq_comp) ? mipmap_byte_offs_vq :
-										  mipmap_byte_offs_norm;
 
-
-wire [19:0] mipmap_byte_offs = (pix_fmt==3'd0) ? norm_or_vq_offs :
-								(pix_fmt==3'd1) ? norm_or_vq_offs :
-								(pix_fmt==3'd2) ? norm_or_vq_offs :
-								(pix_fmt==3'd3) ? norm_or_vq_offs :
-								(pix_fmt==3'd4) ? norm_or_vq_offs :
-								(pix_fmt==3'd5) ? mipmap_byte_offs_pal :
-								(pix_fmt==3'd6) ? mipmap_byte_offs_pal :
-								(pix_fmt==3'd7) ? norm_or_vq_offs :
-												  20'h00000;
-
-
-wire [19:0] mipmap_byte_offs_norm = (tex_u_size==3'd0)  ? 20'h6 : 
-									(tex_u_size==3'd1)  ? 20'h8 : 
-									(tex_u_size==3'd2)  ? 20'h10 : 
-									(tex_u_size==3'd3)  ? 20'h30 : 
-									(tex_u_size==3'd4)  ? 20'hb0 : 
-									(tex_u_size==3'd5)  ? 20'h2b0 : 
-									(tex_u_size==3'd6)  ? 20'hab0 : 
-									(tex_u_size==3'd7)  ? 20'h2ab0 : 
-									(tex_u_size==3'd8)  ? 20'haab0 : 
-									(tex_u_size==3'd9)  ? 20'h2aab0 :
-														  20'haaab0;
-
-wire [19:0] mipmap_byte_offs_vq = (tex_u_size==3'd0)  ? 20'h0 : 
-								  (tex_u_size==3'd1)  ? 20'h1 : 
-								  (tex_u_size==3'd2)  ? 20'h2 : 
-								  (tex_u_size==3'd3)  ? 20'h6 : 
-								  (tex_u_size==3'd4)  ? 20'h16 : 
-								  (tex_u_size==3'd5)  ? 20'h56 : 
-								  (tex_u_size==3'd6)  ? 20'h156 : 
-								  (tex_u_size==3'd7)  ? 20'h556 : 
-								  (tex_u_size==3'd8)  ? 20'h1556 : 
-								  (tex_u_size==3'd9)  ? 20'h5556 :
-													    20'h15556;
-
-wire [19:0] mipmap_byte_offs_pal = (tex_u_size==3'd0)  ? 20'h3 : 
-								   (tex_u_size==3'd1)  ? 20'h4 : 
-								   (tex_u_size==3'd2)  ? 20'h8 : 
-								   (tex_u_size==3'd3)  ? 20'h18 : 
-								   (tex_u_size==3'd4)  ? 20'h58 : 
-								   (tex_u_size==3'd5)  ? 20'h158 : 
-								   (tex_u_size==3'd6)  ? 20'h558 : 
-								   (tex_u_size==3'd7)  ? 20'h1558 : 
-								   (tex_u_size==3'd8)  ? 20'h5558 : 
-								   (tex_u_size==3'd9)  ? 20'h15558 :
-														 20'h55558;
 
 endmodule

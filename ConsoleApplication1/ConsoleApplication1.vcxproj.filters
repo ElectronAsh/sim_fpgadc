@@ -83,6 +83,9 @@
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__3.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
+    <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__3__Slow.cpp">
+      <Filter>Source Files\Vsimtop</Filter>
+    </ClCompile>
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__4.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
