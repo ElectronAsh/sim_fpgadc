@@ -50,9 +50,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel 
     VL_OUT(&trace_wdata0,31,0);
     VL_OUT(&trace_pc1,31,0);
     VL_OUT(&trace_wdata1,31,0);
-    VL_OUT(&vram_addr,22,0);
-    VL_IN(&vram_din,31,0);
-    VL_OUT(&vram_dout,31,0);
+    VL_OUT(&vram_addr,23,0);
     VL_IN(&v1_x,31,0);
     VL_IN(&v1_y,31,0);
     VL_IN(&v2_x,31,0);
@@ -88,6 +86,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel 
     VL_OUT(&twop,19,0);
     VL_OUT64(&dm_req_wdata,63,0);
     VL_IN64(&dm_resp_rdata,63,0);
+    VL_IN64(&vram_din,63,0);
+    VL_OUT64(&vram_dout,63,0);
 
     // CELLS
     // Public to allow access to /* verilator public */ items.

@@ -42,7 +42,6 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
     vlSelf->simtop__DOT__core__DOT__rf_rsrc[3U] = (0xfU 
                                                    & (vlSelf->im_resp_rdata 
                                                       >> 0x18U));
-    vlSelf->simtop__DOT__pvr__DOT__ra_vram_din = vlSelf->vram_din;
     vlSelf->simtop__DOT__dm_resp_valid = vlSelf->dm_resp_valid;
     vlSelf->simtop__DOT__FDY12 = vlSelf->FDY12;
     vlSelf->simtop__DOT__FX1 = vlSelf->FX1;
@@ -60,7 +59,6 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
     vlSelf->simtop__DOT__miny = vlSelf->miny;
     vlSelf->simtop__DOT__spanx = vlSelf->spanx;
     vlSelf->simtop__DOT__spany = vlSelf->spany;
-    vlSelf->simtop__DOT__pvr__DOT__isp_vram_din = (QData)((IData)(vlSelf->vram_din));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7 
         = (0xffffffffffffULL & ((QData)((IData)(vlSelf->FDX12)) 
                                 * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))));
@@ -79,6 +77,7 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12 
         = (0xffffffffffffULL & ((QData)((IData)(vlSelf->FDY31)) 
                                 * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))));
+    vlSelf->simtop__DOT__pvr__DOT__ra_vram_din = (IData)(vlSelf->vram_din);
     vlSelf->simtop__DOT__core__DOT__du0__DOT__imm = 
         (0xfffU & vlSelf->im_resp_rdata);
     vlSelf->simtop__DOT__core__DOT__du1__DOT__imm = 
@@ -144,7 +143,7 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
     vlSelf->simtop__DOT__core__DOT__id_instr0_raw = 
         (0xffffU & vlSelf->im_resp_rdata);
     vlSelf->simtop__DOT__sh4_dm_rdata = ((IData)(vlSelf->simtop__DOT__pvr_reg_cs)
-                                          ? vlSelf->simtop__DOT__pvr_dout
+                                          ? (QData)((IData)(vlSelf->simtop__DOT__pvr_dout))
                                           : vlSelf->dm_resp_rdata);
     vlSelf->simtop__DOT__core__DOT__boot_vector = vlSelf->simtop__DOT__boot_vector;
     vlSelf->simtop__DOT__core__DOT__im_resp_rdata = vlSelf->simtop__DOT__im_resp_rdata;
@@ -161,8 +160,6 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
     vlSelf->simtop__DOT__pvr__DOT__v3_a = vlSelf->simtop__DOT__v3_a;
     vlSelf->simtop__DOT__pvr__DOT__x = vlSelf->simtop__DOT__x;
     vlSelf->simtop__DOT__pvr__DOT__y = vlSelf->simtop__DOT__y;
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_din 
-        = vlSelf->simtop__DOT__pvr__DOT__ra_vram_din;
     vlSelf->simtop__DOT__core__DOT__dm_resp_valid = vlSelf->simtop__DOT__dm_resp_valid;
     vlSelf->simtop__DOT__pvr__DOT__FDY12 = vlSelf->simtop__DOT__FDY12;
     vlSelf->simtop__DOT__pvr__DOT__FX1 = vlSelf->simtop__DOT__FX1;
@@ -180,8 +177,6 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
     vlSelf->simtop__DOT__pvr__DOT__miny = vlSelf->simtop__DOT__miny;
     vlSelf->simtop__DOT__pvr__DOT__spanx = vlSelf->simtop__DOT__spanx;
     vlSelf->simtop__DOT__pvr__DOT__spany = vlSelf->simtop__DOT__spany;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din 
-        = vlSelf->simtop__DOT__pvr__DOT__isp_vram_din;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 
         = ((IData)((0xffffffffffffULL & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1))) 
            + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7) 
@@ -194,6 +189,13 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
         = ((IData)((0xffffffffffffULL & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3))) 
            + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11) 
               - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12)));
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_din 
+        = vlSelf->simtop__DOT__pvr__DOT__ra_vram_din;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din 
+        = vlSelf->simtop__DOT__pvr__DOT__ra_vram_din;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_din 
+        = (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__ra_vram_din));
+    vlSelf->simtop__DOT__pvr__DOT__isp_vram_din = vlSelf->simtop__DOT__pvr__DOT__ra_vram_din;
     vlSelf->simtop__DOT__core__DOT__du0__DOT__imm_sext12 
         = (((- (IData)((1U & (vlSelf->im_resp_rdata 
                               >> 0xbU)))) << 0xcU) 

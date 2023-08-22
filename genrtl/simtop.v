@@ -62,9 +62,9 @@ module simtop (
 	
 	output wire vram_rd,
 	output wire vram_wr,
-	output wire [22:0] vram_addr,
-	input wire [31:0] vram_din,
-	output wire [31:0] vram_dout,
+	output wire [23:0] vram_addr,
+	input wire [63:0] vram_din,
+	output wire [63:0] vram_dout,
 	
 	input signed [31:0] v1_x,
 	input signed [31:0] v1_y,
@@ -221,13 +221,13 @@ wire ta_tex_cs   = req_addr>=29'h11000000 && req_addr<=29'h117fffff;
 
 
 // SH4 Data read mux...
-wire [63:0] sh4_dm_rdata = (pvr_reg_cs) ? pvr_dout :
+wire [63:0] sh4_dm_rdata = (pvr_reg_cs) ? {32'h00000000, pvr_dout} :
 										  dm_resp_rdata;
 
 wire pvr_rd = dm_req_valid && !dm_req_wen;
 wire pvr_wr = dm_req_valid && dm_req_wen;
 
-wire [63:0] pvr_dout;
+wire [31:0] pvr_dout;
 
 pvr pvr (
 	.clock( clk ),			// input  clock
@@ -239,16 +239,16 @@ pvr pvr (
 	.ta_tex_cs( ta_tex_cs ),	// input  ta_tex_cs
 	
 	.pvr_addr( dm_req_addr[15:0] ),	// input [15:0]  pvr_addr
-	.pvr_din( dm_req_wdata ),		// input [63:0]  pvr_din
+	.pvr_din( dm_req_wdata ),		// input [31:0]  pvr_din
 	.pvr_rd( pvr_rd ),			// input  pvr_rd
 	.pvr_wr( pvr_wr ),			// input  pvr_wr
-	.pvr_dout( pvr_dout ),		// output [63:0]  pvr_dout
+	.pvr_dout( pvr_dout ),		// output [31:0]  pvr_dout
 
-	.vram_addr( vram_addr ),	// input [22:0]  vram_addr
-	.vram_din( vram_din ),		// input [31:0]  vram_din
+	.vram_addr( vram_addr ),	// input [23:0]  vram_addr
+	.vram_din( vram_din ),		// input [63:0]  vram_din
 	.vram_rd( vram_rd ),		// output  vram_rd
 	.vram_wr( vram_wr ),		// output  vram_wr
-	.vram_dout( vram_dout ),	// output [31:0]  vram_dout
+	.vram_dout( vram_dout ),	// output [63:0]  vram_dout
 	
 	.v1_x( v1_x ),
 	.v1_y( v1_y ),

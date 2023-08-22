@@ -1719,8 +1719,8 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
         if ((1U & (~ (vlSelf->dm_req_addr >> 0xeU)))) {
             if ((1U & (~ (vlSelf->dm_req_addr >> 0xdU)))) {
                 if ((0x1000U & vlSelf->dm_req_addr)) {
-                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
-                        = vlSelf->simtop__DOT__pvr__DOT__pal_ram
+                    vlSelf->simtop__DOT__pvr_dout = 
+                        vlSelf->simtop__DOT__pvr__DOT__pal_ram
                         [(0xfffU & vlSelf->dm_req_addr)];
                 } else if ((0x800U & vlSelf->dm_req_addr)) {
                     if ((0x400U & vlSelf->dm_req_addr)) {
@@ -1748,7 +1748,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                             if (
                                                                 (1U 
                                                                  & (~ vlSelf->dm_req_addr))) {
-                                                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                                vlSelf->simtop__DOT__pvr_dout 
                                                                     = vlSelf->simtop__DOT__pvr__DOT__TA_OL_POINTERS_END;
                                                             }
                                                         }
@@ -1791,7 +1791,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                         if (
                                                             (1U 
                                                              & (~ vlSelf->dm_req_addr))) {
-                                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                            vlSelf->simtop__DOT__pvr_dout 
                                                                 = vlSelf->simtop__DOT__pvr__DOT__TA_OL_POINTERS_START;
                                                         }
                                                     }
@@ -1820,7 +1820,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                     if (
                                                         (1U 
                                                          & (~ vlSelf->dm_req_addr))) {
-                                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                        vlSelf->simtop__DOT__pvr_dout 
                                                             = vlSelf->simtop__DOT__pvr__DOT__FOG_TABLE_END;
                                                     }
                                                 }
@@ -1850,7 +1850,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                 if (
                                                     (1U 
                                                      & (~ vlSelf->dm_req_addr))) {
-                                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                    vlSelf->simtop__DOT__pvr_dout 
                                                         = vlSelf->simtop__DOT__pvr__DOT__FOG_TABLE_START;
                                                 }
                                             }
@@ -1877,7 +1877,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                 if (
                                                     (1U 
                                                      & (~ vlSelf->dm_req_addr))) {
-                                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                    vlSelf->simtop__DOT__pvr_dout 
                                                         = vlSelf->simtop__DOT__pvr__DOT__TA_NEXT_OPB_INIT;
                                                 }
                                             }
@@ -1888,7 +1888,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                         >> 1U)))) {
                                             if ((1U 
                                                  & (~ vlSelf->dm_req_addr))) {
-                                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                vlSelf->simtop__DOT__pvr_dout 
                                                     = vlSelf->simtop__DOT__pvr__DOT__TA_LIST_CONT;
                                             }
                                         }
@@ -1904,7 +1904,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                     >> 1U)))) {
                                             if ((1U 
                                                  & (~ vlSelf->dm_req_addr))) {
-                                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                vlSelf->simtop__DOT__pvr_dout 
                                                     = vlSelf->simtop__DOT__pvr__DOT__TA_YUV_TEX_CNT;
                                             }
                                         }
@@ -1915,7 +1915,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                     if ((1U & (~ (vlSelf->dm_req_addr 
                                                   >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__TA_YUV_TEX_CTRL;
                                         }
                                     }
@@ -1923,7 +1923,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                   (vlSelf->dm_req_addr 
                                                    >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__TA_YUV_TEX_BASE;
                                     }
                                 }
@@ -1931,14 +1931,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__TA_LIST_INIT;
                                     }
                                 }
                             } else if ((1U & (~ (vlSelf->dm_req_addr 
                                                  >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL;
                                 }
                             }
@@ -1951,7 +1951,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                     >> 1U)))) {
                                             if ((1U 
                                                  & (~ vlSelf->dm_req_addr))) {
-                                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                vlSelf->simtop__DOT__pvr_dout 
                                                     = vlSelf->simtop__DOT__pvr__DOT__TA_GLOB_TILE_CLIP;
                                             }
                                         }
@@ -1960,7 +1960,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                    (vlSelf->dm_req_addr 
                                                     >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__TA_ISP_CURRENT;
                                         }
                                     }
@@ -1968,7 +1968,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                     if ((1U & (~ (vlSelf->dm_req_addr 
                                                   >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__TA_NEXT_OPB;
                                         }
                                     }
@@ -1976,7 +1976,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                   (vlSelf->dm_req_addr 
                                                    >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__TA_ISP_LIMIT;
                                     }
                                 }
@@ -1985,7 +1985,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                     if ((1U & (~ (vlSelf->dm_req_addr 
                                                   >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__TA_OL_LIMIT;
                                         }
                                     }
@@ -1993,7 +1993,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                   (vlSelf->dm_req_addr 
                                                    >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__TA_ISP_BASE;
                                     }
                                 }
@@ -2001,7 +2001,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__TA_OL_BASE;
                                     }
                                 }
@@ -2012,7 +2012,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                     if ((1U & (~ (vlSelf->dm_req_addr 
                                                   >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__PT_ALPHA_REF;
                                         }
                                     }
@@ -2020,7 +2020,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                   (vlSelf->dm_req_addr 
                                                    >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__Y_COEFF;
                                     }
                                 }
@@ -2028,14 +2028,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__FB_C_SOF;
                                     }
                                 }
                             } else if ((1U & (~ (vlSelf->dm_req_addr 
                                                  >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__FB_BURSTCTRL;
                                 }
                             }
@@ -2044,14 +2044,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__SPG_STATUS;
                                     }
                                 }
                             } else if ((1U & (~ (vlSelf->dm_req_addr 
                                                  >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__PAL_RAM_CTRL;
                                 }
                             }
@@ -2069,7 +2069,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                     >> 1U)))) {
                                             if ((1U 
                                                  & (~ vlSelf->dm_req_addr))) {
-                                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                                vlSelf->simtop__DOT__pvr_dout 
                                                     = vlSelf->simtop__DOT__pvr__DOT__SCALER_CTL;
                                             }
                                         }
@@ -2078,7 +2078,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                    (vlSelf->dm_req_addr 
                                                     >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__VO_STARTY;
                                         }
                                     }
@@ -2088,7 +2088,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                     if ((1U & (~ (vlSelf->dm_req_addr 
                                                   >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__VO_STARTX;
                                         }
                                     }
@@ -2096,7 +2096,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                   (vlSelf->dm_req_addr 
                                                    >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__VO_CONTROL;
                                     }
                                 }
@@ -2104,14 +2104,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL;
                                     }
                                 }
                             } else if ((1U & (~ (vlSelf->dm_req_addr 
                                                  >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__SPG_WIDTH;
                                 }
                             }
@@ -2121,7 +2121,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                     if ((1U & (~ (vlSelf->dm_req_addr 
                                                   >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__SPG_VBLANK;
                                         }
                                     }
@@ -2129,7 +2129,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                   (vlSelf->dm_req_addr 
                                                    >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__SPG_LOAD;
                                     }
                                 }
@@ -2137,14 +2137,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__SPG_HBLANK;
                                     }
                                 }
                             } else if ((1U & (~ (vlSelf->dm_req_addr 
                                                  >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__SPG_CONTROL;
                                 }
                             }
@@ -2153,14 +2153,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__SPG_VBLANK_INT;
                                     }
                                 }
                             } else if ((1U & (~ (vlSelf->dm_req_addr 
                                                  >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__SPG_HBLANK_INT;
                                 }
                             }
@@ -2168,14 +2168,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                             if ((1U & (~ (vlSelf->dm_req_addr 
                                           >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__SPG_TRIGGER_POS;
                                 }
                             }
                         } else if ((1U & (~ (vlSelf->dm_req_addr 
                                              >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__FOG_CLAMP_MIN;
                             }
                         }
@@ -2186,7 +2186,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                     if ((1U & (~ (vlSelf->dm_req_addr 
                                                   >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__FOG_CLAMP_MAX;
                                         }
                                     }
@@ -2194,7 +2194,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                   (vlSelf->dm_req_addr 
                                                    >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__FOG_DENSITY;
                                     }
                                 }
@@ -2202,14 +2202,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__FOG_COL_VERT;
                                     }
                                 }
                             } else if ((1U & (~ (vlSelf->dm_req_addr 
                                                  >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__FOG_COL_RAM;
                                 }
                             }
@@ -2219,7 +2219,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__SDRAM_CFG;
                                     }
                                 }
@@ -2228,14 +2228,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                             if ((1U & (~ (vlSelf->dm_req_addr 
                                           >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__SDRAM_ARB_CFG;
                                 }
                             }
                         } else if ((1U & (~ (vlSelf->dm_req_addr 
                                              >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__SDRAM_REFRESH;
                             }
                         }
@@ -2246,7 +2246,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__ISP_FEED_CFG;
                                     }
                                 }
@@ -2257,14 +2257,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                             if ((1U & (~ (vlSelf->dm_req_addr 
                                           >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__ISP_BACKGND_T;
                                 }
                             }
                         } else if ((1U & (~ (vlSelf->dm_req_addr 
                                              >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__ISP_BACKGND_D;
                             }
                         }
@@ -2272,14 +2272,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                         if ((1U & (~ (vlSelf->dm_req_addr 
                                       >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__FPU_PERP_VAL;
                             }
                         }
                     } else if ((1U & (~ (vlSelf->dm_req_addr 
                                          >> 1U)))) {
                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                            vlSelf->simtop__DOT__pvr_dout 
                                 = vlSelf->simtop__DOT__pvr__DOT__HALF_OFFSET;
                         }
                     }
@@ -2291,7 +2291,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                     if ((1U & (~ (vlSelf->dm_req_addr 
                                                   >> 1U)))) {
                                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                            vlSelf->simtop__DOT__pvr_dout 
                                                 = vlSelf->simtop__DOT__pvr__DOT__FPU_PARAM_CFG;
                                         }
                                     }
@@ -2299,7 +2299,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                                   (vlSelf->dm_req_addr 
                                                    >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__FPU_CULL_VAL;
                                     }
                                 }
@@ -2307,7 +2307,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__FPU_SHAD_SCALE;
                                     }
                                 }
@@ -2317,14 +2317,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__FB_Y_CLIP;
                                     }
                                 }
                             } else if ((1U & (~ (vlSelf->dm_req_addr 
                                                  >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__FB_X_CLIP;
                                 }
                             }
@@ -2332,14 +2332,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                             if ((1U & (~ (vlSelf->dm_req_addr 
                                           >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__FB_W_SOF2;
                                 }
                             }
                         } else if ((1U & (~ (vlSelf->dm_req_addr 
                                              >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__FB_W_SOF1;
                             }
                         }
@@ -2349,7 +2349,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__FB_R_SIZE;
                                     }
                                 }
@@ -2358,14 +2358,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                             if ((1U & (~ (vlSelf->dm_req_addr 
                                           >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__FB_R_SOF2;
                                 }
                             }
                         } else if ((1U & (~ (vlSelf->dm_req_addr 
                                              >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__FB_R_SOF1;
                             }
                         }
@@ -2374,14 +2374,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                             if ((1U & (~ (vlSelf->dm_req_addr 
                                           >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__FB_W_LINESTRIDE;
                                 }
                             }
                         } else if ((1U & (~ (vlSelf->dm_req_addr 
                                              >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__FB_W_CTRL;
                             }
                         }
@@ -2389,14 +2389,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                         if ((1U & (~ (vlSelf->dm_req_addr 
                                       >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__FB_R_CTRL;
                             }
                         }
                     } else if ((1U & (~ (vlSelf->dm_req_addr 
                                          >> 1U)))) {
                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                            vlSelf->simtop__DOT__pvr_dout 
                                 = vlSelf->simtop__DOT__pvr__DOT__VO_BORDER_COL;
                         }
                     }
@@ -2409,7 +2409,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                                 if ((1U & (~ (vlSelf->dm_req_addr 
                                               >> 1U)))) {
                                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                        vlSelf->simtop__DOT__pvr_dout 
                                             = vlSelf->simtop__DOT__pvr__DOT__SPAN_SORT_CFG;
                                     }
                                 }
@@ -2420,7 +2420,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                             if ((1U & (~ (vlSelf->dm_req_addr 
                                           >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__REGION_BASE;
                                 }
                             }
@@ -2430,7 +2430,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                         if ((1U & (~ (vlSelf->dm_req_addr 
                                       >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__PARAM_BASE;
                             }
                         }
@@ -2442,7 +2442,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                             if ((1U & (~ (vlSelf->dm_req_addr 
                                           >> 1U)))) {
                                 if ((1U & (~ vlSelf->dm_req_addr))) {
-                                    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                    vlSelf->simtop__DOT__pvr_dout 
                                         = vlSelf->simtop__DOT__pvr__DOT__TEST_SELECT;
                                 }
                             }
@@ -2451,7 +2451,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                         if ((1U & (~ (vlSelf->dm_req_addr 
                                       >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__STARTRENDER;
                             }
                         }
@@ -2462,7 +2462,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                         if ((1U & (~ (vlSelf->dm_req_addr 
                                       >> 1U)))) {
                             if ((1U & (~ vlSelf->dm_req_addr))) {
-                                vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                                vlSelf->simtop__DOT__pvr_dout 
                                     = vlSelf->simtop__DOT__pvr__DOT__SOFTRESET;
                             }
                         }
@@ -2471,14 +2471,14 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
                     if ((1U & (~ (vlSelf->dm_req_addr 
                                   >> 1U)))) {
                         if ((1U & (~ vlSelf->dm_req_addr))) {
-                            vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                            vlSelf->simtop__DOT__pvr_dout 
                                 = vlSelf->simtop__DOT__pvr__DOT__REVISION;
                         }
                     }
                 } else if ((1U & (~ (vlSelf->dm_req_addr 
                                      >> 1U)))) {
                     if ((1U & (~ vlSelf->dm_req_addr))) {
-                        vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout 
+                        vlSelf->simtop__DOT__pvr_dout 
                             = vlSelf->simtop__DOT__pvr__DOT__ID;
                     }
                 }
@@ -3219,8 +3219,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr_reg_cs = ((0x5f7c00U <= vlSelf->simtop__DOT__req_addr) 
                                        & (0x5f7cffU 
                                           >= vlSelf->simtop__DOT__req_addr));
-    vlSelf->simtop__DOT__pvr__DOT__pvr_dout = vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout;
-    vlSelf->simtop__DOT__pvr_dout = (QData)((IData)(vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout));
+    vlSelf->simtop__DOT__pvr__DOT__pvr_dout = vlSelf->simtop__DOT__pvr_dout;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__o_is_zero 
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__mul_o_is_zero;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__o_is_inf 
@@ -3503,7 +3502,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr__DOT__ta_tex_cs = vlSelf->simtop__DOT__ta_tex_cs;
     if (vlSelf->simtop__DOT__pvr_reg_cs) {
         vlSelf->simtop__DOT__pvr__DOT__pvr_reg_cs = 1U;
-        vlSelf->simtop__DOT__sh4_dm_rdata = vlSelf->simtop__DOT__pvr_dout;
+        vlSelf->simtop__DOT__sh4_dm_rdata = (QData)((IData)(vlSelf->simtop__DOT__pvr_dout));
     } else {
         vlSelf->simtop__DOT__pvr__DOT__pvr_reg_cs = 0U;
         vlSelf->simtop__DOT__sh4_dm_rdata = vlSelf->dm_resp_rdata;
@@ -7124,12 +7123,12 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__8(Vsimtop___024root* vlS
 
 VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlSelf);
 VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__1(Vsimtop___024root* vlSelf);
-void Vsimtop___024root___nba_sequent__TOP__4(Vsimtop___024root* vlSelf);
+void Vsimtop___024root___nba_sequent__TOP__5(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___ico_sequent__TOP__2(Vsimtop___024root* vlSelf);
 VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__4(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___ico_sequent__TOP__4(Vsimtop___024root* vlSelf);
 void Vsimtop___024root___ico_sequent__TOP__5(Vsimtop___024root* vlSelf);
-void Vsimtop___024root___nba_sequent__TOP__9(Vsimtop___024root* vlSelf);
+void Vsimtop___024root___nba_sequent__TOP__10(Vsimtop___024root* vlSelf);
 
 VL_ATTR_COLD void Vsimtop___024root___eval_stl(Vsimtop___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
@@ -7139,12 +7138,12 @@ VL_ATTR_COLD void Vsimtop___024root___eval_stl(Vsimtop___024root* vlSelf) {
     if ((1ULL & vlSelf->__VstlTriggered.word(0U))) {
         Vsimtop___024root___stl_sequent__TOP__0(vlSelf);
         Vsimtop___024root___stl_sequent__TOP__1(vlSelf);
-        Vsimtop___024root___nba_sequent__TOP__4(vlSelf);
+        Vsimtop___024root___nba_sequent__TOP__5(vlSelf);
         Vsimtop___024root___ico_sequent__TOP__2(vlSelf);
         Vsimtop___024root___stl_sequent__TOP__4(vlSelf);
         Vsimtop___024root___ico_sequent__TOP__4(vlSelf);
         Vsimtop___024root___ico_sequent__TOP__5(vlSelf);
-        Vsimtop___024root___nba_sequent__TOP__9(vlSelf);
+        Vsimtop___024root___nba_sequent__TOP__10(vlSelf);
         Vsimtop___024root___stl_sequent__TOP__8(vlSelf);
     }
 }
@@ -7179,6 +7178,9 @@ VL_ATTR_COLD void Vsimtop___024root___dump_triggers__act(Vsimtop___024root* vlSe
     if ((2ULL & vlSelf->__VactTriggered.word(0U))) {
         VL_DBG_MSGF("         'act' region trigger index 1 is active: @(posedge clk or negedge im_req_valid)\n");
     }
+    if ((4ULL & vlSelf->__VactTriggered.word(0U))) {
+        VL_DBG_MSGF("         'act' region trigger index 2 is active: @([changed] clk)\n");
+    }
 }
 #endif  // VL_DEBUG
 
@@ -7196,6 +7198,9 @@ VL_ATTR_COLD void Vsimtop___024root___dump_triggers__nba(Vsimtop___024root* vlSe
     }
     if ((2ULL & vlSelf->__VnbaTriggered.word(0U))) {
         VL_DBG_MSGF("         'nba' region trigger index 1 is active: @(posedge clk or negedge im_req_valid)\n");
+    }
+    if ((4ULL & vlSelf->__VnbaTriggered.word(0U))) {
+        VL_DBG_MSGF("         'nba' region trigger index 2 is active: @([changed] clk)\n");
     }
 }
 #endif  // VL_DEBUG
@@ -7233,9 +7238,9 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->trace_wdata1 = VL_RAND_RESET_I(32);
     vlSelf->vram_rd = VL_RAND_RESET_I(1);
     vlSelf->vram_wr = VL_RAND_RESET_I(1);
-    vlSelf->vram_addr = VL_RAND_RESET_I(23);
-    vlSelf->vram_din = VL_RAND_RESET_I(32);
-    vlSelf->vram_dout = VL_RAND_RESET_I(32);
+    vlSelf->vram_addr = VL_RAND_RESET_I(24);
+    vlSelf->vram_din = VL_RAND_RESET_Q(64);
+    vlSelf->vram_dout = VL_RAND_RESET_Q(64);
     vlSelf->v1_x = VL_RAND_RESET_I(32);
     vlSelf->v1_y = VL_RAND_RESET_I(32);
     vlSelf->v2_x = VL_RAND_RESET_I(32);
@@ -7297,9 +7302,9 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__trace_wdata1 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__vram_rd = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__vram_wr = VL_RAND_RESET_I(1);
-    vlSelf->simtop__DOT__vram_addr = VL_RAND_RESET_I(23);
-    vlSelf->simtop__DOT__vram_din = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__vram_dout = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__vram_addr = VL_RAND_RESET_I(24);
+    vlSelf->simtop__DOT__vram_din = VL_RAND_RESET_Q(64);
+    vlSelf->simtop__DOT__vram_dout = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__v1_x = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__v1_y = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__v2_x = VL_RAND_RESET_I(32);
@@ -7360,8 +7365,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__sh4_dm_rdata = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__pvr_rd = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr_wr = VL_RAND_RESET_I(1);
-    vlSelf->simtop__DOT__pvr_dout = VL_RAND_RESET_Q(64);
-    vlSelf->simtop__DOT____Vcellout__pvr__pvr_dout = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr_dout = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__core__DOT__clk = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__core__DOT__rst = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__core__DOT__boot_vector = VL_RAND_RESET_I(32);
@@ -8443,10 +8447,10 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__pvr_dout = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__ta_fifo_wr = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__vram_addr = VL_RAND_RESET_I(24);
-    vlSelf->simtop__DOT__pvr__DOT__vram_din = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__vram_din = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__pvr__DOT__vram_rd = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__vram_wr = VL_RAND_RESET_I(1);
-    vlSelf->simtop__DOT__pvr__DOT__vram_dout = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__vram_dout = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__pvr__DOT__v1_x = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__v1_y = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__v2_x = VL_RAND_RESET_I(32);
@@ -8582,8 +8586,8 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_vram_rd = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_vram_wr = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_vram_addr = VL_RAND_RESET_I(24);
-    vlSelf->simtop__DOT__pvr__DOT__isp_vram_din = VL_RAND_RESET_Q(64);
-    vlSelf->simtop__DOT__pvr__DOT__isp_vram_dout = VL_RAND_RESET_Q(64);
+    vlSelf->simtop__DOT__pvr__DOT__isp_vram_din = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__isp_vram_dout = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_entry_valid = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_switch = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__clock = VL_RAND_RESET_I(1);
@@ -8638,8 +8642,8 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_rd = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_wr = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr = VL_RAND_RESET_I(24);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din = VL_RAND_RESET_Q(64);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout = VL_RAND_RESET_Q(64);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_drawn = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tilex = VL_RAND_RESET_I(6);
@@ -8763,11 +8767,9 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = VL_RAND_RESET_I(1);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__ui = VL_RAND_RESET_I(10);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vi = VL_RAND_RESET_I(10);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pal_pix_fmt = VL_RAND_RESET_I(2);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__twop_out = VL_RAND_RESET_I(20);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr = VL_RAND_RESET_I(21);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr = VL_RAND_RESET_I(24);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texel_argb = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__clock = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__reset_n = VL_RAND_RESET_I(1);
@@ -8775,12 +8777,12 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tsp_inst = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tcw_word = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_pix_fmt = VL_RAND_RESET_I(2);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui = VL_RAND_RESET_I(10);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi = VL_RAND_RESET_I(10);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop = VL_RAND_RESET_I(20);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr = VL_RAND_RESET_I(21);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr = VL_RAND_RESET_I(24);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_din = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__texel_argb = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui = VL_RAND_RESET_I(10);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi = VL_RAND_RESET_I(10);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__depth_comp = VL_RAND_RESET_I(3);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__culling_mode = VL_RAND_RESET_I(2);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__z_write_disable = VL_RAND_RESET_I(1);
@@ -8803,10 +8805,16 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__scan_order = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector = VL_RAND_RESET_I(6);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_start_addr = VL_RAND_RESET_I(21);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_addr_word = VL_RAND_RESET_I(21);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_full = VL_RAND_RESET_I(20);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui_masked = VL_RAND_RESET_I(10);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi_masked = VL_RAND_RESET_I(10);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__norm_or_vq_offs = VL_RAND_RESET_I(20);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_start_offs = VL_RAND_RESET_I(20);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_norm = VL_RAND_RESET_I(20);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_vq = VL_RAND_RESET_I(20);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs_pal = VL_RAND_RESET_I(20);
     vlSelf->__Vtrigprevexpr___TOP__clk__0 = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__im_req_valid__0 = VL_RAND_RESET_I(1);
+    vlSelf->__VactDidInit = 0;
 }

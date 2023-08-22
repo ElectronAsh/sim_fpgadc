@@ -37,8 +37,6 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , trace_pc1{vlSymsp->TOP.trace_pc1}
     , trace_wdata1{vlSymsp->TOP.trace_wdata1}
     , vram_addr{vlSymsp->TOP.vram_addr}
-    , vram_din{vlSymsp->TOP.vram_din}
-    , vram_dout{vlSymsp->TOP.vram_dout}
     , v1_x{vlSymsp->TOP.v1_x}
     , v1_y{vlSymsp->TOP.v1_y}
     , v2_x{vlSymsp->TOP.v2_x}
@@ -74,6 +72,8 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , twop{vlSymsp->TOP.twop}
     , dm_req_wdata{vlSymsp->TOP.dm_req_wdata}
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
+    , vram_din{vlSymsp->TOP.vram_din}
+    , vram_dout{vlSymsp->TOP.vram_dout}
     , rootp{&(vlSymsp->TOP)}
 {
     // Register model with the context

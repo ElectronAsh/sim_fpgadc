@@ -15,8 +15,8 @@ module isp_parser (
 	output reg isp_vram_rd,
 	output reg isp_vram_wr,
 	output reg [23:0] isp_vram_addr,
-	input [63:0] isp_vram_din,
-	output reg [63:0] isp_vram_dout,
+	input [31:0] isp_vram_din,
+	output reg [31:0] isp_vram_dout,
 	
 	output reg isp_entry_valid,
 	
@@ -201,13 +201,13 @@ else begin
 				isp_vram_addr <= poly_addr;
 				
 				if (!opb_word[31]) begin	// TriangleStrips.
-					if (!strip_mask) begin	// Nothing to draw for this strip.
+					if (strip_mask==6'b000000) begin	// Nothing to draw for this strip.
 						strip_cnt <= 3'd0;	// Sanity check.
 						array_cnt <= 4'd0;	// Sanity check.
 						poly_drawn <= 1'b1;
 					end
 					else begin
-						strip_cnt <= (strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5]) +1;
+						strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5] + 1;
 						array_cnt <= 4'd0;	// Sanity check.
 						isp_vram_rd <= 1'b1;
 						isp_state <= 8'd1;
@@ -240,7 +240,7 @@ else begin
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
 		8:  begin vert_a_z <= isp_vram_din;
-			if (array_cnt) begin		// Triangle Array or Quad Array...
+			if (array_cnt>4'd0) begin		// Triangle Array or Quad Array...
 				if (!texture) begin
 					if (tsp_inst==32'h00000000) isp_state <= 8'd16;	// Skip Colour and UV??
 					else isp_state <= 8'd11;	// Skip U+V if not Textured.
@@ -268,7 +268,7 @@ else begin
 		16: vert_b_x <= isp_vram_din;
 		17: vert_b_y <= isp_vram_din;
 		18: begin vert_b_z <= isp_vram_din;
-			if (array_cnt) begin		// Triangle Array...
+			if (array_cnt>4'd0) begin		// Triangle Array...
 				if (!texture) begin
 					if (tsp_inst==32'h00000000) isp_state <= 8'd26;	// Skip Colour and UV??
 					else isp_state <= 8'd21;	// Skip U+V if not Textured.
@@ -296,7 +296,7 @@ else begin
 		26: vert_c_x <= isp_vram_din;
 		27: vert_c_y <= isp_vram_din;
 		28: begin vert_c_z <= isp_vram_din;
-			if (array_cnt) begin		// Triangle Array...
+			if (array_cnt>4'd0) begin		// Triangle Array...
 				if (!texture) begin
 					if (tsp_inst==32'h00000000) begin
 						if (opb_word[31:29]==3'b101) isp_state <= 8'd36;	// Skip Colour and UV if a Quad.
@@ -413,7 +413,7 @@ else begin
 					end
 				end
 				else begin	// Triangle Array or Quad Array not done yet...
-					array_cnt <= array_cnt - 3'd1;
+					array_cnt <= array_cnt - 4'd1;
 					isp_vram_addr <= isp_vram_addr - 4;
 					isp_state <= 8'd1;	// Jump back, to grab the next PRIM (including ISP/TSP/TCW).
 				end
@@ -480,10 +480,10 @@ else begin
 						isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.
 						//isp_vram_dout <= {8'hff, vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, Alpha boosted.
 					end
-					x_ps <= x_ps + 12'd1;
+					x_ps <= x_ps + 10'd1;
 				end
 				else begin
-					y_ps <= y_ps + 12'd1;
+					y_ps <= y_ps + 10'd1;
 					//x_ps <= minx;				// Per-poly rendering.
 					x_ps <= tilex*32;			// Per-tile rendering.
 				end
@@ -560,24 +560,24 @@ texture_address  texture_address_inst (
 	
 	.pal_pix_fmt( pal_pix_fmt ),	// input [1:0] pal_pix_fmt. From PAL_RAM_CTRL[1:0].
 		
-	.ui( ui ),						// input [9:0]  ui. From rasterizer/interp...
-	.vi( vi ),						// input [9:0]  ui.
+	//.ui( ui ),						// input [9:0]  ui. From rasterizer/interp...
+	//.vi( vi ),						// input [9:0]  ui.
 	
 	.twop( twop ),					// output [19:0]  twop.
 		
-	.vram_tex_addr( vram_tex_addr ),// output [20:0]  vram_tex_addr. 64-bit WORD address!
+	.vram_tex_addr( vram_tex_addr ),// output [23:0]  vram_tex_addr. BYTE address!
 	.vram_din( isp_vram_din ),		// input [63:0]  vram_din. Full 64-bit data for texture reads.
 	
 	.texel_argb( texel_argb )		// output [31:0]  texel_argb. Final texel ARGB 8888 output.
 );
 
-reg [9:0] ui;
-reg [9:0] vi;
+//reg [9:0] ui;
+//reg [9:0] vi;
 
 wire [1:0] pal_pix_fmt = 2'b0;
 wire [19:0] twop_out;
 
-wire [20:0] vram_tex_addr;
+wire [23:0] vram_tex_addr;
 wire [31:0] texel_argb;
 
 
@@ -696,17 +696,19 @@ module texture_address (
 	
 	input [1:0] pal_pix_fmt,	// From PAL_RAM_CTRL[1:0].
 		
-	input [9:0] ui,				// From rasterizer/interp...
-	input [9:0] vi,
+	//input wire [9:0] ui,				// From rasterizer/interp...
+	//input wire [9:0] vi,
 	
 	output reg [19:0] twop,
 		
-	output [20:0] vram_tex_addr,	// 64-bit WORD address!
+	output [23:0] vram_tex_addr,	// BYTE address!
 	input [63:0] vram_din,			// Full 64-bit data for texture reads.
 	
 	output [31:0] texel_argb		// Final texel ARGB 8888 output.
 );
 
+reg [9:0] ui;
+reg [9:0] vi;
 
 // ISP Instruction Word.
 wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
@@ -741,73 +743,131 @@ wire [2:0] pix_fmt = tcw_word[29:27];
 wire scan_order = tcw_word[26];
 wire stride = tcw_word[25];
 wire [5:0] pal_selector = tcw_word[26:21];		// Used for 4BPP or 8BPP palette textures.
-wire [20:0] tex_start_addr = tcw_word[20:0];	// 64-bit WORD address!
+wire [20:0] tex_addr_word = tcw_word[20:0];		// 64-bit WORD address!
 
-// tex_u_size and tex_v_size (raw value)...
-// 0=8
-// 1=16
-// 2=32
-// 3=64
-// 4=128
-// 5=256
-// 6=512
-// 7=1024
+// tex_u_size and tex_v_size (raw value vs actual)...
+// 0 = 8
+// 1 = 16
+// 2 = 32
+// 3 = 64
+// 4 = 128
+// 5 = 256
+// 6 = 512
+// 7 = 1024
 
-
-wire [19:0] twop_full = {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
+reg [19:0] twop_full;
 
 wire [9:0] ui_masked = ui & ((8<<tex_u_size)-1);
 wire [9:0] vi_masked = vi & ((8<<tex_v_size)-1);
 
-always @(posedge clock or negedge reset_n)
-if (!reset_n) begin
+always @(clock) begin
+	twop_full <= {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
 
-end
-else begin
 	if (tex_u_size > tex_v_size) begin		// Rectangular texture. U size greater than V size.
 		case (tex_v_size)
-			0: twop <= {ui[9:3] ,twop_full[5:0]};	// V size 8 
-			1: twop <= {ui[9:4] ,twop_full[7:0]};	// V size 16
-			2: twop <= {ui[9:5] ,twop_full[9:0]};	// V size 32
-			3: twop <= {ui[9:6] ,twop_full[11:0]};	// V size 64
-			4: twop <= {ui[9:7] ,twop_full[13:0]};	// V size 128
-			5: twop <= {ui[9:8] ,twop_full[15:0]};	// V size 256
-			6: twop <= {ui[9]   ,twop_full[17:0]};	// V size 512
-			7: twop <= twop_full[19:0];				// V size 1024
-			default:;
+			0: twop <= {7'b0, ui_masked[9:3] ,twop_full[5:0]};		// V size 8 
+			1: twop <= {6'b0, ui_masked[9:4] ,twop_full[7:0]};		// V size 16
+			2: twop <= {5'b0, ui_masked[9:5] ,twop_full[9:0]};		// V size 32
+			3: twop <= {4'b0, ui_masked[9:6] ,twop_full[11:0]};		// V size 64
+			4: twop <= {3'b0, ui_masked[9:7] ,twop_full[13:0]};		// V size 128
+			5: twop <= {2'b0, ui_masked[9:8] ,twop_full[15:0]};		// V size 256
+			6: twop <= {1'b0, ui_masked[9]   ,twop_full[17:0]};		// V size 512
+			7: twop <= twop_full[19:0];								// V size 1024
+		default:;
 		endcase
 	end
 	else if (tex_v_size > tex_u_size) begin // Rectangular. V size greater than U size.
 		case (tex_u_size)
-			0: twop <= {vi[9:3] ,twop_full[5:0]};	// U size 8
-			1: twop <= {vi[9:4] ,twop_full[7:0]};	// U size 16
-			2: twop <= {vi[9:5] ,twop_full[9:0]};	// U size 32
-			3: twop <= {vi[9:6] ,twop_full[11:0]};	// U size 64
-			4: twop <= {vi[9:7] ,twop_full[13:0]};	// U size 128
-			5: twop <= {vi[9:8] ,twop_full[15:0]};	// U size 256
-			6: twop <= {vi[9]   ,twop_full[17:0]};	// U size 512
-			7: twop <= twop_full[19:0];				// U size 1024
-			default:;
+			0: twop <= {7'b0, vi_masked[9:3] ,twop_full[5:0]};		// U size 8
+			1: twop <= {6'b0, vi_masked[9:4] ,twop_full[7:0]};		// U size 16
+			2: twop <= {5'b0, vi_masked[9:5] ,twop_full[9:0]};		// U size 32
+			3: twop <= {4'b0, vi_masked[9:6] ,twop_full[11:0]};		// U size 64
+			4: twop <= {3'b0, vi_masked[9:7] ,twop_full[13:0]};		// U size 128
+			5: twop <= {2'b0, vi_masked[9:8] ,twop_full[15:0]};		// U size 256
+			6: twop <= {1'b0, vi_masked[9]   ,twop_full[17:0]};		// U size 512
+			7: twop <= twop_full[19:0];								// U size 1024
+		default:;
 		endcase
 	end
-	else if (tex_u_size==tex_v_size) begin		// Square texture.
+	else begin		// Square texture.
 		case (tex_u_size)	// Using tex_u_size here. Doesn't really matter which one we use.
-			0: twop <= twop_full[5:0];	// 8x8
-			1: twop <= twop_full[7:0];	// 16x16
-			2: twop <= twop_full[9:0];	// 32x32
-			3: twop <= twop_full[11:0];	// 64x64
-			4: twop <= twop_full[13:0];	// 128x128
-			7: twop <= twop_full[15:0];	// 256x256
-			6: twop <= twop_full[17:0];	// 512x512
-			7: twop <= twop_full[19:0];	// 1024x1024
-			default: twop <= twop_full[19:0];
+			0: twop <= {14'b0, twop_full[5:0]};		// 8x8
+			1: twop <= {12'b0, twop_full[7:0]};		// 16x16
+			2: twop <= {10'b0, twop_full[9:0]};		// 32x32
+			3: twop <= {8'b0, twop_full[11:0]};		// 64x64
+			4: twop <= {6'b0, twop_full[13:0]};		// 128x128
+			7: twop <= {4'b0, twop_full[15:0]};		// 256x256
+			6: twop <= {2'b0, twop_full[17:0]};		// 512x512
+			7: twop <= twop_full[19:0];				// 1024x1024
+		default:;
 		endcase
 	end
 	//else		// <- Shouldn't be possible to end up here.
 	
 	//$display("ui: %d  vi: %d  tex_u_size (raw): %d  tex_v_size (raw): %d  twop 0x%08X  twop_full: 0x%08X", ui, vi, tex_u_size, tex_v_size, twop, twop_full);
+
+	case (pix_fmt)
+		0: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// ARGB 1555. (16BPP).
+		1: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// RGB  565.  (16BPP).
+		2: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// ARGB 4444. (16BPP).
+		3: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// YUV422.    (16BPP, sort of).
+		4: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// Bump Map.  (16BPP. S value + R value).
+		5: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>4*/;	// 4 BPP Palette.
+		6: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>3*/;	// 8 BPP Palette.
+		7: vram_tex_addr <= (tex_addr_word<<2) + mipmap_start_offs/* + twop)>>2*/;	// Reserved. Considered the same as pix_fmt 0 (ARGB 1555).
+		default:;
+	endcase
 end
 
+wire [19:0] norm_or_vq_offs = (vq_comp) ? mipmap_byte_offs_vq :
+										  mipmap_byte_offs_norm;
+
+
+wire [19:0] mipmap_start_offs = (pix_fmt==3'd0) ? norm_or_vq_offs :
+								(pix_fmt==3'd1) ? norm_or_vq_offs :
+								(pix_fmt==3'd2) ? norm_or_vq_offs :
+								(pix_fmt==3'd3) ? norm_or_vq_offs :
+								(pix_fmt==3'd4) ? norm_or_vq_offs :
+								(pix_fmt==3'd5) ? mipmap_byte_offs_pal :
+								(pix_fmt==3'd6) ? mipmap_byte_offs_pal :
+								(pix_fmt==3'd7) ? norm_or_vq_offs :
+												  20'h00000;
+
+
+wire [19:0] mipmap_byte_offs_norm = (tex_u_size==3'd0)  ? 20'h6 : 
+									(tex_u_size==3'd1)  ? 20'h8 : 
+									(tex_u_size==3'd2)  ? 20'h10 : 
+									(tex_u_size==3'd3)  ? 20'h30 : 
+									(tex_u_size==3'd4)  ? 20'hb0 : 
+									(tex_u_size==3'd5)  ? 20'h2b0 : 
+									(tex_u_size==3'd6)  ? 20'hab0 : 
+									(tex_u_size==3'd7)  ? 20'h2ab0 : 
+									(tex_u_size==3'd8)  ? 20'haab0 : 
+									(tex_u_size==3'd9)  ? 20'h2aab0 :
+														  20'haaab0;
+
+wire [19:0] mipmap_byte_offs_vq = (tex_u_size==3'd0)  ? 20'h0 : 
+								  (tex_u_size==3'd1)  ? 20'h1 : 
+								  (tex_u_size==3'd2)  ? 20'h2 : 
+								  (tex_u_size==3'd3)  ? 20'h6 : 
+								  (tex_u_size==3'd4)  ? 20'h16 : 
+								  (tex_u_size==3'd5)  ? 20'h56 : 
+								  (tex_u_size==3'd6)  ? 20'h156 : 
+								  (tex_u_size==3'd7)  ? 20'h556 : 
+								  (tex_u_size==3'd8)  ? 20'h1556 : 
+								  (tex_u_size==3'd9)  ? 20'h5556 :
+													    20'h15556;
+
+wire [19:0] mipmap_byte_offs_pal = (tex_u_size==3'd0)  ? 20'h3 : 
+								   (tex_u_size==3'd1)  ? 20'h4 : 
+								   (tex_u_size==3'd2)  ? 20'h8 : 
+								   (tex_u_size==3'd3)  ? 20'h18 : 
+								   (tex_u_size==3'd4)  ? 20'h58 : 
+								   (tex_u_size==3'd5)  ? 20'h158 : 
+								   (tex_u_size==3'd6)  ? 20'h558 : 
+								   (tex_u_size==3'd7)  ? 20'h1558 : 
+								   (tex_u_size==3'd8)  ? 20'h5558 : 
+								   (tex_u_size==3'd9)  ? 20'h15558 :
+														 20'h55558;
 
 endmodule
-

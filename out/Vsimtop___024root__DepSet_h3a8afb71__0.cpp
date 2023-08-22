@@ -40,9 +40,15 @@ void Vsimtop___024root___eval_triggers__act(Vsimtop___024root* vlSelf) {
                                       & (~ (IData)(vlSelf->__Vtrigprevexpr___TOP__clk__0))) 
                                      | ((~ (IData)(vlSelf->im_req_valid)) 
                                         & (IData)(vlSelf->__Vtrigprevexpr___TOP__im_req_valid__0))));
+    vlSelf->__VactTriggered.set(2U, ((IData)(vlSelf->clk) 
+                                     != (IData)(vlSelf->__Vtrigprevexpr___TOP__clk__0)));
     vlSelf->__Vtrigprevexpr___TOP__clk__0 = vlSelf->clk;
     vlSelf->__Vtrigprevexpr___TOP__im_req_valid__0 
         = vlSelf->im_req_valid;
+    if (VL_UNLIKELY((1U & (~ (IData)(vlSelf->__VactDidInit))))) {
+        vlSelf->__VactDidInit = 1U;
+        vlSelf->__VactTriggered.set(2U, 1U);
+    }
 #ifdef VL_DEBUG
     if (VL_UNLIKELY(vlSymsp->_vm_contextp__->debug())) {
         Vsimtop___024root___dump_triggers__act(vlSelf);

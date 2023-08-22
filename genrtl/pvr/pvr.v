@@ -10,6 +10,7 @@ module pvr (
 	input ta_yuv_cs,
 	input ta_tex_cs,
 	
+	// CPU / HOLLY interface to PVR...
 	input [15:0] pvr_addr,
 	input [31:0] pvr_din,
 	input pvr_rd,
@@ -18,11 +19,12 @@ module pvr (
 	
 	input ta_fifo_wr,
 
+	// To VRAM. Duh...
 	output [23:0] vram_addr,
-	input [31:0] vram_din,
+	input [63:0] vram_din,
 	output vram_rd,
 	output vram_wr,
-	output [31:0] vram_dout,
+	output [63:0] vram_dout,
 	
 	input signed [31:0] v1_x,
 	input signed [31:0] v1_y,
@@ -489,7 +491,7 @@ wire ra_vram_wr;
 wire [23:0] ra_vram_addr;
 
 wire [31:0] ra_vram_din;
-assign ra_vram_din = vram_din;
+assign ra_vram_din = vram_din[31:0];
 
 wire [31:0] ra_control;
 wire ra_cont_last;
@@ -558,9 +560,10 @@ wire isp_vram_rd;
 wire isp_vram_wr;
 wire [23:0] isp_vram_addr;
 
-wire [63:0] isp_vram_din;
-wire [63:0] isp_vram_dout;
-assign isp_vram_din = vram_din;
+// Keep this as 32-bit for now. Only textures are read aas 64-bit wide.
+wire [31:0] isp_vram_din;
+wire [31:0] isp_vram_dout;
+assign isp_vram_din = vram_din[31:0];
 
 wire isp_entry_valid;
 
@@ -596,8 +599,8 @@ isp_parser isp_parser_inst (
 	.isp_vram_rd( isp_vram_rd ),		// output  isp_vram_rd
 	.isp_vram_wr( isp_vram_wr ),		// output  isp_vram_wr
 	.isp_vram_addr( isp_vram_addr ),	// output [23:0]  isp_vram_addr
-	.isp_vram_din( isp_vram_din ),		// input  [63:0]  isp_vram_din
-	.isp_vram_dout( isp_vram_dout ),	// output  [63:0]  isp_vram_dout
+	.isp_vram_din( isp_vram_din ),		// input  [31:0]  isp_vram_din
+	.isp_vram_dout( isp_vram_dout ),	// output  [31:0]  isp_vram_dout
 	
 	.isp_entry_valid( isp_entry_valid ),// output  isp_entry_valid
 	
