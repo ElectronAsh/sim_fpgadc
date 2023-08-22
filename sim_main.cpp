@@ -796,7 +796,7 @@ uint64_t read_vram_64(uint32_t addr) {		// BYTE address!
 
 uint8_t index_byte = 0;
 
-uint32_t tex_index = 0;
+uint32_t vq_tex_index = 0;
 
 uint32_t vram_tex_addr;
 
@@ -807,7 +807,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 							  float v1, float v2, float v3) {
 	
 	// Lazy culling...
-	if (x1>640 || x2>640 || x3>640 || y1>480 || y2>480 || y3>480) return;	// Hydro Thunder title wouldn't display when this was >639 and >480 ??
+	//if (x1>640 || x2>640 || x3>640 || y1>480 || y2>480 || y3>480) return;	// Hydro Thunder title wouldn't display when this was >639 and >480 ??
 	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
 
 	// Check for NaN...
@@ -1043,7 +1043,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			//if (scan_order_flag==0) texel_offs = twiddle_slow(ui,vi,tex_u_size_full,tex_v_size_full);
 			//else texel_offs = ui + (vi * tex_u_size_full);	// Non-Twiddled..
 			if(scan_order_flag==0) texel_offs = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop;
-			else texel_offs = ui + (vi * tex_u_size_full);	// Non-Twiddled..
+			else texel_offs = ui + (vi * tex_u_size_full);	// Non-Twiddled.
 
 			uint16_t tex_u_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
 			uint16_t tex_v_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
@@ -1112,7 +1112,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			uint32_t tex_addr_core		= top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_addr_word << 2; // Make into BYTE address!
 			uint32_t mipmap_byte_offs_core	= top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs;
 			uint32_t vram_tex_addr_core = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr;
-			uint32_t twop_core          = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop;
+			uint32_t twop_core          = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_out;
 
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
 				// VQ requires a shift of the mipmap byte offset?
@@ -1121,10 +1121,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 
 				// Looks like twop address basically hops to each 64-bit wide word.
 				// But we needs the extra shift, to address each 32-bit wide word in each half of VRAM...
-				if ( !(twop_core&4) ) tex_index = 0x000000+1024+tex_addr_core+(mipmap_byte_offs_core>>1) + (twop_core>>3);
-				else                  tex_index = 0x400000+1024+tex_addr_core+(mipmap_byte_offs_core>>1) + (twop_core>>3);
+				if ( !(twop_core&4) ) vq_tex_index = 0x000000+1024+tex_addr_core+(mipmap_byte_offs_core>>1) + (twop_core>>3);
+				else                  vq_tex_index = 0x400000+1024+tex_addr_core+(mipmap_byte_offs_core>>1) + (twop_core>>3);
 
-				uint8_t index_byte = vram_ptr[ (tex_index)&0x7fffff ];
+				uint8_t index_byte = vram_ptr[ (vq_tex_index)&0x7fffff ];
 
 				// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
 				// (but we only shift by <<2 here, because we read a 32-bit word from both the lower and upper 4MB VRAM.)
@@ -1138,6 +1138,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			else {	// Non-VQ / Uncompressed.
 				// Need to add 3 to tex_u_size_raw, because the mipmap table starts at a 1x1 texture size, but tex_u_size==0 is the 8x8 texture size.
 				//uint32_t mipmap_offs = (mipmap_flag) ? mipmap_byte_offset_norm[ tex_u_size_raw+3 ] : 0;
+
+				//if (scan_order_flag==0) texel_offs = twiddle_slow(ui,vi,tex_u_size_full,tex_v_size_full);
+				//else texel_offs = ui + (vi * tex_u_size_full);	// Non-Twiddled..
 
 				switch (twop_core&3) {
 					case 0: texel_pix  = vram_ptr[ 0x000000 + ((tex_addr_core+mipmap_byte_offs_core) + ((twop_core&0xfffffffc)+0)) & 0x7fffff ];
@@ -1498,10 +1501,10 @@ int verilate() {
 
 				// Looks like twop address basically hops to each 64-bit wide word.
 				// So it needs an extra shift, to address each 32-bit wide word in each half of VRAM??
-				if (!(twop_addr&4)) tex_index = tex_addr+mipmap_offs+1024 + (twop_addr>>3);
-				else       tex_index = tex_addr+mipmap_offs+0x400000+1024 + (twop_addr>>3);
+				if (!(twop_addr&4)) vq_tex_index = tex_addr+mipmap_offs+1024 + (twop_addr>>3);
+				else       vq_tex_index = tex_addr+mipmap_offs+0x400000+1024 + (twop_addr>>3);
 
-				uint8_t index_byte = vram_ptr[(tex_index)&0x7fffff];
+				uint8_t index_byte = vram_ptr[(vq_tex_index)&0x7fffff];
 
 				//uint8_t index_byte;
 				//switch (twop_addr&7) {
@@ -1658,15 +1661,15 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
-	pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");	  vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_boat", "rb");		  vram_file = fopen("vram_hotd2_boat.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_gargoyle", "rb");	  vram_file = fopen("vram_hotd2_gargoyle.bin", "rb");
 	//pvrfile = fopen("pvr_regs_rayman_title", "rb");	  vram_file = fopen("vram_rayman_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_rayman_lights", "rb");	  vram_file = fopen("vram_rayman_lights.bin", "rb");
-	//pvrfile = fopen("pvr_regs_xtreme_intro", "rb");	  vram_file = fopen("vram_xtreme_intro.bin", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_intro", "rb");	  vram_file = fopen("vram_daytona_intro.bin", "rb");
+	//pvrfile = fopen("pvr_regs_xtreme_intro", "rb");	  vram_file = fopen("vram_xtreme_intro.bin", "rb");	// TODO: PAL8. (it's why the textures look weird)
+	pvrfile = fopen("pvr_regs_daytona_intro", "rb");	  vram_file = fopen("vram_daytona_intro.bin", "rb");
 	//pvrfile = fopen("pvr_regs_daytona_behind", "rb");	  vram_file = fopen("vram_daytona_behind.bin", "rb");
 	//pvrfile = fopen("pvr_regs_daytona_front", "rb");	  vram_file = fopen("vram_daytona_front.bin", "rb");
 	//pvrfile = fopen("pvr_regs_daytona_sanic", "rb");	  vram_file = fopen("vram_daytona_sanic.bin", "rb");
@@ -1858,8 +1861,8 @@ int main(int argc, char** argv, char** env) {
 		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
 		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
 		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
-		mem_edit_3.HighlightMin = tex_index;
-		mem_edit_3.HighlightMax = tex_index + 1;
+		mem_edit_3.HighlightMin = vq_tex_index;
+		mem_edit_3.HighlightMax = vq_tex_index + 1;
 		//mem_edit_3.HighlightMin = (vq_index) & 0x7fffff;
 		//mem_edit_3.HighlightMax = (vq_index+256) & 0x7fffff;
 		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr_last) & 0x7fffff;
@@ -2132,11 +2135,11 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("         tsp_inst: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
 		ImGui::Text("         tcw_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
 		ImGui::Text("         tex_addr: 0x%08X", tex_addr);
-		ImGui::Text("        texel_off: 0x%08X", texel_offs);
-		ImGui::Text("        tex_index: 0x%08X", tex_index);
+		ImGui::Text("       texel_offs: 0x%05X", texel_offs);
+		//ImGui::Text("   twop_full core: 0x%05X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_full);
+		ImGui::Text("        twop core: 0x%05X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop);
+		//ImGui::Text("     vq_tex_index: 0x%08X",vq_tex_index);
 		//ImGui::Text("vram_tex_addr sim (byte): 0x%08X", vram_tex_addr<<3);
-		ImGui::Text("   twop_full core: 0x%05X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_full);
-		ImGui::Text("        twop core: 0x%05X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop);
 		ImGui::Text("vram_tex_addr cor: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr);
 		ImGui::Text("  tex_u_size full: %d", 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7) );
 		ImGui::Text("  tex_v_size full: %d", 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size&7) );
@@ -2153,7 +2156,7 @@ int main(int argc, char** argv, char** env) {
 			case 6: ImGui::Text("Pal8");		break; // 6  8 BPP Palette   Palette texture with 8 bits/pixel
 		}
 
-		ImGui::Text("        uv_16_bit: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit);
+		ImGui::Text("        uv_16b: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit);
 		ImGui::SameLine();
 		ImGui::Text(" offset: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__offset);
 		ImGui::SameLine();

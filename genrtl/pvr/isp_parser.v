@@ -744,6 +744,8 @@ always @(clock) begin
 	//$display("ui: %d  vi: %d  tex_u_size (raw): %d  tex_v_size (raw): %d  twop 0x%08X  twop_full: 0x%08X", ui, vi, tex_u_size, tex_v_size, twop, twop_full);
 end
 
+wire [23:0] twop_out = (scan_order==0) ? twop :	// Twiddled texel address.
+				(ui + (vi * (8<<tex_u_size) ));	// Non-twiddled.
 
 reg [19:0] mipmap_byte_offs_norm;
 reg [19:0] mipmap_byte_offs_vq;

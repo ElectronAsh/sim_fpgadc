@@ -603,9 +603,6 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst 
                  >> 0xfU));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order 
-        = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
-                 >> 0x1aU));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
                  >> 0x19U));
@@ -675,6 +672,9 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__eol 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                  >> 0x1cU));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order 
+        = (1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
+                 >> 0x1aU));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1 
         = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 
                                        - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult2) 
@@ -768,9 +768,6 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt 
         = (7U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word 
                  >> 0x1bU));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size 
-        = (7U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst 
-                 >> 3U));
     vlSelf->simtop__DOT__clk = vlSelf->clk;
     vlSelf->simtop__DOT__core__DOT__du0__DOT__imm_sext 
         = (((- (IData)((1U & (vlSelf->im_resp_rdata 
@@ -792,6 +789,9 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
         (0xfffffffcU & vlSelf->simtop__DOT__core__DOT__id_reg_pc);
     vlSelf->simtop__DOT__core__DOT__id_instr1_pc = 
         (2U | (0xfffffffcU & vlSelf->simtop__DOT__core__DOT__id_reg_pc));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size 
+        = (7U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst 
+                 >> 3U));
     vlSelf->simtop__DOT__core__DOT__e2_lsu_waltbank 
         = vlSelf->simtop__DOT__core__DOT__lsu__DOT__e2_reg_waltbank;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpscr_v_en 
@@ -1589,8 +1589,6 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_clamp;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_v_clamp 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_clamp;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__scan_order 
-        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride;
     if (vlSelf->simtop__DOT__core__DOT__e1_reg_bru_valid) {
@@ -2613,6 +2611,8 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                  >> 0x1cU)) 
                                           | (1U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                                                    >> 0x1eU)))))));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__scan_order 
+        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 
         = ((IData)((0xffffffffffffULL & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1))) 
            + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7) 
@@ -2713,12 +2713,24 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_fmt 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
+    vlSelf->simtop__DOT__pvr__DOT__clock = vlSelf->simtop__DOT__clk;
+    vlSelf->simtop__DOT__core__DOT__clk = vlSelf->simtop__DOT__clk;
+    vlSelf->simtop__DOT__core__DOT__replay_stalled_pc 
+        = vlSelf->simtop__DOT__core__DOT__id_instr0_pc;
+    vlSelf->simtop__DOT__core__DOT__replay_nodi_pc 
+        = vlSelf->simtop__DOT__core__DOT__id_instr1_pc;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_u_size 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui_masked 
         = ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui) 
            & (((IData)(8U) << (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size)) 
               - (IData)(1U)));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_out 
+        = (0xffffffU & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order)
+                         ? ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui) 
+                            + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi) 
+                               * ((IData)(8U) << (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size))))
+                         : vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__twop));
     if (((((((((0U == ((IData)(3U) + (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size))) 
                | (1U == ((IData)(3U) + (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size)))) 
               | (2U == ((IData)(3U) + (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size)))) 
@@ -2851,12 +2863,6 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                  << 2U) + vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs));
         }
     }
-    vlSelf->simtop__DOT__pvr__DOT__clock = vlSelf->simtop__DOT__clk;
-    vlSelf->simtop__DOT__core__DOT__clk = vlSelf->simtop__DOT__clk;
-    vlSelf->simtop__DOT__core__DOT__replay_stalled_pc 
-        = vlSelf->simtop__DOT__core__DOT__id_instr0_pc;
-    vlSelf->simtop__DOT__core__DOT__replay_nodi_pc 
-        = vlSelf->simtop__DOT__core__DOT__id_instr1_pc;
     vlSelf->simtop__DOT__core__DOT__lsu__DOT__e2_waltbank 
         = vlSelf->simtop__DOT__core__DOT__e2_lsu_waltbank;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fcmp__DOT__ven 
@@ -5110,8 +5116,6 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
         = vlSelf->simtop__DOT__pvr__DOT__reset_n;
     vlSelf->simtop__DOT__core__DOT__fprf__DOT__rf_wen0 
         = vlSelf->simtop__DOT__core__DOT__fprf_wen0;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr 
-        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__clock 
         = vlSelf->simtop__DOT__pvr__DOT__clock;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__clock 
@@ -5121,6 +5125,8 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
         = vlSelf->simtop__DOT__core__DOT__clk;
     vlSelf->simtop__DOT__core__DOT__lsu__DOT__clk = vlSelf->simtop__DOT__core__DOT__clk;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__clk = vlSelf->simtop__DOT__core__DOT__clk;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr 
+        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fmul__DOT__ven 
         = vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__ven;
     vlSelf->simtop__DOT__core__DOT__fpu__DOT__fpu_fma__DOT__fadd__DOT__ven 
