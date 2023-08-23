@@ -116,13 +116,11 @@ module simtop (
 	//input signed [31:0] y_ps
 );
 
-
 // Reset synchronizer
 reg rst_reg;
 always @(posedge clk) begin
 	rst_reg <= rst;
 end
-
 
 /* verilator lint_off PINCONNECTEMPTY */
 core core (

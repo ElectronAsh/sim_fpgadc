@@ -643,8 +643,6 @@ struct PlaneStepper3
 	}
 
 	__forceinline float Ip(float x, float y) const { return x * ddx + y * ddy + c; }
-
-	__forceinline float Ip(float x, float y, float W) const { return Ip(x, y) * W; }
 };
 
 
@@ -798,15 +796,15 @@ uint8_t index_byte = 0;
 uint32_t vq_tex_index = 0;
 uint32_t vram_tex_addr;
 
-void rasterize_triangle_fixed(float x1, float x2, float x3,
-							  float y1, float y2, float y3,
-							  float z1, float z2, float z3,
-							  float u1, float u2, float u3,
-							  float v1, float v2, float v3) {
+void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
+							   float y1, float y2, float y3, float y4,
+							   float z1, float z2, float z3, float z4,
+							   float u1, float u2, float u3, float u4,
+							   float v1, float v2, float v3, float v4) {
 	
 	// Lazy culling...
 	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;	// Hydro Thunder title wouldn't display when this was >639 and >480 ??
-	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
+	if (x1<1 || x2<1 || x3<1 || y1<1 || y2<1 || y3<1) return;				// Hide spikey bits / neg values.
 
 	// Check for NaN...
 	/*
@@ -886,12 +884,12 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	const int FX1 = float_to_fixed(x1, FRAC_BITS);
 	const int FX2 = float_to_fixed(x2, FRAC_BITS);
 	const int FX3 = float_to_fixed(x3, FRAC_BITS);
-	//const int FX4 = float_to_fixed(x4, FRAC_BITS);
+	const int FX4 = float_to_fixed(x4, FRAC_BITS);
 
 	const int FY1 = float_to_fixed(y1, FRAC_BITS);
 	const int FY2 = float_to_fixed(y2, FRAC_BITS);
 	const int FY3 = float_to_fixed(y3, FRAC_BITS);
-	//const int FY4 = float_to_fixed(y4, FRAC_BITS);
+	const int FY4 = float_to_fixed(y4, FRAC_BITS);
 	
 	const int FZ1 = float_to_fixed(z1, FRAC_BITS);
 
@@ -936,13 +934,13 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	const int FDX12 = sgn ? (FX2-FX1) : (FX1-FX2);
 	const int FDX23 = sgn ? (FX3-FX2) : (FX2-FX3);
 	const int FDX31 = sgn ? (FX1-FX3) : (FX3-FX1);
-	//const int FDX41 = (x4 || y4) ? sgn ? (FX1-FX4) : (FX4-FX1) : 0;
+	const int FDX41 = (x4 || y4) ? sgn ? (FX1-FX4) : (FX4-FX1) : 0;
 	//printf("fixed FDX12: %f  FDX23: %f  FDX31: %f\n", ((float)FDX12/1<<FRAC_BITS), ((float)FDX23/1<<FRAC_BITS), ((float)FDX31/1<<FRAC_BITS));
 
 	const int FDY12 = sgn ? (FY2-FY1) : (FY1-FY2);
 	const int FDY23 = sgn ? (FY3-FY2) : (FY2-FY3);
 	const int FDY31 = sgn ? (FY1-FY3) : (FY3-FY1);
-	//const int FDY41 = (x4 || y4) ? sgn ? (FY1-FY4) : (FY4-FY1) : 0;
+	const int FDY41 = (x4 || y4) ? sgn ? (FY1-FY4) : (FY4-FY1) : 0;
 	//printf("fixed FDY12: %f  FDY23: %f  FDY31: %f\n", ((float)FDY12/1<<FRAC_BITS), ((float)FDY23/1<<FRAC_BITS), ((float)FDY31/1<<FRAC_BITS));
 
 	// Bounding rectangle
@@ -959,13 +957,13 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 	int FDY12_MULT = MUL_PREC(FDY12, FX1, FRAC_BITS); int FDX12_MULT = MUL_PREC(FDX12, FY1, FRAC_BITS);
 	int FDY23_MULT = MUL_PREC(FDY23, FX2, FRAC_BITS); int FDX23_MULT = MUL_PREC(FDX23, FY2, FRAC_BITS);
 	int FDY31_MULT = MUL_PREC(FDY31, FX3, FRAC_BITS); int FDX31_MULT = MUL_PREC(FDX31, FY3, FRAC_BITS);
-	//int FDY41_MULT = MUL_PREC(FDY41, FX4, FRAC_BITS); int FDX41_MULT = MUL_PREC(FDX41, FY4, FRAC_BITS);
+	int FDY41_MULT = MUL_PREC(FDY41, FX4, FRAC_BITS); int FDX41_MULT = MUL_PREC(FDX41, FY4, FRAC_BITS);
 	//printf("fixed FDY12_MULT: %f  FDX12_MULT: %f\n\n", ((float)FDY12_MULT/(1<<FRAC_BITS), ((float)FDX12_MULT/1<<FRAC_BITS) );
 
 	int C1 = FDY12_MULT - FDX12_MULT;
 	int C2 = FDY23_MULT - FDX23_MULT;
 	int C3 = FDY31_MULT - FDX31_MULT;
-	//int C4 = (x4 || y4) ? FDY41_MULT - FDX41_MULT : 1;
+	int C4 = (x4 || y4) ? FDY41_MULT - FDX41_MULT : 1;
 	//printf("fixed C1: %f  fixed C2: %f  fixed C3: %f\n\n", ((float)C1/1<<FRAC_BITS), ((float)C2/1<<FRAC_BITS), ((float)C3/1<<FRAC_BITS));
 
 	// Correct for fill convention
@@ -993,10 +991,12 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			top->rootp->FX1 = FX1;
 			top->rootp->FX2 = FX2;
 			top->rootp->FX3 = FX3;
+			//top->rootp->FX4 = FX4;
 
 			top->rootp->FY1 = FY1;
 			top->rootp->FY2 = FY2;
 			top->rootp->FY3 = FY3;
+			//top->rootp->FY4 = FY4;
 
 			top->rootp->FDX12 = FDX12;
 			top->rootp->FDY12 = FDY12;
@@ -1017,11 +1017,14 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			//}
 		}
 
-		float invW = Z.Ip(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);	// Interpolate the Z value, based on X and Y.
+		uint32_t core_x_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
+		uint32_t core_y_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
+
+		float invW = Z.Ip(core_x_ps, core_y_ps);	// Interpolate the Z value, based on X and Y.
 
 		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
-			float u = U.Ip((float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
-			float v = V.Ip((float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps, (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps, 1/invW);
+			float u = U.Ip( (float)core_x_ps, (float)core_y_ps ) * 1/invW;
+			float v = V.Ip( (float)core_x_ps, (float)core_y_ps ) * 1/invW;
 
 			bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 			bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
@@ -1113,33 +1116,25 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 			}
 
 			uint8_t pix_fmt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
-			if (pix_fmt==0 || pix_fmt==7) {
-				// ARGB 1555 (Swirl logo, etc.)...;
+			if (pix_fmt==0 || pix_fmt==7) {	// ARGB 1555 (Swirl logo, etc.)...
 				alpha = (texel_pix&0x8000) ? 0xff : 0x00;
 				rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);	// Red.
 				rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7)  & 0x07);	// Green.
 				rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2)  & 0x07);	// Blue.
 			}
-			else if (pix_fmt==1) {
-				// RGB 565...				// RGB 565...
+			else if (pix_fmt==1) {			// RGB 565...				// RGB 565...
 				alpha = 0xff;
 				rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
 				rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
 				rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
 			}
-			else if (pix_fmt==2) {
-				// ARGB 4444...
+			else if (pix_fmt==2) {			// ARGB 4444...
 				alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
 				rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
 				rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
 				rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
 			}
-			else if (pix_fmt==5 /*|| pix_fmt==6*/) {	// TESTING !!! Using this for both PAL4 and PAL8 atm.
-				// PAL4
-				// Need to shift the output from mipmap_byte_offset_pal, as it points to each NIBBLE for PAL4.
-				// (or points to each BYTE for PAL8).
-				//uint32_t mipmap_offs = (mipmap_flag) ? mipmap_byte_offset_pal[ tex_u_size_raw+3 ]>>1 : 0;
-				
+			else if (pix_fmt==5) {			// PAL4
 				// Palette format (4BBP and 8BPP) always use a twiddled texel address.
 				uint8_t vram_byte  = !(twop_core&2) ? vram_ptr[ 0x000000+(tex_addr_core+mipmap_byte_offs_core)+(twop_core>>2) ] :
 													  vram_ptr[ 0x400000+(tex_addr_core+mipmap_byte_offs_core)+(twop_core>>2) ];
@@ -1148,9 +1143,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 													  (vram_byte>>0) & 0xf;
 				
 				/*
-				uint32_t vram_word = !(twop_core&4) ? read_vram_32( 0x000000+(tex_addr_core+mipmap_byte_offs_core)+(twop_core>>2) ) :
-													  read_vram_32( 0x400000+(tex_addr_core+mipmap_byte_offs_core)+(twop_core>>2) );
-
 				uint8_t pal_nibble;
 				switch ( twop_core&7 ) {
 					case 0: pal_nibble = (vram_word>>0)  & 0xf;
@@ -1163,12 +1155,12 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 					case 7: pal_nibble = (vram_word>>28) & 0xf;
 				}
 				*/
-
+												// TCW bits [26:21] for pal_selector bits [5:0]. Followed by the PAL4 index nibble [3:0].
 				uint16_t pal_lut = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector<<4) | pal_nibble;
 				texel_pix = pvr_ptr[ (0x1000>>2) + pal_lut ] & 0xffff;	// Read from Palette RAM (part of the PVR regs).
 
 				// ARGB 1555 (Swirl logo, etc.)...;
-				uint8_t pal_fmt = pvr_ptr[(0x108>>2)]&03;
+				uint8_t pal_fmt = pvr_ptr[(0x108>>2)]&03;	// Read bits [1:0] from PAL_RAM_CTRL reg, to grab the palette pixel format.
 				switch (pal_fmt) {
 					case 0:	// ARGB 1555.
 						alpha = (texel_pix&0x8000) ? 0xff : 0x00;
@@ -1199,11 +1191,50 @@ void rasterize_triangle_fixed(float x1, float x2, float x3,
 					break;
 				}
 			}
+			else if (pix_fmt==6) {	// PAL8
+				uint8_t vram_byte  = !(twop_core&4) ? vram_ptr[ 0x000000+tex_addr_core+(mipmap_byte_offs_core)+(twop_core>>1) ] :
+													  vram_ptr[ 0x400000+tex_addr_core+(mipmap_byte_offs_core)+(twop_core>>1) ];
+
+														// TCW bits [26:25] for pal_selector bits [5:4]. Followed by the PAL8 index byte [7:0].
+				uint16_t pal_lut = ((top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector&0x30)<<4) | vram_byte;
+				texel_pix = pvr_ptr[ (0x1000>>2) + pal_lut ] & 0xffff;	// Read from Palette RAM (part of the PVR regs).
+
+				uint8_t pal_fmt = pvr_ptr[(0x108>>2)]&03;	// Read bits [1:0] from PAL_RAM_CTRL reg, to grab the palette pixel format.
+				switch(pal_fmt) {
+				case 0:	// ARGB 1555.
+					alpha = (texel_pix&0x8000) ? 0xff : 0x00;
+					rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);	// Red.
+					rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7)  & 0x07);	// Green.
+					rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2)  & 0x07);	// Blue.
+					break;
+
+				case 1:	// RGB 565.
+					alpha = 0xff;
+					rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
+					rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
+					rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
+					break;
+
+				case 2:	// ARGB 4444.
+					alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
+					rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+					rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+					rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+					break;
+
+				case 3:	// TODO: 3 = YUV422.
+					//alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
+					//rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+					//rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+					//rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+					break;
+				}
+			}
 			// TODO...
 			// 3 = YUV422.
 			// 4 = Bump Map.
 			// 5 = 4 BPP Palette. (part done)
-			// 6 = 8 BPP Palette.
+			// 6 = 8 BPP Palette. (part done)
 			else {	// Default, to show *anything*. (until more pixel formats are handled).
 				// ARGB 4444...
 				alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
@@ -1345,26 +1376,22 @@ int verilate() {
 			}
 		}
 
-		float x1,x2,x3,x4;
-		float y1,y2,y3,y4;
-		float z1,z2,z3,z4;
-
 		//X1: 43C994E8 403.163330  X2: 43C994E8 403.163330  X3: 43BC780C 376.937866  X4: 00000000 0.000000
 		//Y1: 43074970 135.286865  Y2: 4391829E 291.020447  Y3: 43074970 135.286865  Y4: 00000000 0.000000
-		x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
-		x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
-		x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
-		x4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x;
+		float x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
+		float x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
+		float x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
+		float x4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x;
 
-		y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
-		y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
-		y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
-		y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
+		float y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
+		float y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
+		float y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
+		float y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
 
-		z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
-		z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
-		z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
-		z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
+		float z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
+		float z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
+		float z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
+		float z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
 
 		//if (z2 > 1.0) run_enable = 0;
 		//if (z3 > 1.0) run_enable = 0;
@@ -1376,6 +1403,7 @@ int verilate() {
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x23f3c) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x47e024) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x4eab0) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x428a58) run_enable = 0;
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
 
@@ -1401,7 +1429,6 @@ int verilate() {
 			v2 = *(float*)&v2_temp;
 			v3 = *(float*)&v3_temp;
 			v4 = *(float*)&v4_temp;
-
 			//printf("uv_16_bit u1: %f  v1: %f\n", u1, v1);
 		}
 		else {
@@ -1422,7 +1449,7 @@ int verilate() {
 		top->eval();            // Evaluate model!
 		main_time++;            // Time passes...
 
-		rasterize_triangle_fixed(x1, x2, x3, y1, y2, y3, z1, z2, z3, u1, u2, u3, v1, v2, v3);
+		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, u1, u2, u3, u4, v1, v2, v3, v4);
 
 		/*
 		tex_addr = 0x34a190;	// Crazy Taxi title.
@@ -1614,9 +1641,9 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
+	pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
-	pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");	  vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_boat", "rb");		  vram_file = fopen("vram_hotd2_boat.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_gargoyle", "rb");	  vram_file = fopen("vram_hotd2_gargoyle.bin", "rb");
@@ -1816,10 +1843,10 @@ int main(int argc, char** argv, char** env) {
 		//uint32_t vq_index = tex_addr + 2048 + (texel_offs>>2);
 
 		mem_edit_3.HighlightColor = 0xFF888800;	// ABGR, probably
-		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
-		//mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
-		mem_edit_3.HighlightMin = vq_tex_index;
-		mem_edit_3.HighlightMax = vq_tex_index + 1;
+		mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff);
+		mem_edit_3.HighlightMax = (top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)+4;
+		//mem_edit_3.HighlightMin = vq_tex_index;
+		//mem_edit_3.HighlightMax = vq_tex_index + 1;
 		//mem_edit_3.HighlightMin = (vq_index) & 0x7fffff;
 		//mem_edit_3.HighlightMax = (vq_index+256) & 0x7fffff;
 		//mem_edit_3.HighlightMin = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr_last) & 0x7fffff;
@@ -2182,15 +2209,6 @@ int main(int argc, char** argv, char** env) {
 		g_pSwapChain->Present(0, 0); // Present without vsync
 
 		if (run_enable) for (int step = 0; step < 1024; step++) {	// Simulates MUCH faster if it's done in batches.
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt>0) {run_enable = 0; break;}
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x28e50) {run_enable = 0; break;}
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {run_enable = 0; break;}
-			//if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr==0x35620) {run_enable = 0; break;}
-			//if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr==0x429224) {run_enable = 0; break;}
-			//if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr==0xB2D0) {run_enable = 0; break;}
-			//if (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__poly_addr==0x266cc) {run_enable = 0; break;}
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__stride) {run_enable = 0; break; }
-			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__shadow) {run_enable = 0; break; }
 			if (run_enable) verilate(); else break;
 		}
 		else {														// But, that will affect the GUI update rate / value fetch.

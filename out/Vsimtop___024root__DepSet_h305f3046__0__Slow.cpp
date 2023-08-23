@@ -480,6 +480,12 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__bank_bit 
         = (0x1fU & (vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL 
                     >> 8U));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_array 
+        = (4U == (vlSelf->simtop__DOT__pvr__DOT__opb_word 
+                  >> 0x1dU));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array 
+        = (5U == (vlSelf->simtop__DOT__pvr__DOT__opb_word 
+                  >> 0x1dU));
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__o_opb 
         = (3U & vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb 
