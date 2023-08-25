@@ -358,7 +358,7 @@ else begin
 				end
 			end
 			else
-			//if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array.
+			if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array.
 				if (array_cnt==4'd0) begin		// If Array is done...
 					if (is_quad_array) begin	// Quad Array (maybe) done.
 						if (!quad_done) begin	// Second half of Quad not done yet...
@@ -373,7 +373,7 @@ else begin
 							/*vert_a_y  <= vert_c_y; */  vert_b_y <= vert_d_y;   /*vert_c_y <= vert_a_y;*/
 							/*vert_a_z  <= vert_c_z; */  /*vert_b_z <= vert_d_z;*/   /*vert_c_z <= vert_a_z;*/
 							/*vert_a_u0 <= vert_c_u0;*/ vert_b_u0 <= vert_d_u0; /*vert_c_u0 <= vert_a_u0;*/
-							/*vert_a_v0 <= vert_c_v0;*/ vert_b_v0 <= vert_d_v0; /*vert_c_v0 <= vert_a_v0;*/
+							vert_a_v0 <= vert_c_v0; vert_b_v0 <= vert_d_v0; /*vert_c_v0 <= vert_a_v0;*/
 
 							isp_entry_valid <= 1'b1;	// To tell the C code to latch the params again, and convert to fixed-point.
 							isp_state <= 8'd46;			// Draw the second half of the Quad.
@@ -394,7 +394,11 @@ else begin
 					isp_vram_addr <= isp_vram_addr - 4;
 					isp_state <= 8'd1;	// Jump back, to grab the next PRIM (including ISP/TSP/TCW).
 				end
-			//end
+			end
+			else begin	// Should never get to here??
+				poly_drawn <= 1'b1;
+				isp_state <= 8'd0;
+			end
 		end
 
 		48: begin
@@ -724,25 +728,25 @@ always @(clock) begin
 	end
 	else if (tex_u_size > tex_v_size) begin		// Rectangular texture. U size greater than V size.
 		case (tex_v_size)
-			0: twop <= {7'b0, ui[9:3] ,twop_full[5:0]};		// V size 8 
-			1: twop <= {6'b0, ui[9:4] ,twop_full[7:0]};		// V size 16
-			2: twop <= {5'b0, ui[9:5] ,twop_full[9:0]};		// V size 32
-			3: twop <= {4'b0, ui[9:6] ,twop_full[11:0]};	// V size 64
-			4: twop <= {3'b0, ui[9:7] ,twop_full[13:0]};	// V size 128
-			5: twop <= {2'b0, ui[9:8] ,twop_full[15:0]};	// V size 256
-			6: twop <= {1'b0, ui[9]   ,twop_full[17:0]};	// V size 512
+			0: twop <= {7'b0, ui_masked[9:3] ,twop_full[5:0]};		// V size 8 
+			1: twop <= {6'b0, ui_masked[9:4] ,twop_full[7:0]};		// V size 16
+			2: twop <= {5'b0, ui_masked[9:5] ,twop_full[9:0]};		// V size 32
+			3: twop <= {4'b0, ui_masked[9:6] ,twop_full[11:0]};	// V size 64
+			4: twop <= {3'b0, ui_masked[9:7] ,twop_full[13:0]};	// V size 128
+			5: twop <= {2'b0, ui_masked[9:8] ,twop_full[15:0]};	// V size 256
+			6: twop <= {1'b0, ui_masked[9]   ,twop_full[17:0]};	// V size 512
 			7: twop <= twop_full[19:0];						// V size 1024
 		endcase
 	end
 	else if (tex_v_size > tex_u_size) begin // Rectangular. V size greater than U size.
 		case (tex_u_size)
-			0: twop <= {7'b0, vi[9:3] ,twop_full[5:0]};		// U size 8
-			1: twop <= {6'b0, vi[9:4] ,twop_full[7:0]};		// U size 16
-			2: twop <= {5'b0, vi[9:5] ,twop_full[9:0]};		// U size 32
-			3: twop <= {4'b0, vi[9:6] ,twop_full[11:0]};	// U size 64
-			4: twop <= {3'b0, vi[9:7] ,twop_full[13:0]};	// U size 128
-			5: twop <= {2'b0, vi[9:8] ,twop_full[15:0]};	// U size 256
-			6: twop <= {1'b0, vi[9]   ,twop_full[17:0]};	// U size 512
+			0: twop <= {7'b0, vi_masked[9:3] ,twop_full[5:0]};		// U size 8
+			1: twop <= {6'b0, vi_masked[9:4] ,twop_full[7:0]};		// U size 16
+			2: twop <= {5'b0, vi_masked[9:5] ,twop_full[9:0]};		// U size 32
+			3: twop <= {4'b0, vi_masked[9:6] ,twop_full[11:0]};	// U size 64
+			4: twop <= {3'b0, vi_masked[9:7] ,twop_full[13:0]};	// U size 128
+			5: twop <= {2'b0, vi_masked[9:8] ,twop_full[15:0]};	// U size 256
+			6: twop <= {1'b0, vi_masked[9]   ,twop_full[17:0]};	// U size 512
 			7: twop <= twop_full[19:0];						// U size 1024
 		endcase
 	end
