@@ -609,7 +609,9 @@ bool ra_running = 0;
 
 inline int32_t float_to_fixed(float d, uint32_t p)
 {
-	return int32_t(d * (1<<p));
+	int32_t temp = d * (1<<p);
+	if (d<0) temp |= 0x80000000;	// If the float is negative, set the Sign bit of the fixed-point.
+	return temp;
 }
 
 //inline float fixed_to_float(int d, uint32_t p)
@@ -656,38 +658,19 @@ union mem128i {
 
 // Clamp and flip a texture coordinate
 static int ClampFlip(bool pp_Clamp, bool pp_Flip, int coord, int size) {
-	if (pp_Clamp) { // clamp
-		if (coord < 0) {
-			coord = 0;
-		}
-		else if (coord >= size) {
-			coord = size-1;
-		}
+	if (pp_Clamp) {			// clamp
+		if (coord < 0)  coord = 0;
+		else if (coord >= size)  coord = size-1;
 	}
-	else if (pp_Flip) { // flip
+	else if (pp_Flip) {		// flip
 		coord &= size*2-1;
-		if (coord & size) {
-			coord ^= size*2-1;
-		}
+		if (coord & size) coord ^= size*2-1;
 	}
-	else { //wrap
-		coord &= size-1;
-	}
+	else coord &= size-1;
 
 	return coord;
 }
 
-const uint32_t MipPoint[8] =
-{
-	0x00006, //8
-	0x00016, //16
-	0x00056, //32
-	0x00156, //64
-	0x00556, //128
-	0x01556, //256
-	0x05556, //512
-	0x15556  //1024
-};
 
 // byte offsets for mipmaps for 4bpp and 8bpp paletted textures
 static unsigned const mipmap_byte_offset_pal[11] ={
@@ -718,7 +701,6 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 		{
 			uint32_t temp=y&1;
 			rv|=temp<<sh;
-
 			y_sz>>=1;
 			y>>=1;
 			sh++;
@@ -727,7 +709,6 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 		{
 			uint32_t temp=x&1;
 			rv|=temp<<sh;
-
 			x_sz>>=1;
 			x>>=1;
 			sh++;
@@ -773,7 +754,7 @@ uint32_t read_vram_32(uint32_t addr) {		// BYTE address!
 	return data;
 };
 
-uint64_t read_vram_64(uint32_t addr) {		// BYTE address!
+QData read_vram_64(uint32_t addr) {		// BYTE address!
 	uint8_t byte0 = vram_ptr[ (addr+0)&0x7fffff ];
 	uint8_t byte1 = vram_ptr[ (addr+1)&0x7fffff ];
 	uint8_t byte2 = vram_ptr[ (addr+2)&0x7fffff ];
@@ -787,14 +768,16 @@ uint64_t read_vram_64(uint32_t addr) {		// BYTE address!
 	uint32_t upper_word = (byte7<<24) | (byte6<<16) | (byte5<<8) | (byte4);
 	uint32_t lower_word = (byte3<<24) | (byte2<<16) | (byte1<<8) | (byte0);
 
-	uint64_t data = (uint64_t)((upper_word<<32) | lower_word);
+	QData data = static_cast<QData>(upper_word<<32) | lower_word;
 
 	return data;
 };
 
 uint8_t index_byte = 0;
 uint32_t vq_tex_index = 0;
-uint32_t vram_tex_addr;
+uint32_t vram_word_addr;
+
+uint32_t vq_index_addr = 0;
 
 void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 							   float y1, float y2, float y3, float y4,
@@ -803,8 +786,8 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 							   float v1, float v2, float v3, float v4) {
 	
 	// Lazy culling...
-	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;	// Hydro Thunder title wouldn't display when this was >639 and >480 ??
-	if (x1<1 || x2<1 || x3<1 || y1<1 || y2<1 || y3<1) return;				// Hide spikey bits / neg values.
+	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
+	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
 
 	// Check for NaN...
 	/*
@@ -1007,13 +990,13 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			top->rootp->FDX31 = FDX31;
 			top->rootp->FDY31 = FDY31;
 
-			Z.Setup(x1, x2, x3, y1, y2, y3, z1, z2, z3);
+			Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 
 			//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
 				int w = tex_u_size_full-1;
 				int h = tex_v_size_full-1;
-				U.Setup(x1, x2, x3, y1, y2, y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
-				V.Setup(x1, x2, x3, y1, y2, y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
+				U.Setup(x1,x2,x3, y1,y2,y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
+				V.Setup(x1,x2,x3, y1,y2,y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
 			//}
 		}
 
@@ -1040,9 +1023,9 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			ui = ClampFlip(pp_ClampU, pp_FlipU, ui, tex_u_size_full);
 			vi = ClampFlip(pp_ClampV, pp_FlipV, vi, tex_v_size_full);
 
-			//bool scan_order_flag = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
-			//if (scan_order_flag==0) texel_offs = twiddle_slow(ui,vi,tex_u_size_full,tex_v_size_full);
-			//else texel_offs = ui + (vi * tex_u_size_full);	// Non-Twiddled..
+			bool scan_order_flag = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__scan_order;
+			if (scan_order_flag==0) texel_offs = /*top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop;*/ twiddle_slow(ui,vi,tex_u_size_full,tex_v_size_full);
+			else texel_offs = ui + (vi * tex_u_size_full);	// Non-Twiddled..
 
 			uint16_t tex_u_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size;
 			uint16_t tex_v_size_raw = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size;
@@ -1075,47 +1058,59 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi = vi;
 
 			// Read the values from the core (I realize this will be delayed by one verilog eval cycle, but it's good enough for testing).
-			uint32_t tex_addr_core		= top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_addr_word << 2; // Make BYTE addr!
+			uint32_t tex_addr_core = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_word_addr << 2; // Make BYTE addr!
 			uint32_t mipmap_byte_offs_core	= top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__mipmap_byte_offs;
-			uint32_t vram_tex_addr_core = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_tex_addr;
-			uint32_t twop_core          = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop_out;
+			uint32_t twop_core     = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop;
+
+			vram_word_addr = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_word_addr<<2;
+			//QData lower_word = read_vram_32( 0x000000 + vram_word_addr );
+			//QData upper_word = read_vram_32( 0x400000 + vram_word_addr );
+			//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_din = (upper_word<<32) | lower_word;
 
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
+				uint32_t mipmap_vq_offs = (mipmap_flag) ? mipmap_byte_offset_vq[tex_u_size_raw+3] : 0;
+
 				// Don't ask. lol...
 				uint32_t my_addr = ((twop_core&0xffffffe0)>>1) | (twop_core&0xf);
-				uint8_t index_byte = vram_ptr[ ( ((twop_core&0x10)<<18) + tex_addr_core + 1024 + (mipmap_byte_offs_core>>1) + (my_addr>>2) )&0x7fffff ];
+				vq_index_addr = ((twop_core&0x10)<<18) + tex_addr_core + 1024 + (mipmap_vq_offs>>1) + (my_addr>>2);
+				uint8_t index_byte = vram_ptr[ vq_index_addr&0x7fffff ];
 				//uint8_t index_tweaked = ((index_byte&0xf8)>>1) | index_byte&3;
 
 				// Group of FOUR 16-bit texels (8 CODE BOOK Bytes) per index_byte.
 				// (but we only shift by <<2 here, because we read a 32-bit word from both the lower and upper 4MB VRAM.)
 				switch ( my_addr&3 ) {
-					case 0: texel_pix  = vram_ptr[ 0x000000 + tex_addr_core + (index_byte<<2) + 0];
-							texel_pix |= vram_ptr[ 0x000000 + tex_addr_core + (index_byte<<2) + 1] << 8; break;
+					case 0: texel_pix  = vram_ptr[ (0x000000 + tex_addr_core + (index_byte<<2) + 0)&0x7fffff ];
+							texel_pix |= vram_ptr[ (0x000000 + tex_addr_core + (index_byte<<2) + 1)&0x7fffff ] << 8; break;
 					
-					case 1: texel_pix  = vram_ptr[ 0x000000 + tex_addr_core + (index_byte<<2) + 2];
-							texel_pix |= vram_ptr[ 0x000000 + tex_addr_core + (index_byte<<2) + 3] << 8; break;
+					case 1: texel_pix  = vram_ptr[ (0x000000 + tex_addr_core + (index_byte<<2) + 2)&0x7fffff ];
+							texel_pix |= vram_ptr[ (0x000000 + tex_addr_core + (index_byte<<2) + 3)&0x7fffff ] << 8; break;
 					
-					case 2: texel_pix  = vram_ptr[ 0x400000 + tex_addr_core + (index_byte<<2) + 0];
-							texel_pix |= vram_ptr[ 0x400000 + tex_addr_core + (index_byte<<2) + 1] << 8; break;
+					case 2: texel_pix  = vram_ptr[ (0x400000 + tex_addr_core + (index_byte<<2) + 0)&0x7fffff ];
+							texel_pix |= vram_ptr[ (0x400000 + tex_addr_core + (index_byte<<2) + 1)&0x7fffff ] << 8; break;
 					
-					case 3: texel_pix  = vram_ptr[ 0x400000 + tex_addr_core + (index_byte<<2) + 2];
-							texel_pix |= vram_ptr[ 0x400000 + tex_addr_core + (index_byte<<2) + 3] << 8; break;
+					case 3: texel_pix  = vram_ptr[ (0x400000 + tex_addr_core + (index_byte<<2) + 2)&0x7fffff ];
+							texel_pix |= vram_ptr[ (0x400000 + tex_addr_core + (index_byte<<2) + 3)&0x7fffff ] << 8; break;
 				}
 			}
 			else {	// Non-VQ / Uncompressed.
-				switch (twop_core&3) {
-					case 0: texel_pix  = vram_ptr[ 0x000000 + ((tex_addr_core+ (mipmap_byte_offs_core>>1) ) + ((twop_core&0xfffffffc)+0)) & 0x7fffff ];
-							texel_pix |= vram_ptr[ 0x000000 + ((tex_addr_core+ (mipmap_byte_offs_core>>1) ) + ((twop_core&0xfffffffc)+1)) & 0x7fffff ] << 8; break;
+				// Using texel_offs here atm.
+				// It's possible Uncompressed textures might use a Twiddled address (scan_order==0).
+				// Some code above will use twop from the core for that. Not sure if working yet. ElectronAsh.
+				switch (texel_offs&3) {
+					case 0: texel_pix  = vram_ptr[ (0x000000 + tex_addr_core + (mipmap_byte_offs_core>>1) + ((texel_offs&0xfffffffc)+0)) & 0x7fffff ];
+							texel_pix |= vram_ptr[ (0x000000 + tex_addr_core + (mipmap_byte_offs_core>>1) + ((texel_offs&0xfffffffc)+1)) & 0x7fffff ] << 8; break;
 
-					case 1: texel_pix  = vram_ptr[ 0x000000 + ((tex_addr_core+ (mipmap_byte_offs_core>>1) ) + ((twop_core&0xfffffffc)+2)) & 0x7fffff ];
-							texel_pix |= vram_ptr[ 0x000000 + ((tex_addr_core+ (mipmap_byte_offs_core>>1) ) + ((twop_core&0xfffffffc)+3)) & 0x7fffff ] << 8; break;
+					case 1: texel_pix  = vram_ptr[ (0x000000 + tex_addr_core + (mipmap_byte_offs_core>>1) + ((texel_offs&0xfffffffc)+2)) & 0x7fffff ];
+							texel_pix |= vram_ptr[ (0x000000 + tex_addr_core + (mipmap_byte_offs_core>>1) + ((texel_offs&0xfffffffc)+3)) & 0x7fffff ] << 8; break;
 
-					case 2: texel_pix  = vram_ptr[ 0x400000 + ((tex_addr_core+ (mipmap_byte_offs_core>>1) ) + ((twop_core&0xfffffffc)+0)) & 0x7fffff ];
-							texel_pix |= vram_ptr[ 0x400000 + ((tex_addr_core+ (mipmap_byte_offs_core>>1) ) + ((twop_core&0xfffffffc)+1)) & 0x7fffff ] << 8; break;
+					case 2: texel_pix  = vram_ptr[ (0x400000 + tex_addr_core + (mipmap_byte_offs_core>>1) + ((texel_offs&0xfffffffc)+0)) & 0x7fffff ];
+							texel_pix |= vram_ptr[ (0x400000 + tex_addr_core + (mipmap_byte_offs_core>>1) + ((texel_offs&0xfffffffc)+1)) & 0x7fffff ] << 8; break;
 
-					case 3: texel_pix  = vram_ptr[ 0x400000 + ((tex_addr_core+ (mipmap_byte_offs_core>>1) ) + ((twop_core&0xfffffffc)+2)) & 0x7fffff ];
-							texel_pix |= vram_ptr[ 0x400000 + ((tex_addr_core+ (mipmap_byte_offs_core>>1) ) + ((twop_core&0xfffffffc)+3)) & 0x7fffff ] << 8; break;
+					case 3: texel_pix  = vram_ptr[ (0x400000 + tex_addr_core + (mipmap_byte_offs_core>>1) + ((texel_offs&0xfffffffc)+2)) & 0x7fffff ];
+							texel_pix |= vram_ptr[ (0x400000 + tex_addr_core + (mipmap_byte_offs_core>>1) + ((texel_offs&0xfffffffc)+3)) & 0x7fffff ] << 8; break;
 				}
+
+				//texel_pix = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__texel_pix;
 			}
 
 			uint8_t pix_fmt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt;
@@ -1149,9 +1144,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 				uint16_t pal_lut = (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector<<4) | pal_nibble;
 				texel_pix = pvr_ptr[ (0x1000>>2) + pal_lut ] & 0xffff;	// Read from Palette RAM (part of the PVR regs).
 
-				// ARGB 1555 (Swirl logo, etc.)...;
-				uint8_t pal_fmt = pvr_ptr[(0x108>>2)]&03;	// Read bits [1:0] from PAL_RAM_CTRL reg, to grab the palette pixel format.
-				switch (pal_fmt) {
+				switch(pvr_ptr[(0x108>>2)]&03) {	// Read bits [1:0] from PAL_RAM_CTRL reg, to grab the palette pixel format.
 					case 0:	// ARGB 1555.
 						alpha = (texel_pix&0x8000) ? 0xff : 0x00;
 						rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);	// Red.
@@ -1173,11 +1166,11 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 						rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
 					break;
 
-					case 3:	// TODO: 3 = YUV422.
-						//alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
-						//rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-						//rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-						//rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+					case 3:	// 3 = ARGB8888
+						alpha  = (texel_pix>>24) & 0xff;
+						rgb[0] = (texel_pix>>16) & 0xff;	// Red.
+						rgb[1] = (texel_pix>>8)  & 0xff;	// Green.
+						rgb[2] = (texel_pix>>0)  & 0xff;	// Blue.
 					break;
 				}
 			}
@@ -1189,44 +1182,41 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 				uint16_t pal_lut = ((top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector&0x30)<<4) | vram_byte;
 				texel_pix = pvr_ptr[ (0x1000>>2) + pal_lut ] & 0xffff;	// Read from Palette RAM (part of the PVR regs).
 
-				uint8_t pal_fmt = pvr_ptr[(0x108>>2)]&03;	// Read bits [1:0] from PAL_RAM_CTRL reg, to grab the palette pixel format.
-				switch(pal_fmt) {
-				case 0:	// ARGB 1555.
-					alpha = (texel_pix&0x8000) ? 0xff : 0x00;
-					rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);	// Red.
-					rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7)  & 0x07);	// Green.
-					rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2)  & 0x07);	// Blue.
+				switch (pvr_ptr[(0x108>>2)]&03) {	// Read bits [1:0] from PAL_RAM_CTRL reg, to grab the palette pixel format.
+					case 0:	// ARGB 1555.
+						alpha = (texel_pix&0x8000) ? 0xff : 0x00;
+						rgb[0] = ((texel_pix>>7) & 0xf8) | ((texel_pix>>12) & 0x07);	// Red.
+						rgb[1] = ((texel_pix>>2) & 0xf8) | ((texel_pix>>7)  & 0x07);	// Green.
+						rgb[2] = ((texel_pix<<3) & 0xf8) | ((texel_pix>>2)  & 0x07);	// Blue.
 					break;
 
-				case 1:	// RGB 565.
-					alpha = 0xff;
-					rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
-					rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
-					rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
+					case 1:	// RGB 565.
+						alpha = 0xff;
+						rgb[0] = ((texel_pix>>8) & 0xf8) | (texel_pix>>13) & 0x7;	// Red.
+						rgb[1] = ((texel_pix>>3) & 0xfc) | (texel_pix>>9)  & 0x3;	// Green.
+						rgb[2] = ((texel_pix<<3) & 0xf8) | (texel_pix>>2)  & 0x7;	// Blue.
 					break;
 
-				case 2:	// ARGB 4444.
-					alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
-					rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-					rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-					rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+					case 2:	// ARGB 4444.
+						alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
+						rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
+						rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
+						rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
 					break;
 
-				case 3:	// TODO: 3 = YUV422.
-					// Default, to show *anything*. (until more pixel formats are handled).
-					// ARGB 4444...
-					alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
-					rgb[0] = ((texel_pix>>4) & 0xf0) | ((texel_pix>>8) & 0x0f);	// Red.
-					rgb[1] = ((texel_pix>>0) & 0xf0) | ((texel_pix>>4) & 0x0f);	// Green.
-					rgb[2] = ((texel_pix<<4) & 0xf0) | ((texel_pix>>0) & 0x0f);	// Blue.
+					case 3:	// 3 = ARGB8888
+						alpha  = (texel_pix>>24) & 0xff;
+						rgb[0] = (texel_pix>>16) & 0xff;	// Red.
+						rgb[1] = (texel_pix>>8)  & 0xff;	// Green.
+						rgb[2] = (texel_pix>>0)  & 0xff;	// Blue.
 					break;
 				}
 			}
 			// TODO...
 			// 3 = YUV422.
 			// 4 = Bump Map.
-			// 5 = 4 BPP Palette. (part done)
-			// 6 = 8 BPP Palette. (part done)
+			// 5 = 4 BPP Palette. (mostly done)
+			// 6 = 8 BPP Palette. (mostly done)
 			else {	// Default, to show *anything*. (until more pixel formats are handled).
 				// ARGB 4444...
 				alpha = (texel_pix>>8)&0xf0 | (texel_pix>>12)&0x0f;
@@ -1243,8 +1233,9 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			rgb[2] = (vertex_c_col&0x000000ff);
 		}
 
-		if (top->vram_wr) {
-			float old_z = z_ptr[(top->vram_addr&0x7fffff)>>2];
+		if (top->vram_wr /*top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state==49 &&
+							top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle*/) {
+			float old_z = z_ptr[ (top->vram_addr&0x7fffff) ];
 			uint8_t depth_mode = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__depth_comp;
 			//if (render_mode == RM_PUNCHTHROUGH) depth_mode = 6;		// TODO: FIXME
 			//else if (render_mode == RM_TRANSLUCENT) depth_mode = 3;	// TODO: FIXME
@@ -1261,25 +1252,34 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 				case 7: allow_write = 1;			   break; // Always
 			}
 
-			if (allow_write) {
-				if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff)>>2 ] = invW;
+			//if (allow_write) {
+				if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff) ] = invW;
 				//uint32_t z_fixed = float_to_fixed(invW, 28);	// Convert Z from float to fixed-point.
-				//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff)>>2 ] = z_fixed;
-				if (alpha==0xff) disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+				//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff) ] = z_fixed;
+				
+				uint32_t my_fb_addr = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_fb_addr;
+				
+				/*if (alpha==0xff) disp_ptr[ (top->vram_addr&0x7fffff) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 				else {
 					uint8_t old_pix[3];
-					old_pix[2] = disp_ptr[(top->vram_addr&0x7fffff)>>2] >> 16;
-					old_pix[1] = disp_ptr[(top->vram_addr&0x7fffff)>>2] >> 8;
-					old_pix[0] = disp_ptr[(top->vram_addr&0x7fffff)>>2];
+					old_pix[2] = disp_ptr[ (top->vram_addr&0x7fffff) ] >> 16;
+					old_pix[1] = disp_ptr[ (top->vram_addr&0x7fffff) ] >> 8;
+					old_pix[0] = disp_ptr[ (top->vram_addr&0x7fffff) ];
 
 					uint8_t result[3];
 					result[0] = (uint8_t)( ( (alpha+1) * rgb[0] + (256-alpha) * old_pix[0]) >> 8);
 					result[1] = (uint8_t)( ( (alpha+1) * rgb[1] + (256-alpha) * old_pix[1]) >> 8);
 					result[2] = (uint8_t)( ( (alpha+1) * rgb[2] + (256-alpha) * old_pix[2]) >> 8);
 
-					disp_ptr[ (top->vram_addr&0x7fffff)>>2 ] = 0xff<<24 | result[2]<<16 | result[1]<<8 | result[0];
-				}
-			}
+					disp_ptr[(top->vram_addr)&0x7fffff] = 0xff<<24 | result[2]<<16 | result[1]<<8 | result[0];*/
+
+					uint32_t texel_argb = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texel_argb;
+					rgb[2] = (texel_argb>>0) &0xff;
+					rgb[1] = (texel_argb>>8) &0xff;
+					rgb[0] = (texel_argb>>16)&0xff;
+					disp_ptr[ (my_fb_addr&0x7fffff) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
+				//}
+			//}
 		}
 	//}
 }
@@ -1338,8 +1338,10 @@ int verilate() {
 		rgb[2] = 0xff;	// Blue.
 
 		// vram_din doesn't seem to get routed to the other modules???
+		
 		uint32_t vram_addr = top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff;
 
+		/*
 		uint8_t byte3 = vram_ptr[ (vram_addr+0) & 0x7fffff ];
 		uint8_t byte2 = vram_ptr[ (vram_addr+1) & 0x7fffff ];
 		uint8_t byte1 = vram_ptr[ (vram_addr+2) & 0x7fffff ];
@@ -1348,10 +1350,27 @@ int verilate() {
 		// Have to byte swap here, because Wintel...
 		uint16_t upper_word = byte0<<8 | byte1;
 		uint16_t lower_word = byte2<<8 | byte3;
-
 		top->vram_din = upper_word<<16 | lower_word;
 		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = upper_word<<16 | lower_word;
 		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = upper_word<<16 | lower_word;
+		*/
+
+		uint8_t byte0 = vram_ptr[ (0x000000+vram_addr+0) & 0x7fffff ];
+		uint8_t byte1 = vram_ptr[ (0x000000+vram_addr+1) & 0x7fffff ];
+		uint8_t byte2 = vram_ptr[ (0x000000+vram_addr+2) & 0x7fffff ];
+		uint8_t byte3 = vram_ptr[ (0x000000+vram_addr+3) & 0x7fffff ];
+
+		uint8_t byte4 = vram_ptr[ (0x400000+vram_addr+0) & 0x7fffff ];
+		uint8_t byte5 = vram_ptr[ (0x400000+vram_addr+1) & 0x7fffff ];
+		uint8_t byte6 = vram_ptr[ (0x400000+vram_addr+2) & 0x7fffff ];
+		uint8_t byte7 = vram_ptr[ (0x400000+vram_addr+3) & 0x7fffff ];
+
+		QData lower_word = byte0<<24 | byte1<<16 | byte2<<8 | byte3<<0;
+		QData upper_word = byte4<<24 | byte5<<16 | byte6<<8 | byte7<<0;
+
+										  top->vram_din = (upper_word<<32 | lower_word);
+		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = (upper_word<<32 | lower_word);
+		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = (upper_word<<32 | lower_word);
 
 		if (tile_highlight && top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid) {
 			uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
@@ -1385,8 +1404,8 @@ int verilate() {
 		float z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
 		float z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
 
-		//if (z2 > 1.0) run_enable = 0;
-		//if (z3 > 1.0) run_enable = 0;
+		//if (z2 > 1.2) run_enable = 0;	// HOTD2 Title has some verts a tiny bit above 1.0? We only want to detect wildly wrong Z values here.
+		//if (z3 > 1.2) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x13720 &&
 			//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt==1) run_enable = 0;
 
@@ -1396,6 +1415,7 @@ int verilate() {
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x47e024) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x4eab0) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x428a58) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x159c) run_enable = 0;
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
 
@@ -1457,7 +1477,7 @@ int verilate() {
 		bool mipmap_flag = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map;
 
 		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp)
-			mipmap_offs = (mipmap_flag) ? MipPoint[top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size]>>1 : 0;
+			mipmap_offs = (mipmap_flag) ? mipmap_byte_offset_vq[ top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size=3 ]>>1 : 0;
 
 		bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 		bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
@@ -1626,14 +1646,14 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");			  vram_file = fopen("vram_taxi2.bin", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");			  vram_file = fopen("vram_taxi3.bin", "rb");
 	//pvrfile = fopen("pvr_regs_taxi4", "rb");			  vram_file = fopen("vram_taxi4.bin", "rb");
-	pvrfile = fopen("pvr_regs_crazy_title", "rb");	  vram_file = fopen("vram_crazy_title.bin", "rb");
+	//pvrfile = fopen("pvr_regs_crazy_title", "rb");	  vram_file = fopen("vram_crazy_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");			  vram_file = fopen("vram_sonic.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sonic_title", "rb");	  vram_file = fopen("vram_sonic_title.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hydro_title", "rb");	  vram_file = fopen("vram_hydro_title.bin", "rb");	// Disable lazy culling, to get this to show!
+	//pvrfile = fopen("pvr_regs_hydro_title", "rb");	  vram_file = fopen("vram_hydro_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
+	pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");	  vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
@@ -1669,6 +1689,17 @@ int main(int argc, char** argv, char** env) {
 	fseek(vram_file, 0L, SEEK_SET);
 	fread(vram_ptr, 1, vram_size, vram_file);
 
+	for (int i=0; i<vram_size; i+=4) {
+		uint8_t byte0 = vram_ptr[ i+0 ];
+		uint8_t byte1 = vram_ptr[ i+1 ];
+		uint8_t byte2 = vram_ptr[ i+2 ];
+		uint8_t byte3 = vram_ptr[ i+3 ];
+
+		vram_ptr[ i+0 ] = byte3;
+		vram_ptr[ i+1 ] = byte2;
+		vram_ptr[ i+2 ] = byte1;
+		vram_ptr[ i+3 ] = byte0;
+	}
 
 	// Our state
 	bool show_demo_window = true;
@@ -2051,7 +2082,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Begin(" RA Parser");
 		ImGui::Text("        ra_state: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state);
 		ImGui::Text("       vram_addr: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__vram_addr);
-		ImGui::Text("        vram_din: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__vram_din);
+		ImGui::Text("        vram_din: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__vram_din);
 		ImGui::Text("     next_region: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region);
 		ImGui::Text("   ol_jump_bytes: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes);
 		ImGui::Separator();
@@ -2090,22 +2121,22 @@ int main(int argc, char** argv, char** env) {
 		ImGui::End();
 
 		ImGui::Begin(" ISP Parser");
-		ImGui::Text("        isp_state: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state);
+		ImGui::Text("         isp_state: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state);
 		ImGui::Separator();
-		ImGui::Text("        core minx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__minx);
-		ImGui::Text("        core miny: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny);
-		ImGui::Text("       core spanx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx);
-		ImGui::Text("       core spany: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany);
-		ImGui::Text("        core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
-		ImGui::Text("        core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
-		ImGui::Text("  core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);
-		//ImGui::Text("       test float: %f", *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float);
-		//ImGui::Text("   test float exp: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp);
-		//ImGui::Text("   test float man: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man);
-		//ImGui::Text("       core fixed: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed);
-		//ImGui::Text(" fixed (as float): %f", (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed / (1<<FRAC_BITS) );
+		ImGui::Text("         core minx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__minx);
+		ImGui::Text("         core miny: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny);
+		ImGui::Text("        core spanx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx);
+		ImGui::Text("        core spany: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany);
+		ImGui::Text("         core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
+		ImGui::Text("         core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
+		ImGui::Text("   core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);
+		//ImGui::Text("        test float: %f", *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float);
+		//ImGui::Text("    test float exp: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp);
+		//ImGui::Text("    test float man: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man);
+		//ImGui::Text("        core fixed: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed);
+		//ImGui::Text("  fixed (as float): %f", (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed / (1<<FRAC_BITS) );
 		ImGui::Separator();
-		ImGui::Text("          pix_fmt:");
+		ImGui::Text("           pix_fmt:");
 		ImGui::SameLine();
 		switch (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt) {
 			case 0: ImGui::Text("ARGB 1555 (0)"); break; // 0  1555 value: 1 bit; RGB values: 5 bits each
@@ -2117,72 +2148,73 @@ int main(int argc, char** argv, char** env) {
 			case 5: ImGui::Text("Pal4      (5)"); break; // 5  4 BPP Palette   Palette texture with 4 bits/pixel
 			case 6: ImGui::Text("Pal8      (6)"); break; // 6  8 BPP Palette   Palette texture with 8 bits/pixel
 		}
-		ImGui::Text("     tex size u/v: %dx%d",8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7),
+		ImGui::Text("      tex size u/v: %dx%d",8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7),
 											   8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size&7));
-		ImGui::Text("          texture: %d  mipmap: %d  vq: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture,
+		ImGui::Text("           texture: %d  mipmap: %d  vq: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture,
 			top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mip_map,
 			top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp);
-		ImGui::Text("           uv_16b: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit);
+		ImGui::Text("            uv_16b: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit);
 		ImGui::SameLine();
 		ImGui::Text(" offset: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__offset);
-		ImGui::Text("         stride_f: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride_flag);
+		ImGui::Text("          stride_f: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride_flag);
 		ImGui::SameLine();
 		ImGui::Text(" stride: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride);
 		//ImGui::Text("         tex_addr: 0x%08X", tex_addr);
 		//ImGui::Text("       texel_offs: 0x%05X", texel_offs);
-		//ImGui::Text("vram_tex_addr sim (byte): 0x%08X", vram_tex_addr<<3);
-		ImGui::Text("    vram_tex_addr: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_tex_addr);
-		ImGui::Text("        twop core: 0x%05X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop);
+		//ImGui::Text("tex_byte_addr sim (byte): 0x%08X", tex_byte_addr<<3);
+		ImGui::Text("vram_word_addr_cor: 0x%08X",vram_word_addr);
+		ImGui::Text("     vq_index_addr: 0x%08X",vq_index_addr );
+		ImGui::Text("         twop core: 0x%05X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop);
 		ImGui::Separator();
-		ImGui::Text("        strip_cnt: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt);
+		ImGui::Text("         strip_cnt: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt);
 		ImGui::SameLine(); ImGui::Text(" array_cnt: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt);
-		ImGui::Text("         isp_inst: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst);
-		ImGui::Text("         tsp_inst: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
-		ImGui::Text("         tcw_word: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
+		ImGui::Text("          isp_inst: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_inst);
+		ImGui::Text("          tsp_inst: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tsp_inst);
+		ImGui::Text("          tcw_word: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
 		ImGui::Separator();
-		ImGui::Text("         vert_a_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
-		ImGui::Text("         vert_a_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y);
-		ImGui::Text("         vert_a_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z);
-		ImGui::Text("        vert_a_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0);
-		ImGui::Text("        vert_a_v0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0);
-		//ImGui::Text("        vert_a_u1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u1);
-		//ImGui::Text("        vert_a_v1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v1);
-		ImGui::Text("vert_a_base_col_0: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0);
-		//ImGui::Text("vert_a_base_col_1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_1);
-		ImGui::Text("   vert_a_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_off_col);
+		ImGui::Text("          vert_a_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
+		ImGui::Text("          vert_a_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y);
+		ImGui::Text("          vert_a_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z);
+		ImGui::Text("         vert_a_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0);
+		ImGui::Text("         vert_a_v0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0);
+		//ImGui::Text("         vert_a_u1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u1);
+		//ImGui::Text("         vert_a_v1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v1);
+		ImGui::Text(" vert_a_base_col_0: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_0);
+		//ImGui::Text(" vert_a_base_col_1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_base_col_1);
+		ImGui::Text("    vert_a_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_off_col);
 		ImGui::Separator();
-		ImGui::Text("         vert_b_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x);
-		ImGui::Text("         vert_b_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y);
-		ImGui::Text("         vert_b_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z);
-		ImGui::Text("        vert_b_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0);
-		ImGui::Text("        vert_b_v0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0);
-		//ImGui::Text("        vert_b_u1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u1);
-		//ImGui::Text("        vert_b_v1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v1);
-		ImGui::Text("vert_b_base_col_0: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_base_col_0);
-		//ImGui::Text("vert_b_base_col_1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_base_col_1);
-		ImGui::Text("   vert_b_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_off_col);
+		ImGui::Text("          vert_b_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x);
+		ImGui::Text("          vert_b_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y);
+		ImGui::Text("          vert_b_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z);
+		ImGui::Text("         vert_b_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0);
+		ImGui::Text("         vert_b_v0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0);
+		//ImGui::Text("         vert_b_u1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u1);
+		//ImGui::Text("         vert_b_v1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v1);
+		ImGui::Text(" vert_b_base_col_0: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_base_col_0);
+		//ImGui::Text(" vert_b_base_col_1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_base_col_1);
+		ImGui::Text("    vert_b_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_off_col);
 		ImGui::Separator();
-		ImGui::Text("         vert_c_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x);
-		ImGui::Text("         vert_c_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y);
-		ImGui::Text("         vert_c_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z);
-		ImGui::Text("        vert_c_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0);
-		ImGui::Text("        vert_c_v0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0);
-		//ImGui::Text("        vert_c_u1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u1);
-		//ImGui::Text("        vert_c_v1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v1);
-		ImGui::Text("vert_c_base_col_0: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0);
-		//ImGui::Text("vert_c_base_col_1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_1);
-		ImGui::Text("   vert_c_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_off_col);
+		ImGui::Text("          vert_c_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x);
+		ImGui::Text("          vert_c_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y);
+		ImGui::Text("          vert_c_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z);
+		ImGui::Text("         vert_c_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0);
+		ImGui::Text("         vert_c_v0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0);
+		//ImGui::Text("         vert_c_u1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u1);
+		//ImGui::Text("         vert_c_v1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v1);
+		ImGui::Text(" vert_c_base_col_0: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_0);
+		//ImGui::Text(" vert_c_base_col_1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_base_col_1);
+		ImGui::Text("    vert_c_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_off_col);
 		ImGui::Separator();
-		ImGui::Text("         vert_d_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x);
-		ImGui::Text("         vert_d_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y);
-		ImGui::Text("         vert_d_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z);
-		ImGui::Text("        vert_d_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0);
-		ImGui::Text("        vert_d_v0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0);
-		//ImGui::Text("        vert_d_u1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u1);
-		//ImGui::Text("        vert_d_v1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v1);
-		ImGui::Text("vert_d_base_col_0: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_base_col_0);
-		//ImGui::Text("vert_d_base_col_1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_base_col_1);
-		ImGui::Text("   vert_d_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_off_col);
+		ImGui::Text("          vert_d_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x);
+		ImGui::Text("          vert_d_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y);
+		ImGui::Text("          vert_d_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z);
+		ImGui::Text("         vert_d_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0);
+		ImGui::Text("         vert_d_v0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0);
+		//ImGui::Text("         vert_d_u1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u1);
+		//ImGui::Text("         vert_d_v1: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v1, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v1);
+		ImGui::Text(" vert_d_base_col_0: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_base_col_0);
+		//ImGui::Text(" vert_d_base_col_1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_base_col_1);
+		ImGui::Text("    vert_d_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_off_col);
 		ImGui::End();
 
 

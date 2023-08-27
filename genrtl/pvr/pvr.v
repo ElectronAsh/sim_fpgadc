@@ -556,10 +556,10 @@ wire poly_drawn;
 
 wire isp_vram_rd;
 wire isp_vram_wr;
-wire [23:0] isp_vram_addr;
+wire [23:0] isp_vram_word_addr;
 
 // Keep this as 32-bit for now. Only textures are read aas 64-bit wide.
-wire [31:0] isp_vram_din;
+wire [63:0] isp_vram_din;
 wire [31:0] isp_vram_dout;
 assign isp_vram_din = vram_din[31:0];
 
@@ -575,11 +575,11 @@ else begin
 	if (poly_drawn) isp_switch <= 1'b0;
 end
 
-assign vram_addr = (isp_switch) ? isp_vram_addr : ra_vram_addr;
+assign vram_addr = (isp_switch) ? isp_vram_word_addr : ra_vram_addr;
 assign vram_dout = isp_vram_dout;
 assign vram_wr = isp_vram_wr;
 
-//assign vram_addr = isp_vram_addr;
+//assign vram_addr = isp_vram_word_addr;
 //assign vram_addr = ra_vram_addr;
 
 
@@ -596,9 +596,9 @@ isp_parser isp_parser_inst (
 	
 	.isp_vram_rd( isp_vram_rd ),		// output  isp_vram_rd
 	.isp_vram_wr( isp_vram_wr ),		// output  isp_vram_wr
-	.isp_vram_addr( isp_vram_addr ),	// output [23:0]  isp_vram_addr
-	.isp_vram_din( isp_vram_din ),		// input  [31:0]  isp_vram_din
-	.isp_vram_dout( isp_vram_dout ),	// output  [31:0]  isp_vram_dout
+	.isp_vram_word_addr( isp_vram_word_addr ),	// output [23:0]  isp_vram_word_addr
+	.isp_vram_din( isp_vram_din ),		// input  [63:0]  isp_vram_din
+	.isp_vram_dout( isp_vram_dout ),	// output  [63:0]  isp_vram_dout
 	
 	.isp_entry_valid( isp_entry_valid ),// output  isp_entry_valid
 	
@@ -631,7 +631,8 @@ isp_parser isp_parser_inst (
 	.spanx( spanx ),
 	.spany( spany ),
 	
-	.TEXT_CONTROL( TEXT_CONTROL )	// From TEXT_CONTROL reg. (0xE4 in PVR regs).
+	.TEXT_CONTROL( TEXT_CONTROL ),		// From TEXT_CONTROL reg. (0xE4 in PVR regs).
+	.PAL_RAM_CTRL( PAL_RAM_CTRL[1:0] )	// From PAL_RAM_CTRL reg, bits [1:0].
 );
 
 
