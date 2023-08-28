@@ -417,53 +417,54 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
            | (5U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) 
           | (6U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) 
          | (7U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux)))) {
-        vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal4_nib 
-            = (0xfU & ((0U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                        ? (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_vram_din)
-                        : ((1U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                            ? (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                       >> 8U)) : ((2U 
-                                                   == 
-                                                   (7U 
-                                                    & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                                                   ? (IData)(
-                                                             (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                              >> 0x10U))
-                                                   : 
-                                                  ((3U 
+        vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal8_byte 
+            = (0xffU & ((0U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
+                         ? (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_vram_din)
+                         : ((1U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
+                             ? (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                        >> 8U)) : (
+                                                   (2U 
                                                     == 
                                                     (7U 
                                                      & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                     ? (IData)(
                                                               (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                               >> 0x18U))
+                                                               >> 0x10U))
                                                     : 
-                                                   ((4U 
+                                                   ((3U 
                                                      == 
                                                      (7U 
                                                       & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                      ? (IData)(
                                                                (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                >> 0x20U))
+                                                                >> 0x18U))
                                                      : 
-                                                    ((5U 
+                                                    ((4U 
                                                       == 
                                                       (7U 
                                                        & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                       ? (IData)(
                                                                 (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                 >> 0x28U))
+                                                                 >> 0x20U))
                                                       : 
-                                                     ((6U 
+                                                     ((5U 
                                                        == 
                                                        (7U 
                                                         & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                        ? (IData)(
                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                  >> 0x30U))
-                                                       : (IData)(
-                                                                 (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                  >> 0x38U))))))))));
+                                                                  >> 0x28U))
+                                                       : 
+                                                      ((6U 
+                                                        == 
+                                                        (7U 
+                                                         & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
+                                                        ? (IData)(
+                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                                                   >> 0x30U))
+                                                        : (IData)(
+                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                                                   >> 0x38U))))))))));
     }
     if ((0U == (3U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) {
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16 
@@ -480,6 +481,80 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16 
             = (0xffffU & (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
                                   >> 0x30U)));
+    }
+    if (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__is_pal4) {
+        vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+            = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_ram
+            [(((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector) 
+               << 4U) | (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal4_nib))];
+    }
+    if (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__is_pal8) {
+        vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+            = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_ram
+            [((0x300U & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector) 
+                         << 4U)) | (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal8_byte))];
+    }
+    if ((0U == (3U & vlSelf->simtop__DOT__pvr__DOT__PAL_RAM_CTRL))) {
+        vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_final 
+            = (((- (IData)((1U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                  >> 0xfU)))) << 0x18U) 
+               | ((0xf80000U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                << 9U)) | ((0x70000U 
+                                            & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                               << 4U)) 
+                                           | ((0xf800U 
+                                               & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                  << 6U)) 
+                                              | ((0x700U 
+                                                  & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                     << 1U)) 
+                                                 | ((0xf8U 
+                                                     & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                        << 3U)) 
+                                                    | (7U 
+                                                       & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                          >> 2U))))))));
+    } else if ((1U == (3U & vlSelf->simtop__DOT__pvr__DOT__PAL_RAM_CTRL))) {
+        vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_final 
+            = (0xff000000U | ((0xf80000U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                            << 8U)) 
+                              | ((0x70000U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                              << 3U)) 
+                                 | ((0xfc00U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                << 5U)) 
+                                    | ((0x300U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                  >> 1U)) 
+                                       | ((0xf8U & 
+                                           (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                            << 3U)) 
+                                          | (7U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                   >> 2U))))))));
+    } else if ((2U == (3U & vlSelf->simtop__DOT__pvr__DOT__PAL_RAM_CTRL))) {
+        vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_final 
+            = ((0xf0000000U & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                               << 0x10U)) | ((0xf000000U 
+                                              & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                 << 0xcU)) 
+                                             | ((0xf00000U 
+                                                 & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                    << 0xcU)) 
+                                                | ((0xf0000U 
+                                                    & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                       << 8U)) 
+                                                   | ((0xf000U 
+                                                       & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                          << 8U)) 
+                                                      | ((0xf00U 
+                                                          & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                             << 4U)) 
+                                                         | ((0xf0U 
+                                                             & (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw 
+                                                                << 4U)) 
+                                                            | (0xfU 
+                                                               & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw))))))));
+    } else if ((3U == (3U & vlSelf->simtop__DOT__pvr__DOT__PAL_RAM_CTRL))) {
+        vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_final 
+            = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_raw;
     }
     if (((((((((0U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt)) 
                | (1U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt))) 
@@ -510,22 +585,24 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
                                                            & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
                                                               >> 2U))))))))
                 : ((1U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt))
-                    ? ((0xf80000U & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                     << 8U)) | ((0x70000U 
-                                                 & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                    << 3U)) 
-                                                | ((0xfc00U 
+                    ? (0xff000000U | ((0xf80000U & 
+                                       ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
+                                        << 8U)) | (
+                                                   (0x70000U 
                                                     & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                       << 5U)) 
-                                                   | ((0x300U 
+                                                       << 3U)) 
+                                                   | ((0xfc00U 
                                                        & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                          >> 1U)) 
-                                                      | ((0xf8U 
+                                                          << 5U)) 
+                                                      | ((0x300U 
                                                           & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                             << 3U)) 
-                                                         | (7U 
-                                                            & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                               >> 2U)))))))
+                                                             >> 1U)) 
+                                                         | ((0xf8U 
+                                                             & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
+                                                                << 3U)) 
+                                                            | (7U 
+                                                               & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
+                                                                  >> 2U))))))))
                     : ((2U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt))
                         ? ((0xf0000000U & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
                                            << 0x10U)) 
@@ -550,37 +627,32 @@ VL_INLINE_OPT void Vsimtop___024root___ico_sequent__TOP__0(Vsimtop___024root* vl
                             : ((4U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt))
                                 ? (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16)
                                 : ((5U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt))
-                                    ? ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal4_nib) 
-                                       << 0xcU) : (
-                                                   (6U 
-                                                    == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt))
-                                                    ? 
-                                                   ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal4_nib) 
-                                                    << 8U)
-                                                    : 
-                                                   (((- (IData)(
-                                                                (1U 
-                                                                 & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                                    >> 0xfU)))) 
-                                                     << 0x18U) 
-                                                    | ((0xf80000U 
+                                    ? vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_final
+                                    : ((6U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt))
+                                        ? vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_final
+                                        : (((- (IData)(
+                                                       (1U 
                                                         & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                           << 9U)) 
-                                                       | ((0x70000U 
+                                                           >> 0xfU)))) 
+                                            << 0x18U) 
+                                           | ((0xf80000U 
+                                               & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
+                                                  << 9U)) 
+                                              | ((0x70000U 
+                                                  & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
+                                                     << 4U)) 
+                                                 | ((0xf800U 
+                                                     & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
+                                                        << 6U)) 
+                                                    | ((0x700U 
+                                                        & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
+                                                           << 1U)) 
+                                                       | ((0xf8U 
                                                            & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                              << 4U)) 
-                                                          | ((0xf800U 
-                                                              & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                                 << 6U)) 
-                                                             | ((0x700U 
-                                                                 & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                                    << 1U)) 
-                                                                | ((0xf8U 
-                                                                    & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                                       << 3U)) 
-                                                                   | (7U 
-                                                                      & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
-                                                                         >> 2U)))))))))))))));
+                                                              << 3U)) 
+                                                          | (7U 
+                                                             & ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16) 
+                                                                >> 2U)))))))))))))));
     }
     vlSelf->simtop__DOT__core__DOT__replay_delayslot_miss 
         = ((IData)(vlSelf->simtop__DOT__core__DOT__replay_icache_miss) 

@@ -467,19 +467,12 @@ always @(*) begin
 		//PALETTE_RAM_START_addr: pvr_dout[31:0] =  PALETTE_RAM_START; 		// 16'h1000; RW  Palette RAM
 
 		//PALETTE_RAM_END_addr: pvr_dout[31:0] =  PALETTE_RAM_END;			// 16'h1FFC;
-		16'b0001????????????: pvr_dout[31:0] = pal_ram[ pvr_addr[11:0] ];
+		16'b0001????????????: pvr_dout[31:0] = pal_dout;
 
 		default: ;
 	endcase
 end
 /* verilator lint_on LATCH */
-
-
-// Palette RAM...
-reg [31:0] pal_ram [0:4095];
-always @(posedge clock) begin
-	if (pvr_wr && pvr_addr[12]) pal_ram[ pvr_addr[11:0] ] <= pvr_din;
-end
 
 
 wire ra_trig;
@@ -631,8 +624,17 @@ isp_parser isp_parser_inst (
 	.spany( spany ),
 	
 	.TEXT_CONTROL( TEXT_CONTROL ),		// From TEXT_CONTROL reg. (0xE4 in PVR regs).
-	.PAL_RAM_CTRL( PAL_RAM_CTRL[1:0] )	// From PAL_RAM_CTRL reg, bits [1:0].
+	.PAL_RAM_CTRL( PAL_RAM_CTRL[1:0] ),	// From PAL_RAM_CTRL reg, bits [1:0].
+	
+	.pal_addr( pvr_addr ),		// input [15:0]  pal_addr
+	.pal_din( pvr_din ),		// input [31:0]  pal_din
+	.pal_rd( pvr_rd ),			// input  pal_rd
+	.pal_wr( pvr_wr ),			// input  pal_wr
+	
+	.pal_dout( pal_dout )		// output [31:0]  pal_dout
 );
+
+wire [31:0] pal_dout;
 
 
 /*

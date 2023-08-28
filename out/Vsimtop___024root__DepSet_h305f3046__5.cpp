@@ -7,10 +7,10 @@
 #include "Vsimtop__Syms.h"
 #include "Vsimtop___024root.h"
 
-VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__4(Vsimtop___024root* vlSelf) {
+VL_INLINE_OPT void Vsimtop___024root___nba_sequent__TOP__3(Vsimtop___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vsimtop__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vsimtop___024root___nba_sequent__TOP__4\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vsimtop___024root___nba_sequent__TOP__3\n"); );
     // Body
     vlSelf->simtop__DOT__core__DOT____VdfgTmp_h6cfdb3c1__0 
         = ((IData)(vlSelf->simtop__DOT__core__DOT__e1_p1_wdst) 

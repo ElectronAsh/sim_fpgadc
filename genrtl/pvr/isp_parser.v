@@ -53,7 +53,13 @@ module isp_parser (
 	input signed [31:0] spany,
 	
 	input [31:0] TEXT_CONTROL,	// From TEXT_CONTROL reg.
-	input  [1:0] PAL_RAM_CTRL	// From PAL_RAM_CTRL reg, bits [1:0].
+	input  [1:0] PAL_RAM_CTRL,	// From PAL_RAM_CTRL reg, bits [1:0].
+	
+	input [15:0] pal_addr,
+	input [31:0] pal_din,
+	input pal_rd,
+	input pal_wr,
+	output [31:0] pal_dout
 );
 
 reg [23:0] isp_vram_addr;
@@ -435,8 +441,8 @@ else begin
 					if (inTriangle && x_ps<639 && y_ps<479 && !FX1[31] && !FX2[31] && !FX3[31] && !FY1[31] && !FY2[31] && !FY3[31]) begin
 						isp_vram_addr <= x_ps + (y_ps * 640);
 						isp_vram_wr <= 1'b1;
-						isp_vram_dout <= texel_argb;	// ABGR, for sim display.
-						//isp_vram_dout <= {8'hff, vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, Alpha boosted.
+						if (texture) isp_vram_dout <= texel_argb;					// ABGR, for sim display.
+						else isp_vram_dout <= {8'hff, vert_c_base_col_0[23:0]};		// Flat-shaded.
 					end
 					x_ps <= x_ps + 12'd1;
 				end
@@ -516,9 +522,14 @@ texture_address  texture_address_inst (
 	.tsp_inst( tsp_inst ),	// input [31:0]  tsp_inst.
 	.tcw_word( tcw_word ),	// input [31:0]  tcw_word.
 	
-	.PAL_RAM_CTRL( PAL_RAM_CTRL ),	// input from PAL_RAM_CTRL, bits [1:0].
-		
 	.TEXT_CONTROL( TEXT_CONTROL ),	// input [31:0]  TEXT_CONTROL.
+
+	.PAL_RAM_CTRL( PAL_RAM_CTRL ),	// input from PAL_RAM_CTRL, bits [1:0].		
+	.pal_addr( pal_addr ),		// input [15:0]  pal_addr
+	.pal_din( pal_din ),		// input [31:0]  pal_din
+	.pal_rd( pal_rd ),			// input  pal_rd
+	.pal_wr( pal_wr ),			// input  pal_wr
+	.pal_dout( pal_dout ),		// output [31:0]  pal_dout
 		
 	//.ui( ui ),						// input [9:0]  ui. From rasterizer/interp...
 	//.vi( vi ),						// input [9:0]  ui.
@@ -534,6 +545,294 @@ texture_address  texture_address_inst (
 
 wire [20:0] vram_word_addr;
 wire [31:0] texel_argb;
+
+endmodule
+
+
+module texture_address (
+	input clock,
+	input reset_n,
+	
+	input [31:0] isp_inst,
+	input [31:0] tsp_inst,
+	input [31:0] tcw_word,
+	
+	input [1:0] PAL_RAM_CTRL,	// From PAL_RAM_CTRL[1:0].
+	input [31:0] TEXT_CONTROL,	// From TEXT_CONTROL reg.
+	
+	input [15:0] pal_addr,
+	input [31:0] pal_din,
+	input pal_rd,
+	input pal_wr,
+	output [31:0] pal_dout,
+		
+	//input wire [9:0] ui,				// From rasterizer/interp...
+	//input wire [9:0] vi,
+		
+	output reg [20:0] vram_word_addr,	// 64-bit WORD address!
+	input [63:0] vram_din,				// Full 64-bit data for texture reads.
+	
+	output reg [31:0] texel_argb	// Final texel ARGB 8888 output.
+);
+
+reg [9:0] ui;
+reg [9:0] vi;
+
+// ISP Instruction Word.
+wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
+wire [1:0] culling_mode = isp_inst[28:27];	// 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
+wire z_write_disable    = isp_inst[26];
+wire texture            = isp_inst[25];
+wire offset             = isp_inst[24];
+wire gouraud            = isp_inst[23];
+wire uv_16_bit          = isp_inst[22];
+wire cache_bypass       = isp_inst[21];
+wire dcalc_ctrl         = isp_inst[20];
+// Bits [19:0] are reserved.
+
+// ISP/TSP Instruction Word. Bit decode, for Opaque Modifier Volume or Translucent Modified Volume...
+// (those prim types use the same culling_mode bits as above.)
+wire [2:0] volume_inst = isp_inst[31:29];
+
+
+// TSP Instruction Word...
+wire tex_u_flip = tsp_inst[18];
+wire tex_v_flip = tsp_inst[17];
+wire tex_u_clamp = tsp_inst[16];
+wire tex_v_clamp = tsp_inst[15];
+wire [2:0] tex_u_size = tsp_inst[5:3];
+wire [2:0] tex_v_size = tsp_inst[2:0];
+
+
+// Texture Control Word...
+wire mip_map = tcw_word[31];
+wire vq_comp = tcw_word[30];
+wire [2:0] pix_fmt = tcw_word[29:27];
+wire scan_order = tcw_word[26];
+wire stride_flag = tcw_word[25];
+wire [5:0] pal_selector = tcw_word[26:21];		// Used for 4BPP or 8BPP palette textures.
+wire [20:0] tex_word_addr = tcw_word[20:0];		// 64-bit WORD address!
+
+
+// TEXT_CONTROL PVR reg. (not to be confused with TCW above!).
+wire code_book_endian = TEXT_CONTROL[17];
+wire index_endian   = TEXT_CONTROL[16];
+wire [5:0] bank_bit = TEXT_CONTROL[12:8];
+wire [4:0] stride   = TEXT_CONTROL[4:0];
+
+
+// tex_u_size and tex_v_size (raw value vs actual)...
+// 0 = 8
+// 1 = 16
+// 2 = 32
+// 3 = 64
+// 4 = 128
+// 5 = 256
+// 6 = 512
+// 7 = 1024
+
+wire [9:0] ui_masked = ui & ((8<<tex_u_size)-1);
+wire [9:0] vi_masked = vi & ((8<<tex_v_size)-1);
+
+reg [19:0] twop_full = {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
+reg [19:0] twop;
+
+wire [19:0] non_twid_addr = (ui_masked + (vi_masked * (8<<tex_u_size)));
+
+reg [3:0] pal4_nib;
+reg [7:0] pal8_byte;
+reg [15:0] pix16;
+
+wire is_pal4 = (pix_fmt==3'd5);
+wire is_pal8 = (pix_fmt==3'd6);
+wire is_twid = (scan_order==1'b0);
+wire is_mipmap = mip_map && scan_order==0;
+
+reg [19:0] pix_addr_mux;
+reg [19:0] pix_addr_shift;
+
+always @(*) begin
+	twop_full = {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
+
+	if ((tex_u_size==tex_v_size) || (is_twid && mip_map) ) begin	// Square texture. (VQ textures are always square, then tex_v_size is ignored).
+		case (tex_u_size)	// Using tex_u_size here. Doesn't really matter which one we use?
+			0: twop = {14'b0, twop_full[5:0]};	// 8x8
+			1: twop = {12'b0, twop_full[7:0]};	// 16x16
+			2: twop = {10'b0, twop_full[9:0]};	// 32x32
+			3: twop = {8'b0, twop_full[11:0]};	// 64x64
+			4: twop = {6'b0, twop_full[13:0]};	// 128x128
+			5: twop = {4'b0, twop_full[15:0]};	// 256x256
+			6: twop = {2'b0, twop_full[17:0]};	// 512x512
+			7: twop = twop_full[19:0];			// 1024x1024
+		endcase
+	end
+	else if (tex_u_size > tex_v_size) begin		// Rectangular texture. U size greater than V size.
+		case (tex_v_size)
+			0: twop = {7'b0, ui_masked[9:3] ,twop_full[5:0]};	// V size 8 
+			1: twop = {6'b0, ui_masked[9:4] ,twop_full[7:0]};	// V size 16
+			2: twop = {5'b0, ui_masked[9:5] ,twop_full[9:0]};	// V size 32
+			3: twop = {4'b0, ui_masked[9:6] ,twop_full[11:0]};	// V size 64
+			4: twop = {3'b0, ui_masked[9:7] ,twop_full[13:0]};	// V size 128
+			5: twop = {2'b0, ui_masked[9:8] ,twop_full[15:0]};	// V size 256
+			6: twop = {1'b0, ui_masked[9]   ,twop_full[17:0]};	// V size 512
+			7: twop = twop_full[19:0];							// V size 1024
+		endcase
+	end
+	else if (tex_v_size > tex_u_size) begin // Rectangular. V size greater than U size.
+		case (tex_u_size)
+			0: twop = {7'b0, vi_masked[9:3] ,twop_full[5:0]};	// U size 8
+			1: twop = {6'b0, vi_masked[9:4] ,twop_full[7:0]};	// U size 16
+			2: twop = {5'b0, vi_masked[9:5] ,twop_full[9:0]};	// U size 32
+			3: twop = {4'b0, vi_masked[9:6] ,twop_full[11:0]};	// U size 64
+			4: twop = {3'b0, vi_masked[9:7] ,twop_full[13:0]};	// U size 128
+			5: twop = {2'b0, vi_masked[9:8] ,twop_full[15:0]};	// U size 256
+			6: twop = {1'b0, vi_masked[9]   ,twop_full[17:0]};	// U size 512
+			7: twop = twop_full[19:0];							// U size 1024
+		endcase
+	end
+
+	//$display("ui: %d  vi: %d  tex_u_size (raw): %d  tex_v_size (raw): %d  twop 0x%08X  twop_full: 0x%08X", ui, vi, tex_u_size, tex_v_size, twop, twop_full);
+end
+
+
+reg [19:0] mipmap_byte_offs_vq;
+reg [19:0] mipmap_byte_offs_norm;
+//reg [19:0] mipmap_byte_offs_pal;	// This table is identical to norm[]>>1, so I ditched it. ElectronAsh.
+
+reg [19:0] mipmap_byte_offs;
+
+
+// Really wide wire here, but the max stride_full value is 34,359,738,368. lol
+//
+// I'm sure the real PVR doesn't pre-calc stride-full this way, but just uses the "stride" value directly. ElectronAsh.
+//
+wire [35:0] stride_full = 16<<stride;	// stride 0==invalid (default?). stride 1==32. stride 2=64. stride 3=96. stride 4=128, and so-on.
+
+always @(*) begin
+	// NOTE: Need to add 3 to tex_u_size in all of these LUTs, because the mipmap table starts at a 1x1 texture size, but tex_u_size==0 is the 8x8 texture size.
+	case (tex_u_size+3)
+		0:  mipmap_byte_offs_norm = 20'h6; 		// 1 texel
+		1:  mipmap_byte_offs_norm = 20'h8; 		// 2 texels
+		2:  mipmap_byte_offs_norm = 20'h10; 	// 4 texels
+		3:  mipmap_byte_offs_norm = 20'h30; 	// 8 texels
+		4:  mipmap_byte_offs_norm = 20'hb0; 	// 16 texels
+		5:  mipmap_byte_offs_norm = 20'h2b0; 	// 32 texels
+		6:  mipmap_byte_offs_norm = 20'hab0; 	// 64 texels
+		7:  mipmap_byte_offs_norm = 20'h2ab0; 	// 128 texels
+		8:  mipmap_byte_offs_norm = 20'haab0; 	// 256 texels
+		9:  mipmap_byte_offs_norm = 20'h2aab0; 	// 512 texels
+		10: mipmap_byte_offs_norm = 20'haaab0; 	// 1024 texels
+	endcase
+
+	case (tex_u_size+3)
+		0:  mipmap_byte_offs_vq = 20'h0; 		// 1 texel
+		1:  mipmap_byte_offs_vq = 20'h1; 		// 2 texels
+		2:  mipmap_byte_offs_vq = 20'h2; 		// 4 texels
+		3:  mipmap_byte_offs_vq = 20'h6; 		// 8 texels
+		4:  mipmap_byte_offs_vq = 20'h16; 		// 16 texels
+		5:  mipmap_byte_offs_vq = 20'h56; 		// 32 texels
+		6:  mipmap_byte_offs_vq = 20'h156; 		// 64 texels
+		7:  mipmap_byte_offs_vq = 20'h556; 		// 128 texels
+		8:  mipmap_byte_offs_vq = 20'h1556; 	// 256 texels
+		9:  mipmap_byte_offs_vq = 20'h5556; 	// 512 texels
+		10: mipmap_byte_offs_vq = 20'h15556; 	// 1024 texels
+	endcase
+
+	mipmap_byte_offs = (!is_mipmap) ? 0 :
+						  (vq_comp) ? (mipmap_byte_offs_vq) :
+				(is_pal4 | is_pal8) ? (mipmap_byte_offs_norm>>1) :	// Note: The mipmap byte offset table for Palettes is just mipmap_byte_offs_norm[]>>1.
+									   mipmap_byte_offs_norm;
+	
+	pix_addr_mux = (is_twid || is_pal4 || is_pal8 || vq_comp) ? (mipmap_byte_offs + twop) :
+															    (mipmap_byte_offs + non_twid_addr);
+																
+	// Shift pix_addr_mux, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
+	pix_addr_shift = (vq_comp) ? (pix_addr_mux>>5) :	// VQ     = 32 TEXELS per 64-bit word. (1 BYTE per four TEXELS).
+					 (is_pal4) ? (pix_addr_mux>>4) :	// PAL4   = 16 TEXELS per 64-bit word. (4BPP).
+					 (is_pal8) ? (pix_addr_mux>>3) :	// PAL8   = 8  TEXELS per 64-bit word. (8BPP).
+								 (pix_addr_mux>>2);		// Uncomp = 4  TEXELS per 64-bit word (16BPP). (Twiddled or Non-Twiddled).
+	
+	vram_word_addr = tex_word_addr + pix_addr_shift;	// Generate 64-bit WORD address for VRAM texture reads.
+	
+	// Select the current texel from each part of the 64-bit word...
+	//pal4_nib  = vram_din[ (pix_addr_mux[3:0]<<2) +:  4];
+	//pal8_byte = vram_din[ (pix_addr_mux[2:0]<<3) +:  8];
+	//pix16     = vram_din[ (pix_addr_mux[1:0]<<4) +: 16];
+	
+	case (pix_addr_mux[3:0])
+		0:  pal4_nib = vram_din[03:00];
+		1:  pal4_nib = vram_din[07:04];
+		2:  pal4_nib = vram_din[11:08];
+		3:  pal4_nib = vram_din[15:12];
+		4:  pal4_nib = vram_din[19:16];
+		5:  pal4_nib = vram_din[23:20];
+		6:  pal4_nib = vram_din[27:24];
+		7:  pal4_nib = vram_din[31:28];
+		8:  pal4_nib = vram_din[35:32];
+		9:  pal4_nib = vram_din[39:36];
+		10: pal4_nib = vram_din[43:40];
+		11: pal4_nib = vram_din[47:44];
+		12: pal4_nib = vram_din[51:48];
+		13: pal4_nib = vram_din[55:52];
+		14: pal4_nib = vram_din[59:56];
+		15: pal4_nib = vram_din[63:60];
+	endcase
+
+	case (pix_addr_mux[2:0])
+		0:  pal8_byte = vram_din[07:00];
+		1:  pal8_byte = vram_din[15:08];
+		2:  pal8_byte = vram_din[23:16];
+		3:  pal8_byte = vram_din[31:24];
+		4:  pal8_byte = vram_din[39:32];
+		5:  pal8_byte = vram_din[47:40];
+		6:  pal8_byte = vram_din[55:48];
+		7:  pal8_byte = vram_din[63:56];
+	endcase
+
+	case (pix_addr_mux[1:0])
+		0: pix16 = vram_din[15:00];
+		1: pix16 = vram_din[31:16];
+		2: pix16 = vram_din[47:32];
+		3: pix16 = vram_din[63:48];
+	endcase
+	
+	if (pix_fmt==5) pal_raw = pal_ram[ {pal_selector[5:0], pal4_nib}  ];
+	if (pix_fmt==6) pal_raw = pal_ram[ {pal_selector[5:4], pal8_byte} ];	
+	
+	case (PAL_RAM_CTRL)
+		0: pal_final = { {8{pal_raw[15]}}, pal_raw[14:10],pal_raw[14:12], pal_raw[9:5],pal_raw[9:7], pal_raw[4:0],pal_raw[4:2] };				// ARGB 1555 
+		1: pal_final = { 8'hff, pal_raw[15:11],pal_raw[15:13], pal_raw[10:5],pal_raw[10:9], pal_raw[4:0],pal_raw[4:2] };						//  RGB 565
+		2: pal_final = { pal_raw[15:12],pal_raw[15:12], pal_raw[11:8],pal_raw[11:8], pal_raw[7:4],pal_raw[7:4],  pal_raw[3:0],pal_raw[3:0] };	// ARGB 4444
+		3: pal_final = pal_raw;		// ARGB 8888
+	endcase
+	
+	// Convert all texture pixel formats to ARGB8888.
+	// (fill missing lower colour bits using some of the upper colour bits.)
+	case (pix_fmt)
+		0: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7], pix16[4:0],pix16[4:2] };			// ARGB 1555 
+		1: texel_argb = { 8'hff, pix16[15:11],pix16[15:13], pix16[10:5],pix16[10:9], pix16[4:0],pix16[4:2] };					//  RGB 565
+		2: texel_argb = { pix16[15:12],pix16[15:12], pix16[11:8],pix16[11:8], pix16[7:4],pix16[7:4],  pix16[3:0],pix16[3:0] };	// ARGB 4444
+		3: texel_argb = pix16;	// ARGB8888 direct from pallete. TODO. YUV422 (32-bit Y8 U8 Y8 V8).
+		4: texel_argb = pix16;	// TODO. Bump Map (16-bit S8 R8).
+		5: texel_argb = pal_final;	// TODO. Palette look-up. PAL4 or PAL8 can be ARGB1555, RGB565, ARGB4444, or even ARGB8888.
+		6: texel_argb = pal_final;	// Palette format read from PAL_RAM_CTRL[1:0].
+		7: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7],	pix16[4:0],pix16[4:2] };			// Reserved (considered ARGB 1555).
+	endcase
+end
+
+reg [31:0] pal_raw;
+reg [31:0] pal_final;
+
+// Palette RAM...
+reg [31:0] pal_ram [0:4095];
+always @(posedge clock) begin
+	if (pal_addr[12] && pal_wr) pal_ram[ pal_addr[11:2] ] <= pal_din;
+end
+
+//assign pal_dout = pal_ram[ pal_addr[11:2] ];
+
+
+endmodule
 
 
 // Aa = ((v3_a - v1_a) * (v2_y - v1_y) - (v2_a - v1_a) * (v3_y - v1_y));
@@ -566,7 +865,6 @@ edge_calc  edge_calc_c1 (
 	.interp( interp )
 );
 
-
 edge_calc  edge_calc_c2 (
 	.v1_x( v1_x ),
 	.v1_y( v1_y ),
@@ -593,7 +891,6 @@ edge_calc  edge_calc_c2 (
 	.interp( interp )
 );
 
-
 edge_calc  edge_calc_c3 (
 	.v1_x( v1_x ),
 	.v1_y( v1_y ),
@@ -619,6 +916,32 @@ edge_calc  edge_calc_c3 (
 	.y( y ),
 	.interp( interp )
 );
+*/
+
+/*
+module depth_compare (
+	input [2:0] depth_comp,
+	
+	input [22:0] old_z,
+	input [22:0] invW,
+	
+	output reg depth_allow
+);
+
+always @* begin
+	case (depth_comp)
+		0: depth_allow = 0;					// Never.
+		1: depth_allow = (invW <  old_z);	// Less.
+		2: depth_allow = (invW == old_z);	// Equal.
+		3: depth_allow = (invW <= old_z);	// Less or Equal
+		4: depth_allow = (invW >  old_z);	// Greater.
+		5: depth_allow = (invW != old_z);	// Not Equal.
+		6: depth_allow = (invW >= old_z);	// Greater or Equal.
+		7: depth_allow = 1;					// Always
+	endcase
+end
+
+endmodule
 */
 
 /*
@@ -918,293 +1241,3 @@ depth_compare depth_compare_inst31 (
 	.depth_allow( allow_31 )		// output depth_allow
 );
 */
-
-
-endmodule
-
-/*
-module depth_compare (
-	input [2:0] depth_comp,
-	
-	input [22:0] old_z,
-	input [22:0] invW,
-	
-	output reg depth_allow
-);
-
-always @* begin
-	case (depth_comp)
-		0: depth_allow = 0;					// Never.
-		1: depth_allow = (invW <  old_z);	// Less.
-		2: depth_allow = (invW == old_z);	// Equal.
-		3: depth_allow = (invW <= old_z);	// Less or Equal
-		4: depth_allow = (invW >  old_z);	// Greater.
-		5: depth_allow = (invW != old_z);	// Not Equal.
-		6: depth_allow = (invW >= old_z);	// Greater or Equal.
-		7: depth_allow = 1;					// Always
-	endcase
-end
-
-endmodule
-*/
-
-module texture_address (
-	input clock,
-	input reset_n,
-	
-	input [31:0] isp_inst,
-	input [31:0] tsp_inst,
-	input [31:0] tcw_word,
-	
-	input [1:0] PAL_RAM_CTRL,	// From PAL_RAM_CTRL[1:0].
-	input [31:0] TEXT_CONTROL,	// From TEXT_CONTROL reg.
-		
-	//input wire [9:0] ui,				// From rasterizer/interp...
-	//input wire [9:0] vi,
-		
-	output reg [20:0] vram_word_addr,	// 64-bit WORD address!
-	input [63:0] vram_din,				// Full 64-bit data for texture reads.
-	
-	output reg [31:0] texel_argb	// Final texel ARGB 8888 output.
-);
-
-reg [9:0] ui;
-reg [9:0] vi;
-
-// ISP Instruction Word.
-wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
-wire [1:0] culling_mode = isp_inst[28:27];	// 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
-wire z_write_disable    = isp_inst[26];
-wire texture            = isp_inst[25];
-wire offset             = isp_inst[24];
-wire gouraud            = isp_inst[23];
-wire uv_16_bit          = isp_inst[22];
-wire cache_bypass       = isp_inst[21];
-wire dcalc_ctrl         = isp_inst[20];
-// Bits [19:0] are reserved.
-
-// ISP/TSP Instruction Word. Bit decode, for Opaque Modifier Volume or Translucent Modified Volume...
-// (those prim types use the same culling_mode bits as above.)
-wire [2:0] volume_inst = isp_inst[31:29];
-
-
-// TSP Instruction Word...
-wire tex_u_flip = tsp_inst[18];
-wire tex_v_flip = tsp_inst[17];
-wire tex_u_clamp = tsp_inst[16];
-wire tex_v_clamp = tsp_inst[15];
-wire [2:0] tex_u_size = tsp_inst[5:3];
-wire [2:0] tex_v_size = tsp_inst[2:0];
-
-
-// Texture Control Word...
-wire mip_map = tcw_word[31];
-wire vq_comp = tcw_word[30];
-wire [2:0] pix_fmt = tcw_word[29:27];
-wire scan_order = tcw_word[26];
-wire stride_flag = tcw_word[25];
-wire [5:0] pal_selector = tcw_word[26:21];		// Used for 4BPP or 8BPP palette textures.
-wire [20:0] tex_word_addr = tcw_word[20:0];		// 64-bit WORD address!
-
-
-// TEXT_CONTROL PVR reg. (not to be confused with TCW above!).
-wire code_book_endian = TEXT_CONTROL[17];
-wire index_endian   = TEXT_CONTROL[16];
-wire [5:0] bank_bit = TEXT_CONTROL[12:8];
-wire [4:0] stride   = TEXT_CONTROL[4:0];
-
-
-// tex_u_size and tex_v_size (raw value vs actual)...
-// 0 = 8
-// 1 = 16
-// 2 = 32
-// 3 = 64
-// 4 = 128
-// 5 = 256
-// 6 = 512
-// 7 = 1024
-
-wire [9:0] ui_masked = ui & ((8<<tex_u_size)-1);
-wire [9:0] vi_masked = vi & ((8<<tex_v_size)-1);
-
-reg [19:0] twop_full;
-reg [19:0] twop;
-
-wire [19:0] non_twid_addr = (ui_masked + (vi_masked * (8<<tex_u_size)));
-
-reg [3:0] pal4_nib;
-reg [7:0] pal8_byte;
-reg [15:0] pix16;
-
-wire [2:0] col_fmt = (is_pal4 || is_pal8) ? PAL_RAM_CTRL :	// PAL_RAM_CTRL[1:0] can only be 0: ARGB1555, 1: ARGB565, 2: ARGB4444, 3: ARGB8888.
-											pix_fmt;		// pix_fmt[2:0] comes from tcw_word[29:27].
-
-wire is_pal4 = (pix_fmt==3'd5);
-wire is_pal8 = (pix_fmt==3'd6);
-wire is_twid = (scan_order==1'b0);
-wire is_mipmap = mip_map && scan_order==0;
-
-reg [19:0] pix_addr_mux;
-reg [19:0] pix_addr_shift;
-
-always @(clock) begin
-	twop_full <= {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
-
-	if ((tex_u_size==tex_v_size) || (scan_order==0 && mip_map) ) begin	// Square texture. (VQ textures are always square, then tex_v_size is ignored).
-		case (tex_u_size)	// Using tex_u_size here. Doesn't really matter which one we use?
-			0: twop <= {14'b0, twop_full[5:0]};	// 8x8
-			1: twop <= {12'b0, twop_full[7:0]};	// 16x16
-			2: twop <= {10'b0, twop_full[9:0]};	// 32x32
-			3: twop <= {8'b0, twop_full[11:0]};	// 64x64
-			4: twop <= {6'b0, twop_full[13:0]};	// 128x128
-			5: twop <= {4'b0, twop_full[15:0]};	// 256x256
-			6: twop <= {2'b0, twop_full[17:0]};	// 512x512
-			7: twop <= twop_full[19:0];			// 1024x1024
-		endcase
-	end
-	else if (tex_u_size > tex_v_size) begin		// Rectangular texture. U size greater than V size.
-		case (tex_v_size)
-			0: twop <= {7'b0, ui_masked[9:3] ,twop_full[5:0]};	// V size 8 
-			1: twop <= {6'b0, ui_masked[9:4] ,twop_full[7:0]};	// V size 16
-			2: twop <= {5'b0, ui_masked[9:5] ,twop_full[9:0]};	// V size 32
-			3: twop <= {4'b0, ui_masked[9:6] ,twop_full[11:0]};	// V size 64
-			4: twop <= {3'b0, ui_masked[9:7] ,twop_full[13:0]};	// V size 128
-			5: twop <= {2'b0, ui_masked[9:8] ,twop_full[15:0]};	// V size 256
-			6: twop <= {1'b0, ui_masked[9]   ,twop_full[17:0]};	// V size 512
-			7: twop <= twop_full[19:0];							// V size 1024
-		endcase
-	end
-	else if (tex_v_size > tex_u_size) begin // Rectangular. V size greater than U size.
-		case (tex_u_size)
-			0: twop <= {7'b0, vi_masked[9:3] ,twop_full[5:0]};	// U size 8
-			1: twop <= {6'b0, vi_masked[9:4] ,twop_full[7:0]};	// U size 16
-			2: twop <= {5'b0, vi_masked[9:5] ,twop_full[9:0]};	// U size 32
-			3: twop <= {4'b0, vi_masked[9:6] ,twop_full[11:0]};	// U size 64
-			4: twop <= {3'b0, vi_masked[9:7] ,twop_full[13:0]};	// U size 128
-			5: twop <= {2'b0, vi_masked[9:8] ,twop_full[15:0]};	// U size 256
-			6: twop <= {1'b0, vi_masked[9]   ,twop_full[17:0]};	// U size 512
-			7: twop <= twop_full[19:0];							// U size 1024
-		endcase
-	end
-
-	//$display("ui: %d  vi: %d  tex_u_size (raw): %d  tex_v_size (raw): %d  twop 0x%08X  twop_full: 0x%08X", ui, vi, tex_u_size, tex_v_size, twop, twop_full);
-end
-
-
-reg [19:0] mipmap_byte_offs_vq;
-reg [19:0] mipmap_byte_offs_norm;
-//reg [19:0] mipmap_byte_offs_pal;	// This table is identical to norm[]>>1, so I ditched it. ElectronAsh.
-
-reg [19:0] mipmap_byte_offs;
-
-
-// Really wide wire here, but the max stride_full value is 34,359,738,368. lol
-//
-// I'm sure the real PVR doesn't pre-calc stride-full this way, but just uses the "stride" value directly. ElectronAsh.
-//
-wire [35:0] stride_full = 16<<stride;	// stride 0==invalid (default?). stride 1==32. stride 2=64. stride 3=96. stride 4=128, and so-on.
-
-always @(*) begin
-	// NOTE: Need to add 3 to tex_u_size in all of these LUTs, because the mipmap table starts at a 1x1 texture size, but tex_u_size==0 is the 8x8 texture size.
-	case (tex_u_size+3)
-		0:  mipmap_byte_offs_norm = 20'h6; 		// 1 texel
-		1:  mipmap_byte_offs_norm = 20'h8; 		// 2 texels
-		2:  mipmap_byte_offs_norm = 20'h10; 	// 4 texels
-		3:  mipmap_byte_offs_norm = 20'h30; 	// 8 texels
-		4:  mipmap_byte_offs_norm = 20'hb0; 	// 16 texels
-		5:  mipmap_byte_offs_norm = 20'h2b0; 	// 32 texels
-		6:  mipmap_byte_offs_norm = 20'hab0; 	// 64 texels
-		7:  mipmap_byte_offs_norm = 20'h2ab0; 	// 128 texels
-		8:  mipmap_byte_offs_norm = 20'haab0; 	// 256 texels
-		9:  mipmap_byte_offs_norm = 20'h2aab0; 	// 512 texels
-		10: mipmap_byte_offs_norm = 20'haaab0; 	// 1024 texels
-	endcase
-
-	case (tex_u_size+3)
-		0:  mipmap_byte_offs_vq = 20'h0; 		// 1 texel
-		1:  mipmap_byte_offs_vq = 20'h1; 		// 2 texels
-		2:  mipmap_byte_offs_vq = 20'h2; 		// 4 texels
-		3:  mipmap_byte_offs_vq = 20'h6; 		// 8 texels
-		4:  mipmap_byte_offs_vq = 20'h16; 		// 16 texels
-		5:  mipmap_byte_offs_vq = 20'h56; 		// 32 texels
-		6:  mipmap_byte_offs_vq = 20'h156; 		// 64 texels
-		7:  mipmap_byte_offs_vq = 20'h556; 		// 128 texels
-		8:  mipmap_byte_offs_vq = 20'h1556; 	// 256 texels
-		9:  mipmap_byte_offs_vq = 20'h5556; 	// 512 texels
-		10: mipmap_byte_offs_vq = 20'h15556; 	// 1024 texels
-	endcase
-
-	mipmap_byte_offs = (!is_mipmap) ? 0 :
-						  (vq_comp) ? (mipmap_byte_offs_vq) :
-				(is_pal4 | is_pal8) ? (mipmap_byte_offs_norm>>1) :	// Note: The mipmap byte offset table for Palettes is just mipmap_byte_offs_norm[]>>1.
-									   mipmap_byte_offs_norm;
-	
-	pix_addr_mux = (is_twid || is_pal4 || is_pal8 || vq_comp) ? (mipmap_byte_offs + twop) :
-															    (mipmap_byte_offs + non_twid_addr);
-																
-	// Shift pix_addr_mux, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
-	pix_addr_shift = (vq_comp) ? (pix_addr_mux>>5) :	// VQ     = 32 TEXELS per 64-bit word. (1 BYTE per four TEXELS).
-					 (is_pal4) ? (pix_addr_mux>>4) :	// PAL4   = 16 TEXELS per 64-bit word. (4BPP).
-					 (is_pal8) ? (pix_addr_mux>>3) :	// PAL8   = 8  TEXELS per 64-bit word. (8BPP).
-								 (pix_addr_mux>>2);		// Uncomp = 4  TEXELS per 64-bit word (16BPP). (Twiddled or Non-Twiddled).
-	
-	vram_word_addr = tex_word_addr + pix_addr_shift;	// Generate 64-bit WORD address for VRAM texture reads.
-	
-	// Select the current texel from each part of the 64-bit word...
-	//pal4_nib  = vram_din[ (pix_addr_mux[3:0]<<2) +:  4];
-	//pal8_byte = vram_din[ (pix_addr_mux[2:0]<<3) +:  8];
-	//pix16     = vram_din[ (pix_addr_mux[1:0]<<4) +: 16];
-	
-	case (pix_addr_mux[3:0])
-		0:  pal4_nib = vram_din[03:00];
-		1:  pal4_nib = vram_din[07:04];
-		2:  pal4_nib = vram_din[11:08];
-		3:  pal4_nib = vram_din[15:12];
-		4:  pal4_nib = vram_din[19:16];
-		5:  pal4_nib = vram_din[23:20];
-		6:  pal4_nib = vram_din[27:24];
-		7:  pal4_nib = vram_din[31:28];
-		8:  pal4_nib = vram_din[35:32];
-		9:  pal4_nib = vram_din[39:36];
-		10: pal4_nib = vram_din[43:40];
-		11: pal4_nib = vram_din[47:44];
-		12: pal4_nib = vram_din[51:48];
-		13: pal4_nib = vram_din[55:52];
-		14: pal4_nib = vram_din[59:56];
-		15: pal4_nib = vram_din[63:60];
-	endcase
-
-	case (pix_addr_mux[2:0])
-		0:  pal4_nib = vram_din[07:00];
-		1:  pal4_nib = vram_din[15:08];
-		2:  pal4_nib = vram_din[23:16];
-		3:  pal4_nib = vram_din[31:24];
-		4:  pal4_nib = vram_din[39:32];
-		5:  pal4_nib = vram_din[47:40];
-		6:  pal4_nib = vram_din[55:48];
-		7:  pal4_nib = vram_din[63:56];
-	endcase
-
-	case (pix_addr_mux[1:0])
-		0: pix16 = vram_din[15:00];
-		1: pix16 = vram_din[31:16];
-		2: pix16 = vram_din[47:32];
-		3: pix16 = vram_din[63:48];
-	endcase
-
-	// Convert all texture pixel formats to ARGB8888.
-	// (fill missing lower colour bits using some of the upper colour bits.)
-	case (pix_fmt)
-		0: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7], pix16[4:0],pix16[4:2] };			// ARGB 1555 
-		1: texel_argb = { pix16[15:11],pix16[15:13], pix16[10:5],pix16[10:9], pix16[4:0],pix16[4:2] };							//  RGB 565
-		2: texel_argb = { pix16[15:12],pix16[15:12], pix16[11:8],pix16[11:8], pix16[7:4],pix16[7:4],  pix16[3:0],pix16[3:0] };	// ARGB 4444
-		3: texel_argb = pix16;	// TODO. YUV422 (32-bit Y8 U8 Y8 V8).
-		4: texel_argb = pix16;	// TODO. Bump Map (16-bit S8 R8).
-		5: texel_argb = pal4_nib<<12;	// TODO. Palette look-up. PAL4 can be ARGB1555, RGB565, or even ARGB8888. Palette format read from PAL_RAM_CTRL[1:0].
-		6: texel_argb = pal4_nib<<8;	// TODO. Palette look-up. PAL8 can be ARGB1555, RGB565, or even ARGB8888. Palette format read from PAL_RAM_CTRL[1:0].
-		7: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7],	pix16[4:0],pix16[4:2] };			// Reserved (considered ARGB 1555).
-	endcase
-end
-
-
-endmodule
