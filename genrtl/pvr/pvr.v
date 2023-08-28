@@ -559,9 +559,8 @@ wire isp_vram_wr;
 wire [23:0] isp_vram_word_addr;
 
 // Keep this as 32-bit for now. Only textures are read aas 64-bit wide.
-wire [63:0] isp_vram_din;
+wire [63:0] isp_vram_din = vram_din;
 wire [31:0] isp_vram_dout;
-assign isp_vram_din = vram_din[31:0];
 
 wire isp_entry_valid;
 

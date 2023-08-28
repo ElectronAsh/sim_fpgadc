@@ -435,8 +435,8 @@ else begin
 			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
 				//if (x_ps < minx+spanx) begin	// Per-poly rendering.
 				if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
-					if (inTriangle /*&& x_ps<639 && y_ps<479 && !FX1[31] && !FX2[31] && !FX3[31] && !FY1[31] && !FY2[31] && !FY3[31]*/) begin
-						isp_fb_addr <= x_ps + (y_ps * 640);
+					if (inTriangle && x_ps<639 && y_ps<479 && !FX1[31] && !FX2[31] && !FX3[31] && !FY1[31] && !FY2[31] && !FY3[31]) begin
+						isp_fb_addr   <= x_ps + (y_ps * 640);
 						isp_vram_addr <= x_ps + (y_ps * 640);
 						isp_vram_wr <= 1'b1;
 						//isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.
@@ -1140,7 +1140,7 @@ always @(*) begin
 
 	mipmap_byte_offs = (!is_mipmap) ? 0 :
 						  (vq_comp) ? (mipmap_byte_offs_vq) :
-				(is_pal4 | is_pal8) ? (mipmap_byte_offs_norm>>1) :	// Note: The mipmap byte offset table for Palettes is just norm>>1.
+				(is_pal4 | is_pal8) ? (mipmap_byte_offs_norm>>1) :	// Note: The mipmap byte offset table for Palettes is just mipmap_byte_offs_norm[]>>1.
 									   mipmap_byte_offs_norm;
 	
 	pix_addr_mux = (is_twid || is_pal4 || is_pal8 || vq_comp) ? (mipmap_byte_offs + twop) :
@@ -1155,9 +1155,46 @@ always @(*) begin
 	vram_word_addr = tex_word_addr + pix_addr_shift;	// Generate 64-bit WORD address for VRAM texture reads.
 	
 	// Select the current texel from each part of the 64-bit word...
-	pal4_nib  = vram_din[ (pix_addr_mux[3:0]<<16) +:  4];
-	pal8_byte = vram_din[ (pix_addr_mux[2:0]<<8)  +:  8];
-	pix16     = vram_din[ (pix_addr_mux[1:0]<<4)  +: 16];	
+	//pal4_nib  = vram_din[ (pix_addr_mux[3:0]<<2) +:  4];
+	//pal8_byte = vram_din[ (pix_addr_mux[2:0]<<3) +:  8];
+	//pix16     = vram_din[ (pix_addr_mux[1:0]<<4) +: 16];
+	
+	case (pix_addr_mux[3:0])
+		0:  pal4_nib = vram_din[35:32];
+		1:  pal4_nib = vram_din[39:36];
+		2:  pal4_nib = vram_din[43:40];
+		3:  pal4_nib = vram_din[47:44];
+		4:  pal4_nib = vram_din[51:48];
+		5:  pal4_nib = vram_din[55:52];
+		6:  pal4_nib = vram_din[59:56];
+		7:  pal4_nib = vram_din[63:60];
+		8:  pal4_nib = vram_din[03:00];
+		9:  pal4_nib = vram_din[07:04];
+		10: pal4_nib = vram_din[11:08];
+		11: pal4_nib = vram_din[15:12];
+		12: pal4_nib = vram_din[19:16];
+		13: pal4_nib = vram_din[23:20];
+		14: pal4_nib = vram_din[27:24];
+		15: pal4_nib = vram_din[31:28];
+	endcase
+
+	case (pix_addr_mux[2:0])
+		0:  pal4_nib = vram_din[39:32];
+		1:  pal4_nib = vram_din[47:40];
+		2:  pal4_nib = vram_din[55:48];
+		3:  pal4_nib = vram_din[63:56];
+		4:  pal4_nib = vram_din[07:00];
+		5:  pal4_nib = vram_din[15:08];
+		6:  pal4_nib = vram_din[23:16];
+		7:  pal4_nib = vram_din[31:24];
+	endcase
+
+	case (pix_addr_mux[1:0])
+		0: pix16 = vram_din[47:32];
+		1: pix16 = vram_din[63:48];
+		2: pix16 = vram_din[15:00];
+		3: pix16 = vram_din[31:16];
+	endcase
 
 	// Convert all texture pixel formats to ARGB8888.
 	// (fill missing lower colour bits using some of the upper colour bits.)
@@ -1165,8 +1202,8 @@ always @(*) begin
 		0: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7], pix16[4:0],pix16[4:2] };			// ARGB 1555 
 		1: texel_argb = { pix16[15:11],pix16[15:13], pix16[10:5],pix16[10:9], pix16[4:0],pix16[4:2] };							//  RGB 565
 		2: texel_argb = { pix16[15:12],pix16[15:12], pix16[11:8],pix16[11:8], pix16[7:4],pix16[7:4],  pix16[3:0],pix16[3:0] };	// ARGB 4444
-		3: texel_argb = pix16	;	// TODO. YUV422 (32-bit Y8 U8 Y8 V8).
-		4: texel_argb = pix16	;	// TODO. Bump Map (16-bit S8 R8).
+		3: texel_argb = pix16;	// TODO. YUV422 (32-bit Y8 U8 Y8 V8).
+		4: texel_argb = pix16;	// TODO. Bump Map (16-bit S8 R8).
 		5: texel_argb = pal4_nib<<12;	// TODO. Palette look-up. PAL4 can be ARGB1555, RGB565, or even ARGB8888. Palette format read from PAL_RAM_CTRL[1:0].
 		6: texel_argb = pal4_nib<<8;	// TODO. Palette look-up. PAL8 can be ARGB1555, RGB565, or even ARGB8888. Palette format read from PAL_RAM_CTRL[1:0].
 		7: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7],	pix16[4:0],pix16[4:2] };			// Reserved (considered ARGB 1555).

@@ -49,6 +49,8 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__1(Vsimtop___024root* vlS
           ^ (vlSelf->simtop__DOT__core__DOT__e1_reg_mtu1_oph 
              >> 0x1fU)) ? (IData)(vlSelf->simtop__DOT__core__DOT__mtu1__DOT____VdfgTmp_h9fa499bc__0)
           : (IData)(vlSelf->simtop__DOT__core__DOT__mtu1__DOT__ltu));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__texel_argb 
+        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texel_argb;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_word_addr 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vram_word_addr;
     vlSelf->simtop__DOT__pvr__DOT__isp_vram_word_addr 
