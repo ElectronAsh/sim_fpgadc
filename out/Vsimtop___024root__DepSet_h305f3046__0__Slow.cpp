@@ -6482,22 +6482,16 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
          | (7U == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux)))) {
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal4_nib 
             = (0xfU & ((0U == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                        ? (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                   >> 0x20U)) : ((1U 
-                                                  == 
-                                                  (0xfU 
-                                                   & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                                                  ? (IData)(
-                                                            (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                             >> 0x24U))
-                                                  : 
-                                                 ((2U 
+                        ? (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_vram_din)
+                        : ((1U == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
+                            ? (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                       >> 4U)) : ((2U 
                                                    == 
                                                    (0xfU 
                                                     & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                    ? (IData)(
                                                              (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                              >> 0x28U))
+                                                              >> 8U))
                                                    : 
                                                   ((3U 
                                                     == 
@@ -6505,7 +6499,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                      & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                     ? (IData)(
                                                               (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                               >> 0x2cU))
+                                                               >> 0xcU))
                                                     : 
                                                    ((4U 
                                                      == 
@@ -6513,7 +6507,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                       & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                      ? (IData)(
                                                                (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                >> 0x30U))
+                                                                >> 0x10U))
                                                      : 
                                                     ((5U 
                                                       == 
@@ -6521,7 +6515,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                        & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                       ? (IData)(
                                                                 (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                 >> 0x34U))
+                                                                 >> 0x14U))
                                                       : 
                                                      ((6U 
                                                        == 
@@ -6529,10 +6523,10 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                         & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                        ? (IData)(
                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                  >> 0x38U))
+                                                                  >> 0x18U))
                                                        : (IData)(
                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                  >> 0x3cU))))))))));
+                                                                  >> 0x1cU))))))))));
     } else if (((((((((8U == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux)) 
                       | (9U == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) 
                      | (0xaU == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) 
@@ -6543,16 +6537,22 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                 | (0xfU == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux)))) {
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal4_nib 
             = (0xfU & ((8U == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                        ? (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_vram_din)
-                        : ((9U == (0xfU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                            ? (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                       >> 4U)) : ((0xaU 
+                        ? (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                   >> 0x20U)) : ((9U 
+                                                  == 
+                                                  (0xfU 
+                                                   & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
+                                                  ? (IData)(
+                                                            (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                                             >> 0x24U))
+                                                  : 
+                                                 ((0xaU 
                                                    == 
                                                    (0xfU 
                                                     & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                    ? (IData)(
                                                              (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                              >> 8U))
+                                                              >> 0x28U))
                                                    : 
                                                   ((0xbU 
                                                     == 
@@ -6560,7 +6560,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                      & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                     ? (IData)(
                                                               (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                               >> 0xcU))
+                                                               >> 0x2cU))
                                                     : 
                                                    ((0xcU 
                                                      == 
@@ -6568,7 +6568,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                       & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                      ? (IData)(
                                                                (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                >> 0x10U))
+                                                                >> 0x30U))
                                                      : 
                                                     ((0xdU 
                                                       == 
@@ -6576,7 +6576,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                        & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                       ? (IData)(
                                                                 (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                 >> 0x14U))
+                                                                 >> 0x34U))
                                                       : 
                                                      ((0xeU 
                                                        == 
@@ -6584,10 +6584,10 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                         & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                        ? (IData)(
                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                  >> 0x18U))
+                                                                  >> 0x38U))
                                                        : (IData)(
                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                  >> 0x1cU))))))))));
+                                                                  >> 0x3cU))))))))));
     }
     if (((((((((0U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux)) 
                | (1U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) 
@@ -6599,22 +6599,16 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
          | (7U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux)))) {
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal4_nib 
             = (0xfU & ((0U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                        ? (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                   >> 0x20U)) : ((1U 
-                                                  == 
-                                                  (7U 
-                                                   & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                                                  ? (IData)(
-                                                            (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                             >> 0x28U))
-                                                  : 
-                                                 ((2U 
+                        ? (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_vram_din)
+                        : ((1U == (7U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
+                            ? (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                       >> 8U)) : ((2U 
                                                    == 
                                                    (7U 
                                                     & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                    ? (IData)(
                                                              (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                              >> 0x30U))
+                                                              >> 0x10U))
                                                    : 
                                                   ((3U 
                                                     == 
@@ -6622,13 +6616,15 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                      & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                     ? (IData)(
                                                               (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                               >> 0x38U))
+                                                               >> 0x18U))
                                                     : 
                                                    ((4U 
                                                      == 
                                                      (7U 
                                                       & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
-                                                     ? (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_vram_din)
+                                                     ? (IData)(
+                                                               (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                                                >> 0x20U))
                                                      : 
                                                     ((5U 
                                                       == 
@@ -6636,7 +6632,7 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                        & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                       ? (IData)(
                                                                 (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                 >> 8U))
+                                                                 >> 0x28U))
                                                       : 
                                                      ((6U 
                                                        == 
@@ -6644,26 +6640,26 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                         & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))
                                                        ? (IData)(
                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                  >> 0x10U))
+                                                                  >> 0x30U))
                                                        : (IData)(
                                                                  (vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                                                  >> 0x18U))))))))));
+                                                                  >> 0x38U))))))))));
     }
     if ((0U == (3U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) {
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16 
-            = (0xffffU & (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                  >> 0x20U)));
+            = (0xffffU & (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_vram_din));
     } else if ((1U == (3U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) {
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16 
             = (0xffffU & (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                  >> 0x30U)));
+                                  >> 0x10U)));
     } else if ((2U == (3U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) {
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16 
-            = (0xffffU & (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_vram_din));
+            = (0xffffU & (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
+                                  >> 0x20U)));
     } else if ((3U == (3U & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix_addr_mux))) {
         vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pix16 
             = (0xffffU & (IData)((vlSelf->simtop__DOT__pvr__DOT__isp_vram_din 
-                                  >> 0x10U)));
+                                  >> 0x30U)));
     }
     if (((((((((0U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt)) 
                | (1U == (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pix_fmt))) 

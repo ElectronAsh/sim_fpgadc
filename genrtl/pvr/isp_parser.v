@@ -61,9 +61,6 @@ reg [23:0] isp_vram_addr;
 assign isp_vram_word_addr = (isp_state==8'd49) ? (vram_word_addr<<2) :	// Output texture address.
 												  isp_vram_addr;		// Output ISP Parser address.
 
-
-reg [23:0] isp_fb_addr;	// Framebuffer write-back address.
-
 // OL Word bit decodes...
 wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.
 wire [3:0] num_prims = opb_word[28:25];	// For Triangle Array or Quad Array only.
@@ -436,10 +433,9 @@ else begin
 				//if (x_ps < minx+spanx) begin	// Per-poly rendering.
 				if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
 					if (inTriangle && x_ps<639 && y_ps<479 && !FX1[31] && !FX2[31] && !FX3[31] && !FY1[31] && !FY2[31] && !FY3[31]) begin
-						isp_fb_addr   <= x_ps + (y_ps * 640);
 						isp_vram_addr <= x_ps + (y_ps * 640);
 						isp_vram_wr <= 1'b1;
-						//isp_vram_dout <= {vert_c_base_col_0[31:24], vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, for sim display.
+						isp_vram_dout <= texel_argb;	// ABGR, for sim display.
 						//isp_vram_dout <= {8'hff, vert_c_base_col_0[7:0], vert_c_base_col_0[15:8], vert_c_base_col_0[23:16]};	// ABGR, Alpha boosted.
 					end
 					x_ps <= x_ps + 12'd1;
@@ -1160,40 +1156,40 @@ always @(*) begin
 	//pix16     = vram_din[ (pix_addr_mux[1:0]<<4) +: 16];
 	
 	case (pix_addr_mux[3:0])
-		0:  pal4_nib = vram_din[35:32];
-		1:  pal4_nib = vram_din[39:36];
-		2:  pal4_nib = vram_din[43:40];
-		3:  pal4_nib = vram_din[47:44];
-		4:  pal4_nib = vram_din[51:48];
-		5:  pal4_nib = vram_din[55:52];
-		6:  pal4_nib = vram_din[59:56];
-		7:  pal4_nib = vram_din[63:60];
-		8:  pal4_nib = vram_din[03:00];
-		9:  pal4_nib = vram_din[07:04];
-		10: pal4_nib = vram_din[11:08];
-		11: pal4_nib = vram_din[15:12];
-		12: pal4_nib = vram_din[19:16];
-		13: pal4_nib = vram_din[23:20];
-		14: pal4_nib = vram_din[27:24];
-		15: pal4_nib = vram_din[31:28];
+		0:  pal4_nib = vram_din[03:00];
+		1:  pal4_nib = vram_din[07:04];
+		2:  pal4_nib = vram_din[11:08];
+		3:  pal4_nib = vram_din[15:12];
+		4:  pal4_nib = vram_din[19:16];
+		5:  pal4_nib = vram_din[23:20];
+		6:  pal4_nib = vram_din[27:24];
+		7:  pal4_nib = vram_din[31:28];
+		8:  pal4_nib = vram_din[35:32];
+		9:  pal4_nib = vram_din[39:36];
+		10: pal4_nib = vram_din[43:40];
+		11: pal4_nib = vram_din[47:44];
+		12: pal4_nib = vram_din[51:48];
+		13: pal4_nib = vram_din[55:52];
+		14: pal4_nib = vram_din[59:56];
+		15: pal4_nib = vram_din[63:60];
 	endcase
 
 	case (pix_addr_mux[2:0])
-		0:  pal4_nib = vram_din[39:32];
-		1:  pal4_nib = vram_din[47:40];
-		2:  pal4_nib = vram_din[55:48];
-		3:  pal4_nib = vram_din[63:56];
-		4:  pal4_nib = vram_din[07:00];
-		5:  pal4_nib = vram_din[15:08];
-		6:  pal4_nib = vram_din[23:16];
-		7:  pal4_nib = vram_din[31:24];
+		0:  pal4_nib = vram_din[07:00];
+		1:  pal4_nib = vram_din[15:08];
+		2:  pal4_nib = vram_din[23:16];
+		3:  pal4_nib = vram_din[31:24];
+		4:  pal4_nib = vram_din[39:32];
+		5:  pal4_nib = vram_din[47:40];
+		6:  pal4_nib = vram_din[55:48];
+		7:  pal4_nib = vram_din[63:56];
 	endcase
 
 	case (pix_addr_mux[1:0])
-		0: pix16 = vram_din[47:32];
-		1: pix16 = vram_din[63:48];
-		2: pix16 = vram_din[15:00];
-		3: pix16 = vram_din[31:16];
+		0: pix16 = vram_din[15:00];
+		1: pix16 = vram_din[31:16];
+		2: pix16 = vram_din[47:32];
+		3: pix16 = vram_din[63:48];
 	endcase
 
 	// Convert all texture pixel formats to ARGB8888.

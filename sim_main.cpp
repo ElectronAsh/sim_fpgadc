@@ -1062,9 +1062,6 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 		uint32_t twop_core     = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop;
 
 		vram_word_addr = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_word_addr<<2;
-		//QData lower_word = read_vram_32( 0x000000 + vram_word_addr );
-		//QData upper_word = read_vram_32( 0x400000 + vram_word_addr );
-		//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_din = (upper_word<<32) | lower_word;
 
 		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp) {
 			uint32_t mipmap_vq_offs = (mipmap_flag) ? mipmap_byte_offset_vq[tex_u_size_raw+3] : 0;
@@ -1256,7 +1253,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			//uint32_t z_fixed = float_to_fixed(invW, 28);	// Convert Z from float to fixed-point.
 			//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ (top->vram_addr&0x7fffff) ] = z_fixed;
 				
-			uint32_t my_fb_addr = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_fb_addr;
+			uint32_t my_fb_addr = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_addr;
 				
 			/*if (alpha==0xff) disp_ptr[ (top->vram_addr&0x7fffff) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			else {
@@ -1273,7 +1270,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 				disp_ptr[(top->vram_addr)&0x7fffff] = 0xff<<24 | result[2]<<16 | result[1]<<8 | result[0];*/
 
 				if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
-					uint32_t texel_argb = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texel_argb;
+					uint32_t texel_argb = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout;
 					rgb[2] = (texel_argb>>0) &0xff;
 					rgb[1] = (texel_argb>>8) &0xff;
 					rgb[0] = (texel_argb>>16)&0xff;
