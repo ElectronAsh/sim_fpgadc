@@ -715,7 +715,7 @@ end
 
 reg [19:0] mipmap_byte_offs_vq;
 reg [19:0] mipmap_byte_offs_norm;
-//reg [19:0] mipmap_byte_offs_pal;	// This table is identical to norm[]>>1, so I ditched it. ElectronAsh.
+//reg [19:0] mipmap_byte_offs_pal;	// The palette mipmap offset table is just norm[]>>1, so I ditched the table.
 
 reg [19:0] mipmap_byte_offs;
 
@@ -763,8 +763,8 @@ always @(*) begin
 	
 	// Twiddled or Non-Twiddled).
 	twop_or_not = (vq_comp) ? ((12'd2048 + mipmap_byte_offs)<<2) + twop :
-				  (is_twid || is_pal4 || is_pal8) ? (mipmap_byte_offs>>1) + twop :
-													(mipmap_byte_offs>>1) + non_twid_addr;
+				  (is_pal4 || is_pal8 || is_twid) ? (mipmap_byte_offs>>1) + twop :
+												mipmap_byte_offs + non_twid_addr;
 													 
 	// Shift twop_or_not, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
 	texel_word_offs = (vq_comp) ? (twop_or_not)>>5 : // VQ = 32 TEXELS per 64-bit VRAM word. (1 BYTE per FOUR Texels).
@@ -844,14 +844,14 @@ always @(*) begin
 	// Convert all texture pixel formats to ARGB8888.
 	// (fill missing lower colour bits using some of the upper colour bits.)
 	case (pix_fmt)
-		0: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7], pix16[4:0],pix16[4:2] };			// ARGB 1555 
-		1: texel_argb = { 8'hff, pix16[15:11],pix16[15:13], pix16[10:5],pix16[10:9], pix16[4:0],pix16[4:2] };					//  RGB 565
-		2: texel_argb = { pix16[15:12],pix16[15:12], pix16[11:8],pix16[11:8], pix16[7:4],pix16[7:4],  pix16[3:0],pix16[3:0] };	// ARGB 4444
+		0: texel_argb = { {8{pix16[15]}},    pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7],   pix16[4:0],pix16[4:2] };	// ARGB 1555 
+		1: texel_argb = { 8'hff,             pix16[15:11],pix16[15:13], pix16[10:5],pix16[10:9], pix16[4:0],pix16[4:2] };	//  RGB 565
+		2: texel_argb = { {2{pix16[15:12]}}, {2{pix16[11:8]}},          {2{pix16[7:4]}},         {2{pix16[3:0]}} };		// ARGB 4444
 		3: texel_argb = pix16;	// TODO. YUV422 (32-bit Y8 U8 Y8 V8).
 		4: texel_argb = pix16;	// TODO. Bump Map (16-bit S8 R8).
 		5: texel_argb = pal_final;	// TODO. Palette look-up. PAL4 or PAL8 can be ARGB1555, RGB565, ARGB4444, or even ARGB8888.
 		6: texel_argb = pal_final;	// Palette format read from PAL_RAM_CTRL[1:0].
-		7: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7],	pix16[4:0],pix16[4:2] };			// Reserved (considered ARGB 1555).
+		7: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7],	pix16[4:0],pix16[4:2] };	// Reserved (considered ARGB 1555).
 	endcase
 end
 
