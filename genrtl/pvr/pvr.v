@@ -567,12 +567,11 @@ else begin
 	if (poly_drawn) isp_switch <= 1'b0;
 end
 
-assign vram_addr = (isp_switch) ? isp_vram_word_addr : ra_vram_addr;
+wire [23:0] isp_vram_addr_out;
+
+assign vram_addr = (isp_switch) ? isp_vram_addr_out : ra_vram_addr;
 assign vram_dout = isp_vram_dout;
 assign vram_wr = isp_vram_wr;
-
-//assign vram_addr = isp_vram_word_addr;
-//assign vram_addr = ra_vram_addr;
 
 
 isp_parser isp_parser_inst (
@@ -588,7 +587,7 @@ isp_parser isp_parser_inst (
 	
 	.isp_vram_rd( isp_vram_rd ),		// output  isp_vram_rd
 	.isp_vram_wr( isp_vram_wr ),		// output  isp_vram_wr
-	.isp_vram_word_addr( isp_vram_word_addr ),	// output [23:0]  isp_vram_word_addr
+	.isp_vram_addr_out( isp_vram_addr_out ),	// output [23:0]  isp_vram_word_addr BYTE address!
 	.isp_vram_din( isp_vram_din ),		// input  [63:0]  isp_vram_din
 	.isp_vram_dout( isp_vram_dout ),	// output  [63:0]  isp_vram_dout
 	

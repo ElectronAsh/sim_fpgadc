@@ -12,7 +12,7 @@ VM_TIMING = 0
 # Coverage output mode?  0/1 (from --coverage)
 VM_COVERAGE = 0
 # Parallel builds?  0/1 (from --output-split)
-VM_PARALLEL_BUILDS = 1
+VM_PARALLEL_BUILDS = 0
 # Tracing output mode?  0/1 (from --trace/--trace-fst)
 VM_TRACE = 0
 # Tracing output mode in VCD format?  0/1 (from --trace)
@@ -26,25 +26,12 @@ VM_CLASSES_FAST += \
 	Vsimtop \
 	Vsimtop___024root__DepSet_h3a8afb71__0 \
 	Vsimtop___024root__DepSet_h305f3046__0 \
-	Vsimtop___024root__DepSet_h305f3046__1 \
-	Vsimtop___024root__DepSet_h305f3046__2 \
-	Vsimtop___024root__DepSet_h305f3046__3 \
-	Vsimtop___024root__DepSet_h305f3046__4 \
-	Vsimtop___024root__DepSet_h305f3046__5 \
-	Vsimtop___024root__DepSet_h305f3046__6 \
-	Vsimtop___024root__DepSet_h305f3046__7 \
-	Vsimtop___024root__DepSet_h305f3046__8 \
-	Vsimtop___024root__DepSet_h305f3046__9 \
 
 # Generated module classes, non-fast-path, compile with low/medium optimization
 VM_CLASSES_SLOW += \
-	Vsimtop__ConstPool_0 \
 	Vsimtop___024root__Slow \
 	Vsimtop___024root__DepSet_h3a8afb71__0__Slow \
 	Vsimtop___024root__DepSet_h305f3046__0__Slow \
-	Vsimtop___024root__DepSet_h305f3046__1__Slow \
-	Vsimtop___024root__DepSet_h305f3046__2__Slow \
-	Vsimtop___024root__DepSet_h305f3046__3__Slow \
 
 # Generated support classes, fast-path, compile with highest optimization
 VM_SUPPORT_FAST += \

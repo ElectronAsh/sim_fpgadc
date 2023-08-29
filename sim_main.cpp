@@ -765,8 +765,8 @@ QData read_vram_64(uint32_t addr) {		// BYTE address!
 	uint8_t byte6 = vram_ptr[ (0x400000+addr+2)&0x7fffff ];
 	uint8_t byte7 = vram_ptr[ (0x400000+addr+3)&0x7fffff ];
 
-	QData upper_word = (byte7<<24) | (byte6<<16) | (byte5<<8) | (byte4);
-	QData lower_word = (byte3<<24) | (byte2<<16) | (byte1<<8) | (byte0);
+	QData upper_word = static_cast<QData>((byte7<<24) | (byte6<<16) | (byte5<<8) | (byte4));
+	QData lower_word = static_cast<QData>((byte3<<24) | (byte2<<16) | (byte1<<8) | (byte0));
 
 	QData data = (upper_word<<32) | lower_word;
 
@@ -1087,7 +1087,6 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			uint32_t my_addr = ((twop_core&0xffffffe0)>>1) | (twop_core&0xf);
 			vq_index_addr = ((twop_core&0x10)<<18) + tex_addr_core + 1024 + (mipmap_vq_offs>>1) + (my_addr>>2);
 			uint8_t index_byte = vram_ptr[ vq_index_addr&0x7fffff ];
-			//uint8_t index_tweaked = ((index_byte&0xf8)>>1) | index_byte&3;
 
 			uint16_t texel_pix0 = 0x0000;
 			uint16_t texel_pix1 = 0x0000;
@@ -1284,15 +1283,13 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			rgb[0] = (texel_argb>>16)&0xff;
 			alpha  = (texel_argb>>24)&0xff;
 
-			//disp_ptr[ (my_fb_addr&0x7fffff) ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
-
 			if (alpha==0xff) disp_ptr[ my_fb_addr&0x7fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			else {
 				uint8_t old_pix[3];
-				old_pix[2] = disp_ptr[ my_fb_addr&0x7fffff ] >> 16;
-				old_pix[1] = disp_ptr[ my_fb_addr&0x7fffff ] >> 8;
 				old_pix[0] = disp_ptr[ my_fb_addr&0x7fffff ];
-
+				old_pix[1] = disp_ptr[ my_fb_addr&0x7fffff ] >> 8;
+				old_pix[2] = disp_ptr[ my_fb_addr&0x7fffff ] >> 16;
+				
 				uint8_t result[3];
 				result[0] = (uint8_t)( ( (alpha+1) * rgb[0] + (256-alpha) * old_pix[0]) >> 8);
 				result[1] = (uint8_t)( ( (alpha+1) * rgb[1] + (256-alpha) * old_pix[1]) >> 8);
@@ -1353,27 +1350,9 @@ int verilate() {
 		top->im_resp_valid = 1;
 		top->dm_resp_valid = 1;
 
-		rgb[0] = 0xff;	// Red.
-		rgb[1] = 0xff;	// Green.
-		rgb[2] = 0xff;	// Blue.
 
-		// vram_din doesn't seem to get routed to the other modules???
-		
+		// Route 64-bit data from vram_ptr to the core...
 		uint32_t vram_addr = top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff;
-
-		/*
-		uint8_t byte3 = vram_ptr[ (vram_addr+0) & 0x7fffff ];
-		uint8_t byte2 = vram_ptr[ (vram_addr+1) & 0x7fffff ];
-		uint8_t byte1 = vram_ptr[ (vram_addr+2) & 0x7fffff ];
-		uint8_t byte0 = vram_ptr[ (vram_addr+3) & 0x7fffff ];
-
-		// Have to byte swap here, because Wintel...
-		uint16_t upper_word = byte0<<8 | byte1;
-		uint16_t lower_word = byte2<<8 | byte3;
-		top->vram_din = upper_word<<16 | lower_word;
-		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = upper_word<<16 | lower_word;
-		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = upper_word<<16 | lower_word;
-		*/
 
 		uint8_t byte0 = vram_ptr[ (0x000000 + vram_addr +0) & 0x7fffff ];
 		uint8_t byte1 = vram_ptr[ (0x000000 + vram_addr +1) & 0x7fffff ];
@@ -1387,10 +1366,14 @@ int verilate() {
 
 		uint32_t lower_word = byte0<<24 | byte1<<16 | byte2<<8 | byte3<<0;
 		uint32_t upper_word = byte4<<24 | byte5<<16 | byte6<<8 | byte7<<0;
-
+		
+		// Route 64-bit WORD to simtop vram_din.
 		top->vram_din = (static_cast<QData>(upper_word)<<32 | lower_word);
-		top->rootp->simtop__DOT__pvr__DOT__ra_vram_din  = (static_cast<QData>(upper_word)<<32 | lower_word);
-		top->rootp->simtop__DOT__pvr__DOT__isp_vram_din = (static_cast<QData>(upper_word)<<32 | lower_word);
+
+
+		rgb[0] = 0xff;	// Red.
+		rgb[1] = 0xff;	// Green.
+		rgb[2] = 0xff;	// Blue.
 
 		if (tile_highlight && top->rootp->simtop__DOT__pvr__DOT__ra_entry_valid) {
 			uint32_t x_start = top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex * 32;
@@ -1614,22 +1597,6 @@ int main(int argc, char** argv, char** env) {
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-	// Load Fonts
-	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-	// - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-	// - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-	// - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-	// - Read 'misc/fonts/README.txt' for more instructions and details.
-	// - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-	//io.Fonts->AddFontDefault();
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-	//IM_ASSERT(font != NULL);
-
-
 	Verilated::commandArgs(argc, argv);
 
 	top = new Vsimtop;
@@ -1673,9 +1640,9 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
+	pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
-	pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");	  vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_boat", "rb");		  vram_file = fopen("vram_hotd2_boat.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_gargoyle", "rb");	  vram_file = fopen("vram_hotd2_gargoyle.bin", "rb");
@@ -1916,7 +1883,7 @@ int main(int argc, char** argv, char** env) {
 		mem_edit_5.DrawContents(tag_ptr, tag_size, 0);
 		ImGui::End();
 
-		
+		/*
 		ImGui::Begin("SH4 Regfile0");
 		ImGui::Text("   if_pc_plus4: 0x%08X", top->rootp->simtop__DOT__core__DOT__if_pc_plus4);
 		ImGui::Text("            PC: 0x%08X", top->rootp->simtop__DOT__core__DOT__if_reg_pc);
@@ -1965,6 +1932,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("           R6: 0x%08X", top->rootp->simtop__DOT__core__DOT__rf__DOT__rf_array_b1[6]);
 		ImGui::Text("           R7: 0x%08X", top->rootp->simtop__DOT__core__DOT__rf__DOT__rf_array_b1[7]);
 		ImGui::End();
+		*/
 
 		/*
 		ImGui::Begin("   Trace");
@@ -2157,6 +2125,8 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("         core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
 		ImGui::Text("   core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);
 		ImGui::Text("      isp_vram_din: 0x%016llX",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din);
+		ImGui::Text("          tex_wait: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_wait);
+		ImGui::Text("     cb_word_index: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__cb_word_index);
 		//ImGui::Text("        test float: %f", *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float);
 		//ImGui::Text("    test float exp: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp);
 		//ImGui::Text("    test float man: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man);

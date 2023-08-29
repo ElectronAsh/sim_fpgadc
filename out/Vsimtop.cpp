@@ -11,8 +11,8 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     : VerilatedModel{*_vcontextp__}
     , vlSymsp{new Vsimtop__Syms(contextp(), _vcname__, this)}
     , clk{vlSymsp->TOP.clk}
-    , im_req_valid{vlSymsp->TOP.im_req_valid}
     , rst{vlSymsp->TOP.rst}
+    , im_req_valid{vlSymsp->TOP.im_req_valid}
     , im_resp_valid{vlSymsp->TOP.im_resp_valid}
     , dm_req_wmask{vlSymsp->TOP.dm_req_wmask}
     , dm_req_wen{vlSymsp->TOP.dm_req_wen}

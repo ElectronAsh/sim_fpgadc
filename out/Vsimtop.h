@@ -25,8 +25,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel 
     // The application code writes and reads these signals to
     // propagate new values into/out from the Verilated model.
     VL_IN8(&clk,0,0);
-    VL_OUT8(&im_req_valid,0,0);
     VL_IN8(&rst,0,0);
+    VL_OUT8(&im_req_valid,0,0);
     VL_IN8(&im_resp_valid,0,0);
     VL_OUT8(&dm_req_wmask,7,0);
     VL_OUT8(&dm_req_wen,0,0);

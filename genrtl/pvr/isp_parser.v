@@ -14,7 +14,7 @@ module isp_parser (
 	
 	output reg isp_vram_rd,
 	output reg isp_vram_wr,
-	output reg [23:0] isp_vram_word_addr,
+	output reg [23:0] isp_vram_addr_out,
 	input [63:0] isp_vram_din,
 	output reg [63:0] isp_vram_dout,
 	
@@ -64,8 +64,8 @@ module isp_parser (
 
 reg [23:0] isp_vram_addr;
 
-assign isp_vram_word_addr = (isp_state==8'd49) ? (vram_word_addr<<2) :	// Output texture address.
-												  isp_vram_addr;		// Output ISP Parser address.
+assign isp_vram_addr_out = (tex_wait || isp_state==8'd49) ? (vram_word_addr<<2) :	// Output texture WORD address as a BYTE address.
+															 isp_vram_addr;			// Output ISP Parser BYTE address.
 
 // OL Word bit decodes...
 wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.
@@ -183,6 +183,7 @@ if (!reset_n) begin
 	isp_entry_valid <= 1'b0;
 	quad_done <= 1'b1;
 	poly_drawn <= 1'b0;
+	read_codebook <= 1'b0;
 end
 else begin
 	//isp_vram_rd <= 1'b0;
@@ -190,11 +191,13 @@ else begin
 	
 	isp_entry_valid <= 1'b0;
 	poly_drawn <= 1'b0;
+	
+	read_codebook <= 1'b0;
 
 	if (isp_state > 0) begin
 		//if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47 || isp_state != 8'd48 || isp_state != 8'd49 || isp_state != 8'd50) isp_state <= isp_state + 8'd1;
-		if (isp_state < 8'd46) isp_state <= isp_state + 8'd1;
-		if (isp_state < 8'd47) isp_vram_addr <= isp_vram_addr + 4;
+		if (!tex_wait && isp_state < 8'd46) isp_state <= isp_state + 8'd1;
+		if (!tex_wait && isp_state < 8'd47) isp_vram_addr <= isp_vram_addr + 4;
 	end
 
 	case (isp_state)
@@ -230,12 +233,17 @@ else begin
 			end
 		end
 		1: begin isp_inst <= isp_vram_din; end
-		2:  tsp_inst <= isp_vram_din;
-		3:  begin tcw_word <= isp_vram_din; /*if (shadow) isp_state <= 8'd4; else*/ isp_state <= 8'd6; end	// Shadow still breaks everything?
+		2: begin tsp_inst <= isp_vram_din; end
+		3: begin
+			tcw_word <= isp_vram_din;
+			if (isp_vram_din[30]) read_codebook <= 1'b1;	// Read VQ Code Book if TCW bit 30 is set.
+			isp_state <= 8'd6;
+		end
 		
 		// if (shadow)...
-		4:  tsp2_inst <= isp_vram_din;
-		5:  tex2_cont <= isp_vram_din;
+		// Probably wrong? I think the shadow bit denotes when a poly can be affected by a Modifier Volume?) ElectronAsh.
+		//4:  tsp2_inst <= isp_vram_din;
+		//5:  tex2_cont <= isp_vram_din;
 		
 		6:  vert_a_x <= isp_vram_din;
 		7:  vert_a_y <= isp_vram_din;
@@ -530,6 +538,9 @@ texture_address  texture_address_inst (
 	.pal_rd( pal_rd ),			// input  pal_rd
 	.pal_wr( pal_wr ),			// input  pal_wr
 	.pal_dout( pal_dout ),		// output [31:0]  pal_dout
+	
+	.read_codebook( read_codebook ),	// input  read_codebook
+	.tex_wait( tex_wait ),				// output  tex_wait
 		
 	//.ui( ui ),						// input [9:0]  ui. From rasterizer/interp...
 	//.vi( vi ),						// input [9:0]  ui.
@@ -539,6 +550,9 @@ texture_address  texture_address_inst (
 	
 	.texel_argb( texel_argb )		// output [31:0]  texel_argb. Final texel ARGB 8888 output.
 );
+
+reg read_codebook;
+wire tex_wait;
 
 //reg [9:0] ui;
 //reg [9:0] vi;
@@ -565,6 +579,9 @@ module texture_address (
 	input pal_rd,
 	input pal_wr,
 	output [31:0] pal_dout,
+	
+	input read_codebook,
+	output reg tex_wait,
 		
 	//input wire [9:0] ui,				// From rasterizer/interp...
 	//input wire [9:0] vi,
@@ -641,6 +658,7 @@ wire [19:0] non_twid_addr = (ui_masked + (vi_masked * (8<<tex_u_size)));
 
 reg [3:0] pal4_nib;
 reg [7:0] pal8_byte;
+reg [7:0] vq_index;
 reg [15:0] pix16;
 
 wire is_pal4 = (pix_fmt==3'd5);
@@ -648,8 +666,8 @@ wire is_pal8 = (pix_fmt==3'd6);
 wire is_twid = (scan_order==1'b0);
 wire is_mipmap = mip_map && scan_order==0;
 
-reg [19:0] pix_addr_mux;
-reg [19:0] pix_addr_shift;
+reg [19:0] twop_or_not;
+reg [19:0] texel_word_offs;
 
 always @(*) begin
 	twop_full = {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
@@ -701,12 +719,11 @@ reg [19:0] mipmap_byte_offs_norm;
 
 reg [19:0] mipmap_byte_offs;
 
-
 // Really wide wire here, but the max stride_full value is 34,359,738,368. lol
 //
 // I'm sure the real PVR doesn't pre-calc stride-full this way, but just uses the "stride" value directly. ElectronAsh.
 //
-wire [35:0] stride_full = 16<<stride;	// stride 0==invalid (default?). stride 1==32. stride 2=64. stride 3=96. stride 4=128, and so-on.
+//wire [35:0] stride_full = 16<<stride;	// stride 0==invalid (default?). stride 1=32. stride 2=64. stride 3=96. stride 4=128, and so-on.
 
 always @(*) begin
 	// NOTE: Need to add 3 to tex_u_size in all of these LUTs, because the mipmap table starts at a 1x1 texture size, but tex_u_size==0 is the 8x8 texture size.
@@ -738,28 +755,31 @@ always @(*) begin
 		10: mipmap_byte_offs_vq = 20'h15556; 	// 1024 texels
 	endcase
 
+	// mipmap table mux (or zero offset, for non-mipmap)...
 	mipmap_byte_offs = (!is_mipmap) ? 0 :
-						  (vq_comp) ? (mipmap_byte_offs_vq) :
-				(is_pal4 | is_pal8) ? (mipmap_byte_offs_norm>>1) :	// Note: The mipmap byte offset table for Palettes is just mipmap_byte_offs_norm[]>>1.
-									   mipmap_byte_offs_norm;
+						  (vq_comp) ? mipmap_byte_offs_vq :
+				(is_pal4 | is_pal8) ? (mipmap_byte_offs_norm>>1) : // Note: The mipmap byte offset table for Palettes is just mipmap_byte_offs_norm[]>>1.
+									  mipmap_byte_offs_norm;
 	
-	pix_addr_mux = (is_twid || is_pal4 || is_pal8 || vq_comp) ? (mipmap_byte_offs + twop) :
-															    (mipmap_byte_offs + non_twid_addr);
-																
-	// Shift pix_addr_mux, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
-	pix_addr_shift = (vq_comp) ? (pix_addr_mux>>5) :	// VQ     = 32 TEXELS per 64-bit word. (1 BYTE per four TEXELS).
-					 (is_pal4) ? (pix_addr_mux>>4) :	// PAL4   = 16 TEXELS per 64-bit word. (4BPP).
-					 (is_pal8) ? (pix_addr_mux>>3) :	// PAL8   = 8  TEXELS per 64-bit word. (8BPP).
-								 (pix_addr_mux>>2);		// Uncomp = 4  TEXELS per 64-bit word (16BPP). (Twiddled or Non-Twiddled).
+	// Twiddled or Non-Twiddled).
+	twop_or_not = (is_twid || is_pal4 || is_pal8 || vq_comp) ? twop :
+													   non_twid_addr;
+													 
+	// Shift twop_or_not, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
+	texel_word_offs = (vq_comp) ? ( ((12'd2048 + mipmap_byte_offs)<<2) + twop_or_not)>>5 :	// VQ = 32 TEXELS per 64-bit VRAM word. (1 BYTE per FOUR Texels).
+					  (is_pal4) ? (mipmap_byte_offs + twop_or_not)>>4 :				// PAL4   = 16 TEXELS per 64-bit word. (4BPP).
+					  (is_pal8) ? (mipmap_byte_offs + twop_or_not)>>3 :				// PAL8   = 8  TEXELS per 64-bit word. (8BPP).
+								  (mipmap_byte_offs + twop_or_not)>>2;				// Uncomp = 4  TEXELS per 64-bit word (16BPP).
 	
-	vram_word_addr = tex_word_addr + pix_addr_shift;	// Generate 64-bit WORD address for VRAM texture reads.
+	if (tex_wait) vram_word_addr = tex_word_addr + cb_word_index;	// 64-bit WORD address for Code Book reads
+			 else vram_word_addr = tex_word_addr + texel_word_offs;	// Generate 64-bit WORD address for VRAM texture reads.
 	
 	// Select the current texel from each part of the 64-bit word...
-	//pal4_nib  = vram_din[ (pix_addr_mux[3:0]<<2) +:  4];
-	//pal8_byte = vram_din[ (pix_addr_mux[2:0]<<3) +:  8];
-	//pix16     = vram_din[ (pix_addr_mux[1:0]<<4) +: 16];
+	//pal4_nib  = vram_din[ (twop_or_not[3:0]<<2) +:  4];
+	//pal8_byte = vram_din[ (twop_or_not[2:0]<<3) +:  8];
+	//pix16     = vram_din[ (twop_or_not[1:0]<<4) +: 16];
 	
-	case (pix_addr_mux[3:0])
+	case (twop_or_not[3:0])
 		0:  pal4_nib = vram_din[03:00];
 		1:  pal4_nib = vram_din[07:04];
 		2:  pal4_nib = vram_din[11:08];
@@ -778,7 +798,7 @@ always @(*) begin
 		15: pal4_nib = vram_din[63:60];
 	endcase
 
-	case (pix_addr_mux[2:0])
+	case (twop_or_not[2:0])
 		0:  pal8_byte = vram_din[07:00];
 		1:  pal8_byte = vram_din[15:08];
 		2:  pal8_byte = vram_din[23:16];
@@ -788,22 +808,36 @@ always @(*) begin
 		6:  pal8_byte = vram_din[55:48];
 		7:  pal8_byte = vram_din[63:56];
 	endcase
-
-	case (pix_addr_mux[1:0])
-		0: pix16 = vram_din[15:00];
-		1: pix16 = vram_din[31:16];
-		2: pix16 = vram_din[47:32];
-		3: pix16 = vram_din[63:48];
-	endcase
 	
+	// VQ has FOUR TEXELS per Index Byte.
+	// 32 TEXELS per 64-bit VRAM word.
+	case (twop_or_not[4:2])
+		0:  vq_index = vram_din[07:00];
+		1:  vq_index = vram_din[15:08];
+		2:  vq_index = vram_din[23:16];
+		3:  vq_index = vram_din[31:24];
+		4:  vq_index = vram_din[39:32];
+		5:  vq_index = vram_din[47:40];
+		6:  vq_index = vram_din[55:48];
+		7:  vq_index = vram_din[63:56];
+	endcase
+
+	// Read 16BPP from either the Code Book for VQ, or direct from VRAM.
+	case (twop_or_not[1:0])
+		0: pix16 = (vq_comp) ? code_book[vq_index][15:00] : vram_din[15:00];
+		1: pix16 = (vq_comp) ? code_book[vq_index][31:16] : vram_din[31:16];
+		2: pix16 = (vq_comp) ? code_book[vq_index][47:32] : vram_din[47:32];
+		3: pix16 = (vq_comp) ? code_book[vq_index][63:48] : vram_din[63:48];
+	endcase
+
 	if (pix_fmt==5) pal_raw = pal_ram[ {pal_selector[5:0], pal4_nib}  ];
 	if (pix_fmt==6) pal_raw = pal_ram[ {pal_selector[5:4], pal8_byte} ];	
 	
 	case (PAL_RAM_CTRL)
-		0: pal_final = { {8{pal_raw[15]}}, pal_raw[14:10],pal_raw[14:12], pal_raw[9:5],pal_raw[9:7], pal_raw[4:0],pal_raw[4:2] };				// ARGB 1555 
-		1: pal_final = { 8'hff, pal_raw[15:11],pal_raw[15:13], pal_raw[10:5],pal_raw[10:9], pal_raw[4:0],pal_raw[4:2] };						//  RGB 565
-		2: pal_final = { pal_raw[15:12],pal_raw[15:12], pal_raw[11:8],pal_raw[11:8], pal_raw[7:4],pal_raw[7:4],  pal_raw[3:0],pal_raw[3:0] };	// ARGB 4444
-		3: pal_final = pal_raw;		// ARGB 8888
+		0: pal_final = { {8{pal_raw[15]}},    pal_raw[14:10],pal_raw[14:12], pal_raw[09:05],pal_raw[09:07], pal_raw[04:00],pal_raw[04:02] };// ARGB 1555 
+		1: pal_final = {            8'hff,    pal_raw[15:11],pal_raw[15:13], pal_raw[10:05],pal_raw[10:09], pal_raw[04:00],pal_raw[04:02] };//  RGB 565
+		2: pal_final = { {2{pal_raw[15:12]}}, {2{pal_raw[11:08]}},           {2{pal_raw[07:04]}},           {2{pal_raw[03:00]}} };			// ARGB 4444
+		3: pal_final = pal_raw;		// ARGB 8888. (the full 32-bit wide Palette entry is used directly).
 	endcase
 	
 	// Convert all texture pixel formats to ARGB8888.
@@ -812,7 +846,7 @@ always @(*) begin
 		0: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7], pix16[4:0],pix16[4:2] };			// ARGB 1555 
 		1: texel_argb = { 8'hff, pix16[15:11],pix16[15:13], pix16[10:5],pix16[10:9], pix16[4:0],pix16[4:2] };					//  RGB 565
 		2: texel_argb = { pix16[15:12],pix16[15:12], pix16[11:8],pix16[11:8], pix16[7:4],pix16[7:4],  pix16[3:0],pix16[3:0] };	// ARGB 4444
-		3: texel_argb = pix16;	// ARGB8888 direct from pallete. TODO. YUV422 (32-bit Y8 U8 Y8 V8).
+		3: texel_argb = pix16;	// TODO. YUV422 (32-bit Y8 U8 Y8 V8).
 		4: texel_argb = pix16;	// TODO. Bump Map (16-bit S8 R8).
 		5: texel_argb = pal_final;	// TODO. Palette look-up. PAL4 or PAL8 can be ARGB1555, RGB565, ARGB4444, or even ARGB8888.
 		6: texel_argb = pal_final;	// Palette format read from PAL_RAM_CTRL[1:0].
@@ -823,10 +857,32 @@ end
 reg [31:0] pal_raw;
 reg [31:0] pal_final;
 
-// Palette RAM...
-reg [31:0] pal_ram [0:4095];
-always @(posedge clock) begin
-	if (pal_addr[12] && pal_wr) pal_ram[ pal_addr[11:2] ] <= pal_din;
+// Palette RAM. 1024 32-bit Words.
+// PVR Addr 0x1000-0x1FFC.
+reg [31:0] pal_ram [0:1023];
+
+// VQ Code Book. 256 64-bit Words.
+reg [63:0] code_book [0:255];
+reg [7:0] cb_word_index;
+
+always @(posedge clock or negedge reset_n)
+if (!reset_n) begin
+	tex_wait <= 1'b0;
+end
+else begin
+	// Handle Palette RAM writes.
+	if (pal_addr[15:12]==4'b0001 && pal_wr) pal_ram[ pal_addr[11:2] ] <= pal_din;
+
+	// Handle VQ Code Book reading.
+	if (read_codebook) begin
+		tex_wait <= 1'b1;
+		cb_word_index <= 8'd0;
+	end
+	else if (tex_wait) begin
+		code_book[ cb_word_index ] <= vram_din;
+		if (cb_word_index==8'd255) tex_wait <= 1'b0;
+		else cb_word_index <= cb_word_index + 8'd1;
+	end
 end
 
 //assign pal_dout = pal_ram[ pal_addr[11:2] ];

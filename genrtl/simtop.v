@@ -122,7 +122,9 @@ always @(posedge clk) begin
 	rst_reg <= rst;
 end
 
+
 /* verilator lint_off PINCONNECTEMPTY */
+/*
 core core (
 	.clk(clk),
 	.rst(rst_reg),
@@ -167,6 +169,7 @@ core core (
 	.dm_req_prefetch(),
 	.dm_req_nofill()
 );
+*/
 /* verilator lint_on PINCONNECTEMPTY */
 
 wire [28:0] req_addr = dm_req_addr[28:0];
