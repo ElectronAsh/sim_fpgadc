@@ -762,14 +762,15 @@ always @(*) begin
 									  mipmap_byte_offs_norm;
 	
 	// Twiddled or Non-Twiddled).
-	twop_or_not = (is_twid || is_pal4 || is_pal8 || vq_comp) ? twop :
-													   non_twid_addr;
+	twop_or_not = (vq_comp) ? ((12'd2048 + mipmap_byte_offs)<<2) + twop :
+				  (is_twid || is_pal4 || is_pal8) ? (mipmap_byte_offs<<2) + twop :
+													(mipmap_byte_offs<<2) + non_twid_addr;
 													 
 	// Shift twop_or_not, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
-	texel_word_offs = (vq_comp) ? ( ((12'd2048 + mipmap_byte_offs)<<2) + twop_or_not)>>5 :	// VQ = 32 TEXELS per 64-bit VRAM word. (1 BYTE per FOUR Texels).
-					  (is_pal4) ? (mipmap_byte_offs + twop_or_not)>>4 :				// PAL4   = 16 TEXELS per 64-bit word. (4BPP).
-					  (is_pal8) ? (mipmap_byte_offs + twop_or_not)>>3 :				// PAL8   = 8  TEXELS per 64-bit word. (8BPP).
-								  (mipmap_byte_offs + twop_or_not)>>2;				// Uncomp = 4  TEXELS per 64-bit word (16BPP).
+	texel_word_offs = (vq_comp) ? (twop_or_not)>>5 : // VQ = 32 TEXELS per 64-bit VRAM word. (1 BYTE per FOUR Texels).
+					  (is_pal4) ? (twop_or_not)>>4 : // PAL4   = 16 TEXELS per 64-bit word. (4BPP).
+					  (is_pal8) ? (twop_or_not)>>3 : // PAL8   = 8  TEXELS per 64-bit word. (8BPP).
+								  (twop_or_not)>>2;	 // Uncomp = 4  TEXELS per 64-bit word (16BPP).
 	
 	if (tex_wait) vram_word_addr = tex_word_addr + cb_word_index;	// 64-bit WORD address for Code Book reads
 			 else vram_word_addr = tex_word_addr + texel_word_offs;	// Generate 64-bit WORD address for VRAM texture reads.

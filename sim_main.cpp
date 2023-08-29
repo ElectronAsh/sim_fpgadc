@@ -1640,7 +1640,7 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
 	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
-	pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
+	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");	  vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
@@ -1654,7 +1654,7 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_daytona_behind", "rb");	  vram_file = fopen("vram_daytona_behind.bin", "rb");
 	//pvrfile = fopen("pvr_regs_daytona_front", "rb");	  vram_file = fopen("vram_daytona_front.bin", "rb");
 	//pvrfile = fopen("pvr_regs_daytona_sanic", "rb");	  vram_file = fopen("vram_daytona_sanic.bin", "rb");
-	//pvrfile = fopen("pvr_regs_toy_front", "rb");		  vram_file = fopen("vram_toy_front.bin", "rb");
+	pvrfile = fopen("pvr_regs_toy_front", "rb");		  vram_file = fopen("vram_toy_front.bin", "rb");
 	//pvrfile = fopen("pvr_regs_18wheel_select", "rb");	  vram_file = fopen("vram_18wheel_select.bin", "rb");
 	
 	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
