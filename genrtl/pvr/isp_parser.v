@@ -763,8 +763,8 @@ always @(*) begin
 	
 	// Twiddled or Non-Twiddled).
 	twop_or_not = (vq_comp) ? ((12'd2048 + mipmap_byte_offs)<<2) + twop :
-				  (is_twid || is_pal4 || is_pal8) ? (mipmap_byte_offs<<2) + twop :
-													(mipmap_byte_offs<<2) + non_twid_addr;
+				  (is_twid || is_pal4 || is_pal8) ? (mipmap_byte_offs>>1) + twop :
+													(mipmap_byte_offs>>1) + non_twid_addr;
 													 
 	// Shift twop_or_not, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
 	texel_word_offs = (vq_comp) ? (twop_or_not)>>5 : // VQ = 32 TEXELS per 64-bit VRAM word. (1 BYTE per FOUR Texels).
