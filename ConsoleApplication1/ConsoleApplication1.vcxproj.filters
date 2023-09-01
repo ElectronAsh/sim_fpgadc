@@ -74,6 +74,9 @@
     <ClCompile Include="..\out\Vsimtop__Syms.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
+    <ClCompile Include="..\EasyBMP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\linux_temp\imgui\imconfig.h">
@@ -141,6 +144,18 @@
     </ClInclude>
     <ClInclude Include="..\out\Vsimtop__Syms.h">
       <Filter>Source Files\Vsimtop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\EasyBMP.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\EasyBMP_DataStructures.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\EasyBMP_BMP.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\EasyBMP_VariousBMPutilities.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

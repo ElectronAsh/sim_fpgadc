@@ -172,6 +172,7 @@
     <ClCompile Include="..\..\verilator\include\verilated.cpp" />
     <ClCompile Include="..\..\verilator\include\verilated_threads.cpp" />
     <ClCompile Include="..\..\verilator\include\verilated_timing.cpp" />
+    <ClCompile Include="..\EasyBMP.cpp" />
     <ClCompile Include="..\out\Vsimtop.cpp" />
     <ClCompile Include="..\out\Vsimtop__Syms.cpp" />
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__0.cpp" />
@@ -201,6 +202,10 @@
     <ClInclude Include="..\..\verilator\include\verilated_trace_defs.h" />
     <ClInclude Include="..\..\verilator\include\verilated_trace_imp.h" />
     <ClInclude Include="..\..\verilator\include\verilated_types.h" />
+    <ClInclude Include="..\EasyBMP.h" />
+    <ClInclude Include="..\EasyBMP_BMP.h" />
+    <ClInclude Include="..\EasyBMP_DataStructures.h" />
+    <ClInclude Include="..\EasyBMP_VariousBMPutilities.h" />
     <ClInclude Include="..\out\Vsimtop.h" />
     <ClInclude Include="..\out\Vsimtop__Syms.h" />
     <ClInclude Include="..\out\Vsimtop___024root.h" />

@@ -20,6 +20,8 @@
 
 #include "imgui_memory_editor.h"
 
+#include "EasyBMP.h"
+
 
 uint32_t t_size;
 uint32_t t_addr;
@@ -790,6 +792,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
 
 	// Filter out NaN values...
+	/*
 	if (x1 != x1) return;
 	if (x2 != x2) return;
 	if (x3 != x3) return;
@@ -799,6 +802,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	if (z1 != z1) return;
 	if (z2 != z2) return;
 	if (z3 != z3) return;
+	*/
 
 	/*
 	if (x1< -200) return;
@@ -832,6 +836,12 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
+	
+	/*
+	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
+	int sgn = 1;
+	if (f_area > 0) sgn = -1;
+	*/
 
 	/*
 	uint8_t cullmode = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode;
@@ -950,9 +960,9 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	//printf("fixed C1: %f  fixed C2: %f  fixed C3: %f\n\n", ((float)C1/1<<FRAC_BITS), ((float)C2/1<<FRAC_BITS), ((float)C3/1<<FRAC_BITS));
 
 	// Correct for fill convention
-	if ((FDY12>>FRAC_BITS) < 0 || (FDY12>>FRAC_BITS) == 0 && (FDX12>>FRAC_BITS) > 0) C1=C1+(1<<FRAC_BITS);
-	if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
-	if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
+	//if ((FDY12>>FRAC_BITS) < 0 || (FDY12>>FRAC_BITS) == 0 && (FDX12>>FRAC_BITS) > 0) C1=C1+(1<<FRAC_BITS);
+	//if ((FDY23>>FRAC_BITS) < 0 || (FDY23>>FRAC_BITS) == 0 && (FDX23>>FRAC_BITS) > 0) C2=C2+(1<<FRAC_BITS);
+	//if ((FDY31>>FRAC_BITS) < 0 || (FDY31>>FRAC_BITS) == 0 && (FDX31>>FRAC_BITS) > 0) C3=C3+(1<<FRAC_BITS);
 
 	// Texture size values are 0=8, 1=16, 2=32, 3=64, 4=128, etc.
 	uint32_t tex_u_size_full = 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7);
@@ -963,6 +973,19 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	//int halfpixel = 1<<(FRAC_BITS-1);
 	int y_ps = miny /*+ halfpixel*/;
 	int minx_ps = minx /*+ halfpixel*/;
+
+
+	float dx12 = 0;
+	float dx23 = 0;
+	float dx31 = 0;
+
+	float dy12 = 0;
+	float dy23 = 0;
+	float dy31 = 0;
+
+	float c1 = 0;
+	float c2 = 0;
+	float c3 = 0;
 
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 		top->rootp->spanx = spanx;
@@ -991,21 +1014,40 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 
 		Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
-			int w = tex_u_size_full-1;
-			int h = tex_v_size_full-1;
-			U.Setup(x1,x2,x3, y1,y2,y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
-			V.Setup(x1,x2,x3, y1,y2,y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
-		//}
+		int w = tex_u_size_full-1;
+		int h = tex_v_size_full-1;
+		U.Setup(x1,x2,x3, y1,y2,y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
+		V.Setup(x1,x2,x3, y1,y2,y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
 	}
 
 	uint32_t core_x_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
 	uint32_t core_y_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
+	
+	// TESTING float version !!
+	/*
+	dx12 = sgn ? (x2-x1) : (x1-x2);
+	dx23 = sgn ? (x3-x2) : (x2-x3);
+	dx31 = sgn ? (x1-x3) : (x3-x1);
+
+	dy12 = sgn ? (y2-y1) : (y1-y2);
+	dy23 = sgn ? (y3-y2) : (y2-y3);
+	dy31 = sgn ? (y1-y3) : (y3-y1);
+
+	c1 = (dy12 * x1) - (dx12 * y1);
+	c2 = (dy23 * x2) - (dx23 * y2);
+	c3 = (dy31 * x3) - (dx31 * y3);
+
+	float Xhs12 = c1 + (dx12*(float)core_y_ps) - (dy12*(float)core_x_ps);
+	float Xhs23 = c2 + (dx23*(float)core_y_ps) - (dy23*(float)core_x_ps);
+	float Xhs31 = c3 + (dx31*(float)core_y_ps) - (dy31*(float)core_x_ps);
+
+	top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = (Xhs12>=0) && (Xhs23>=0) && (Xhs31>=0);
+	*/
 
 	float invW = Z.Ip(core_x_ps, core_y_ps);	// Interpolate the Z value, based on X and Y.
 
-	float u = U.Ip((float)core_x_ps,(float)core_y_ps) * 1/invW;
-	float v = V.Ip((float)core_x_ps,(float)core_y_ps) * 1/invW;
+	float u = U.Ip((float)core_x_ps, (float)core_y_ps) * 1/invW;
+	float v = V.Ip((float)core_x_ps, (float)core_y_ps) * 1/invW;
 
 	bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 	bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
@@ -1420,6 +1462,7 @@ int verilate() {
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x428a58) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x159c) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x30b08) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x41F960) run_enable = 0;
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
 
@@ -1558,9 +1601,9 @@ int verilate() {
 
 
 int load_vram_dump(const char *name) {
-
 	FILE *pvrfile;
 	FILE *vram_file;
+
 	sprintf(my_string,"pvr_regs%s", name); pvrfile = fopen(my_string,"rb");
 	if(pvrfile != NULL) printf("\n%s dump loaded OK.\n\n", my_string);
 	else { printf("\n%s dump file not found!\n\n", my_string); return 0; }
@@ -1692,13 +1735,13 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_hotd2_selfie");
 	//load_vram_dump("_hotd2_car_fire");
 	//load_vram_dump("_hotd2_boat");
-	//load_vram_dump("_hotd2_gargoyle");
+	load_vram_dump("_hotd2_gargoyle");
 	//load_vram_dump("_rayman_title");
 	//load_vram_dump("_rayman_lights");
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	load_vram_dump("_daytona_behind");
+	//load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
@@ -2237,19 +2280,23 @@ int main(int argc, char** argv, char** env) {
 
 		if (dump_to_raw) {
 			dump_to_raw = 0;
+			BMP *bmp = new BMP;
+			bmp->SetBitDepth(24);
+			bmp->SetSize(640,480);
 			char my_string [20];
-			sprintf(my_string, "frame%d.raw", dump_cnt);
-			FILE *dump = fopen(my_string, "wb");
+			sprintf(my_string, "frame%d.bmp", dump_cnt);
 			for (int y=0; y<480; y++) {
 				for (int x=0; x<640; x++) {
 					uint32_t addr = x + (y * 640);
-					rgb[2] = disp_ptr[ addr ] >> 16;
-					rgb[1] = disp_ptr[ addr ] >> 8;
-					rgb[0] = disp_ptr[ addr ] >> 0;
-					fwrite(rgb, 1, 3, dump);
+					RGBApixel pixel;
+					pixel.Alpha = 0xff;
+					pixel.Red   = disp_ptr[addr] >> 0;
+					pixel.Green = disp_ptr[addr] >> 8;
+					pixel.Blue  = disp_ptr[addr] >> 16;
+					bmp->SetPixel(x, y, pixel);
 				}
 			}
-			fclose(dump);
+			bmp->WriteToFile(my_string);
 		}
 
 		// Update the texture for disp_ptr!

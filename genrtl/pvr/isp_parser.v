@@ -212,7 +212,7 @@ else begin
 						poly_drawn <= 1'b1;
 					end
 					else begin
-						strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5] + 1;
+						strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5] /*+1*/;
 						array_cnt <= 4'd0;	// Sanity check.
 						isp_vram_rd <= 1'b1;
 						isp_state <= 8'd1;
@@ -444,11 +444,10 @@ else begin
 			//y_ps <= miny;		// Per-poly rendering.
 			y_ps <= tiley*32;	// Per-tile rendering.
 			
-			begin
-				//x_ps <= minx;				// Per-poly rendering.
-				x_ps <= tilex*32;			// Per-tile rendering.
-				isp_state <= isp_state + 8'd1;
-			end
+			//x_ps <= minx;				// Per-poly rendering.
+			x_ps <= tilex*32;			// Per-tile rendering.
+
+			isp_state <= isp_state + 8'd1;
 		end
 		
 		49: begin
@@ -456,9 +455,9 @@ else begin
 			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
 				//if (x_ps < minx+spanx) begin	// Per-poly rendering.
 				if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
-					if (inTriangle && /*x_ps<639 && y_ps<479 &&*/ !FX1[31] && !FX2[31] && !FX3[31] && !FY1[31] && !FY2[31] && !FY3[31]) begin
+					if (inTriangle /*&& !ovr_xy*/ && !neg_xy) begin
 						isp_vram_addr <= x_ps + (y_ps * 640);
-						/*if (x_ps>0 && x_ps<640 && y_ps>0 && y_ps<480)*/ isp_vram_wr <= 1'b1;
+						isp_vram_wr <= 1'b1;
 						isp_vram_dout <= (texture) ? texel_argb:	// ABGR, for sim display.
 							   {8'hff, vert_c_base_col_0[23:0]};	// Flat-shaded.
 					end
@@ -481,6 +480,9 @@ else begin
 end
 
 wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
+
+wire ovr_xy = x_ps>639 || y_ps>479;
+wire neg_xy = FX1[31] || FX2[31] || FX3[31] || FY1[31] || FY2[31] || FY3[31];
 
 
 wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
@@ -519,20 +521,20 @@ wire signed [31:0] C3 = (mult5 - mult6) >>FRAC_BITS;
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
 
 // These mults for C1,C2,C3 will probably work OK without the FRAC_BITS stuff?
-wire signed [47:0] mult7  = (FDX12 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
-wire signed [47:0] mult8  = (FDY12 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult7  = (FDX12 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+wire signed [47:0] mult8  = (FDY12 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
 wire signed [31:0] Xhs12 = C1 + (mult7  - mult8 );
 
-wire signed [47:0] mult9  = (FDX23 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
-wire signed [47:0] mult10 = (FDY23 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult9  = (FDX23 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+wire signed [47:0] mult10 = (FDY23 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
 wire signed [31:0] Xhs23 = C2 + (mult9  - mult10);
 
-wire signed [47:0] mult11 = (FDX31 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
-wire signed [47:0] mult12 = (FDY31 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult11 = (FDX31 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+wire signed [47:0] mult12 = (FDY31 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
 wire signed [31:0] Xhs31 = C3 + (mult11 - mult12);
 
 wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
-
+//wire inTriangle;
 
 texture_address  texture_address_inst (
 	.clock( clock ),

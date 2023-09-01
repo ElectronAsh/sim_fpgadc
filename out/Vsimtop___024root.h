@@ -174,6 +174,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop___024root final : public VerilatedMod
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__quad_done;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_words;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__ovr_xy;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__neg_xy;
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__read_codebook;
