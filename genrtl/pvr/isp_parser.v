@@ -232,8 +232,8 @@ else begin
 				end
 			end
 		end
-		1: begin isp_inst <= isp_vram_din; end
-		2: begin tsp_inst <= isp_vram_din; end
+		1: isp_inst <= isp_vram_din;
+		2: tsp_inst <= isp_vram_din;
 		3: begin
 			tcw_word <= isp_vram_din;
 			if (isp_vram_din[30]) read_codebook <= 1'b1;	// Read VQ Code Book if TCW bit 30 is set.
@@ -376,17 +376,27 @@ else begin
 					isp_state <= 8'd6;
 				end
 			end
-			else
-			if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array.
+			else if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array.
 				if (array_cnt==4'd0) begin		// If Array is done...
 					if (is_quad_array) begin	// Quad Array (maybe) done.
 						if (!quad_done) begin	// Second half of Quad not done yet...
+							vert_a_x <= vert_c_x;
+							vert_a_y <= vert_c_y;
+							vert_a_z <= vert_c_z;
+							vert_a_u0 <= vert_c_u0;
+							vert_a_v0 <= vert_c_v0;
 							
-							vert_a_x <= vert_c_x;   vert_b_x <= vert_d_x;   vert_c_x <= vert_a_x;
-							vert_a_y <= vert_c_y;   vert_b_y <= vert_d_y;   vert_c_y <= vert_a_y;
-							vert_a_z <= vert_c_z;   /*vert_b_z <= vert_d_z;*/   vert_c_z <= vert_a_z;
-							vert_a_u0 <= vert_c_u0; vert_b_u0 <= vert_d_u0; vert_c_u0 <= vert_a_u0;
-							vert_a_v0 <= vert_c_v0; vert_b_v0 <= vert_d_v0; vert_c_v0 <= vert_a_v0;
+							vert_b_x <= vert_d_x;
+							vert_b_y <= vert_d_y;
+							//vert_b_z <= vert_d_z;
+							vert_b_u0 <= vert_d_u0;
+							vert_b_v0 <= vert_d_v0;
+							
+							vert_c_x <= vert_a_x;
+							vert_c_y <= vert_a_y;
+							vert_c_z <= vert_a_z;
+							vert_c_u0 <= vert_a_u0;
+							vert_c_v0 <= vert_a_v0;
 							
 							isp_state <= 8'd46;			// Draw the second half of the Quad.
 														// isp_entry_valid will tell the C code to latch the
@@ -446,11 +456,11 @@ else begin
 			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
 				//if (x_ps < minx+spanx) begin	// Per-poly rendering.
 				if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
-					if (inTriangle && x_ps<639 && y_ps<479 && !FX1[31] && !FX2[31] && !FX3[31] && !FY1[31] && !FY2[31] && !FY3[31]) begin
+					if (inTriangle && /*x_ps<639 && y_ps<479 &&*/ !FX1[31] && !FX2[31] && !FX3[31] && !FY1[31] && !FY2[31] && !FY3[31]) begin
 						isp_vram_addr <= x_ps + (y_ps * 640);
-						isp_vram_wr <= 1'b1;
-						if (texture) isp_vram_dout <= texel_argb;					// ABGR, for sim display.
-						else isp_vram_dout <= {8'hff, vert_c_base_col_0[23:0]};		// Flat-shaded.
+						/*if (x_ps>0 && x_ps<640 && y_ps>0 && y_ps<480)*/ isp_vram_wr <= 1'b1;
+						isp_vram_dout <= (texture) ? texel_argb:	// ABGR, for sim display.
+							   {8'hff, vert_c_base_col_0[23:0]};	// Flat-shaded.
 					end
 					x_ps <= x_ps + 12'd1;
 				end
@@ -507,16 +517,18 @@ wire signed [31:0] C3 = (mult5 - mult6) >>FRAC_BITS;
 //int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
-wire signed [47:0] mult7  = (FDX12 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
-wire signed [47:0] mult8  = (FDY12 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+
+// These mults for C1,C2,C3 will probably work OK without the FRAC_BITS stuff?
+wire signed [47:0] mult7  = (FDX12 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult8  = (FDY12 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
 wire signed [31:0] Xhs12 = C1 + (mult7  - mult8 );
 
-wire signed [47:0] mult9  = (FDX23 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
-wire signed [47:0] mult10 = (FDY23 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+wire signed [47:0] mult9  = (FDX23 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult10 = (FDY23 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
 wire signed [31:0] Xhs23 = C2 + (mult9  - mult10);
 
-wire signed [47:0] mult11 = (FDX31 * (y_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
-wire signed [47:0] mult12 = (FDY31 * (x_ps/*<<FRAC_BITS*/) ) /*>>FRAC_BITS*/;
+wire signed [47:0] mult11 = (FDX31 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
+wire signed [47:0] mult12 = (FDY31 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
 wire signed [31:0] Xhs31 = C3 + (mult11 - mult12);
 
 wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0;
@@ -763,8 +775,8 @@ always @(*) begin
 	
 	// Twiddled or Non-Twiddled).
 	twop_or_not = (vq_comp) ? ((12'd2048 + mipmap_byte_offs)<<2) + twop :
-				  (is_pal4 || is_pal8 || is_twid) ? (mipmap_byte_offs>>1) + twop :
-												mipmap_byte_offs + non_twid_addr;
+		(is_pal4 || is_pal8 || is_twid) ? (mipmap_byte_offs>>1) + twop :		// I haven't figured out why this needs the >>1 yet. Oh well.
+										   mipmap_byte_offs + non_twid_addr;
 													 
 	// Shift twop_or_not, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
 	texel_word_offs = (vq_comp) ? (twop_or_not)>>5 : // VQ = 32 TEXELS per 64-bit VRAM word. (1 BYTE per FOUR Texels).
@@ -772,8 +784,8 @@ always @(*) begin
 					  (is_pal8) ? (twop_or_not)>>3 : // PAL8   = 8  TEXELS per 64-bit word. (8BPP).
 								  (twop_or_not)>>2;	 // Uncomp = 4  TEXELS per 64-bit word (16BPP).
 	
-	if (tex_wait) vram_word_addr = tex_word_addr + cb_word_index;	// 64-bit WORD address for Code Book reads
-			 else vram_word_addr = tex_word_addr + texel_word_offs;	// Generate 64-bit WORD address for VRAM texture reads.
+	// Generate the 64-bit VRAM WORD address using either the Code Book READ index, or texel_word_offs;
+	vram_word_addr = tex_word_addr + ((tex_wait) ? cb_word_index : texel_word_offs);
 	
 	// Select the current texel from each part of the 64-bit word...
 	//pal4_nib  = vram_din[ (twop_or_not[3:0]<<2) +:  4];
@@ -830,12 +842,12 @@ always @(*) begin
 		2: pix16 = (vq_comp) ? code_book[vq_index][47:32] : vram_din[47:32];
 		3: pix16 = (vq_comp) ? code_book[vq_index][63:48] : vram_din[63:48];
 	endcase
-
+	
 	if (pix_fmt==5) pal_raw = pal_ram[ {pal_selector[5:0], pal4_nib}  ];
 	if (pix_fmt==6) pal_raw = pal_ram[ {pal_selector[5:4], pal8_byte} ];	
 	
 	case (PAL_RAM_CTRL)
-		0: pal_final = { {8{pal_raw[15]}},    pal_raw[14:10],pal_raw[14:12], pal_raw[09:05],pal_raw[09:07], pal_raw[04:00],pal_raw[04:02] };// ARGB 1555 
+		0: pal_final = { {8{pal_raw[15]}},    pal_raw[14:10],pal_raw[14:12], pal_raw[09:05],pal_raw[09:07], pal_raw[04:00],pal_raw[04:02] };// ARGB 1555
 		1: pal_final = {            8'hff,    pal_raw[15:11],pal_raw[15:13], pal_raw[10:05],pal_raw[10:09], pal_raw[04:00],pal_raw[04:02] };//  RGB 565
 		2: pal_final = { {2{pal_raw[15:12]}}, {2{pal_raw[11:08]}},           {2{pal_raw[07:04]}},           {2{pal_raw[03:00]}} };			// ARGB 4444
 		3: pal_final = pal_raw;		// ARGB 8888. (the full 32-bit wide Palette entry is used directly).
@@ -844,14 +856,14 @@ always @(*) begin
 	// Convert all texture pixel formats to ARGB8888.
 	// (fill missing lower colour bits using some of the upper colour bits.)
 	case (pix_fmt)
-		0: texel_argb = { {8{pix16[15]}},    pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7],   pix16[4:0],pix16[4:2] };	// ARGB 1555 
-		1: texel_argb = { 8'hff,             pix16[15:11],pix16[15:13], pix16[10:5],pix16[10:9], pix16[4:0],pix16[4:2] };	//  RGB 565
-		2: texel_argb = { {2{pix16[15:12]}}, {2{pix16[11:8]}},          {2{pix16[7:4]}},         {2{pix16[3:0]}} };		// ARGB 4444
-		3: texel_argb = pix16;	// TODO. YUV422 (32-bit Y8 U8 Y8 V8).
-		4: texel_argb = pix16;	// TODO. Bump Map (16-bit S8 R8).
-		5: texel_argb = pal_final;	// TODO. Palette look-up. PAL4 or PAL8 can be ARGB1555, RGB565, ARGB4444, or even ARGB8888.
+		0: texel_argb = { {8{pix16[15]}},    pix16[14:10],pix16[14:12], pix16[09:05],pix16[09:07], pix16[04:00],pix16[04:02] };	// ARGB 1555
+		1: texel_argb = {          8'hff,    pix16[15:11],pix16[15:13], pix16[10:05],pix16[10:09], pix16[04:00],pix16[04:02] };	//  RGB 565
+		2: texel_argb = { {2{pix16[15:12]}}, {2{pix16[11:08]}},         {2{pix16[07:04]}},         {2{pix16[03:00]}} };			// ARGB 4444
+		3: texel_argb = pix16;		// TODO. YUV422 (32-bit Y8 U8 Y8 V8).
+		4: texel_argb = pix16;		// TODO. Bump Map (16-bit S8 R8).
+		5: texel_argb = pal_final;	// PAL4 or PAL8 can be ARGB1555, RGB565, ARGB4444, or even ARGB8888.
 		6: texel_argb = pal_final;	// Palette format read from PAL_RAM_CTRL[1:0].
-		7: texel_argb = { {8{pix16[15]}}, pix16[14:10],pix16[14:12], pix16[9:5],pix16[9:7],	pix16[4:0],pix16[4:2] };	// Reserved (considered ARGB 1555).
+		7: texel_argb = { {8{pix16[15]}},    pix16[14:10],pix16[14:12], pix16[09:05],pix16[09:07], pix16[04:00],pix16[04:02] };	// Reserved (considered ARGB 1555).
 	endcase
 end
 

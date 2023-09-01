@@ -787,10 +787,9 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	
 	// Lazy culling...
 	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
-	if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
+	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
 
-	// Check for NaN...
-	/*
+	// Filter out NaN values...
 	if (x1 != x1) return;
 	if (x2 != x2) return;
 	if (x3 != x3) return;
@@ -801,6 +800,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	if (z2 != z2) return;
 	if (z3 != z3) return;
 
+	/*
 	if (x1< -200) return;
 	if (x2< -200) return;
 	if (x3< -200) return;
@@ -814,21 +814,21 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	if (y1>  600) return;
 	if (y2>  600) return;
 	if (y3>  600) return;
-
-	if (x1<1) x1 = 1;
-	if (x2<1) x2 = 1;
-	if (x3<1) x3 = 1;
-	if (x1>639) x1 = 639;
-	if (x2>639) x2 = 639;
-	if (x3>639) x3 = 639;
-
-	if (y1<1) y1 = 1;
-	if (y2<1) y2 = 1;
-	if (y3<1) y3 = 1;
-	if (y1>479) y1 = 479;
-	if (y2>479) y2 = 479;
-	if (y3>479) y3 = 479;
 	*/
+
+	//if (x1<0) x1 = 0;
+	//if (x2<0) x2 = 0;
+	//if (x3<0) x3 = 0;
+	//if (x1>639) x1 = 639;
+	//if (x2>639) x2 = 639;
+	//if (x3>639) x3 = 639;
+
+	//if (y1<1) y1 = 1;
+	//if (y2<1) y2 = 1;
+	//if (y3<1) y3 = 1;
+	//if (y1>479) y1 = 479;
+	//if (y2>479) y2 = 479;
+	//if (y3>479) y3 = 479;
 
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	bool sgn = (f_area > 0);
@@ -1278,10 +1278,10 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = z_fixed;
 			
 			uint32_t texel_argb = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout;
-			rgb[2] = (texel_argb>>0) &0xff;
-			rgb[1] = (texel_argb>>8) &0xff;
-			rgb[0] = (texel_argb>>16)&0xff;
 			alpha  = (texel_argb>>24)&0xff;
+			rgb[0] = (texel_argb>>16)&0xff;
+			rgb[1] = (texel_argb>>8) &0xff;
+			rgb[2] = (texel_argb>>0) &0xff;
 
 			if (alpha==0xff) disp_ptr[ my_fb_addr&0x7fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			else {
@@ -1419,6 +1419,7 @@ int verilate() {
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x4eab0) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x428a58) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x159c) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x30b08) run_enable = 0;
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
 
@@ -1632,13 +1633,13 @@ int main(int argc, char** argv, char** env) {
 	//pvrfile = fopen("pvr_regs_taxi", "rb");			  vram_file = fopen("vram_taxi.bin", "rb");
 	//pvrfile = fopen("pvr_regs_taxi2", "rb");			  vram_file = fopen("vram_taxi2.bin", "rb");
 	//pvrfile = fopen("pvr_regs_taxi3", "rb");			  vram_file = fopen("vram_taxi3.bin", "rb");
-	pvrfile = fopen("pvr_regs_taxi4", "rb");			  vram_file = fopen("vram_taxi4.bin", "rb");
+	//pvrfile = fopen("pvr_regs_taxi4", "rb");			  vram_file = fopen("vram_taxi4.bin", "rb");
 	//pvrfile = fopen("pvr_regs_crazy_title", "rb");	  vram_file = fopen("vram_crazy_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sonic", "rb");			  vram_file = fopen("vram_sonic.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sonic_title", "rb");	  vram_file = fopen("vram_sonic_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hydro_title", "rb");	  vram_file = fopen("vram_hydro_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
-	//pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
+	pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
 	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
 	//pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
@@ -2076,7 +2077,6 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Begin(" RA Parser");
 		ImGui::Text("        ra_state: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state);
 		ImGui::Text("       vram_addr: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__vram_addr);
-		ImGui::Text(" simtop vram_din: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__vram_din);
 		ImGui::Text("     next_region: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__next_region);
 		ImGui::Text("   ol_jump_bytes: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ol_jump_bytes);
 		ImGui::Separator();
@@ -2230,16 +2230,21 @@ int main(int argc, char** argv, char** env) {
 		g_pSwapChain->Present(0, 0); // Present without vsync
 
 		if (run_enable) for (int step = 0; step < 4096; step++) {	// Simulates MUCH faster if it's done in batches.
+			bool key_f6 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F6));
+			bool key_f11 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F11));
+			if (key_f6 || key_f11) run_enable = 0;
 			if (run_enable) verilate(); else break;
 		}
 		else {														// But, that will affect the GUI update rate / value fetch.
 			bool key_f5 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F5));
-			bool key_f11 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F11));
 			if (key_f5) run_enable = 1;
-			if (key_f11) run_enable = 0;
+
+			bool key_f6 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F6));
+			bool key_f11 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F11));
+			if (key_f6 || key_f11) run_enable = 0;
 
 			if (single_step || key_f11) verilate();
-			if (multi_step) for (int step = 0; step < multi_step_amount; step++) verilate();
+			if (multi_step || key_f6) for (int step = 0; step < multi_step_amount; step++) verilate();
 		}
 	}
 	// Close imgui stuff properly...

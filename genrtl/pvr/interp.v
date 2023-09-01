@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module edge_calc (
+module interp (
 	input signed [31:0] v1_x,
 	input signed [31:0] v1_y,
 	
