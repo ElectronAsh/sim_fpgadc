@@ -443,10 +443,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop___024root final : public VerilatedMod
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_vram_dout;
     IData/*23:0*/ simtop__DOT__pvr__DOT__isp_vram_addr_out;
     IData/*31:0*/ simtop__DOT__pvr__DOT__pal_dout;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE;
+    IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE;
     IData/*23:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_addr;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_din;
     IData/*31:0*/ simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_control;

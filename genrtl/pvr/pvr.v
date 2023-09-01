@@ -512,7 +512,11 @@ ra_parser ra_parser_inst (
 	
 	.ra_trig( ra_trig ),	// input  ra_trig
 
-	.FPU_PARAM_CFG( 32'h0027DF77 ),	// input [31:0]  FPU_PARAM_CFG. (always the same value, so far).
+	.PARAM_BASE( PARAM_BASE ),			// input [31:0]  PARAM_BASE  0x20.
+	.REGION_BASE( REGION_BASE ),		// input [31:0]  REGION_BASE 0x2C.
+
+	.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG. (always the same value, so far).
+	.TA_ALLOC_CTRL( TA_ALLOC_CTRL ),	// input [31:0]  TA_ALLOC_CTRL	
 
 	.ra_vram_rd( ra_vram_rd ),			// output  ra_vram_rd
 	.ra_vram_wr( ra_vram_wr ),			// output  ra_vram_wr

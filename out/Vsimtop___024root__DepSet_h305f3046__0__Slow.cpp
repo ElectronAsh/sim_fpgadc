@@ -190,6 +190,12 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__trace_wdata1 = vlSelf->trace_wdata1;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trig 
         = vlSelf->simtop__DOT__pvr__DOT__ra_trig;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE 
+        = vlSelf->simtop__DOT__pvr__DOT__PARAM_BASE;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE 
+        = vlSelf->simtop__DOT__pvr__DOT__REGION_BASE;
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL 
+        = vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_rd 
         = vlSelf->simtop__DOT__pvr__DOT__ra_vram_rd;
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_wr 
@@ -260,29 +266,29 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                     >> 8U));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride 
         = (0x1fU & vlSelf->simtop__DOT__pvr__DOT__TEXT_CONTROL);
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__o_opb 
+        = (3U & vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL);
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb 
+        = (3U & (vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL 
+                 >> 4U));
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__t_opb 
+        = (3U & (vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL 
+                 >> 8U));
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__tm_opb 
+        = (3U & (vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL 
+                 >> 0xcU));
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__pt_opb 
+        = (3U & (vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL 
+                 >> 0x10U));
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_mode 
+        = (1U & (vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL 
+                 >> 0x14U));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_array 
         = (4U == (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                   >> 0x1dU));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array 
         = (5U == (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                   >> 0x1dU));
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__o_opb 
-        = (3U & vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL);
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__om_opb 
-        = (3U & (vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL 
-                 >> 4U));
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__t_opb 
-        = (3U & (vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL 
-                 >> 8U));
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__tm_opb 
-        = (3U & (vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL 
-                 >> 0xcU));
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__pt_opb 
-        = (3U & (vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL 
-                 >> 0x10U));
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_mode 
-        = (1U & (vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL 
-                 >> 0x14U));
     vlSelf->simtop__DOT__vram_rd = vlSelf->vram_rd;
     vlSelf->simtop__DOT__vram_din = vlSelf->vram_din;
     vlSelf->simtop__DOT__v1_x = vlSelf->v1_x;
@@ -2681,10 +2687,10 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__clock = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__reset_n = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trig = VL_RAND_RESET_I(1);
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__FPU_PARAM_CFG = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_rd = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_wr = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_vram_addr = VL_RAND_RESET_I(24);

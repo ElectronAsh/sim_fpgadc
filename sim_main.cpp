@@ -79,8 +79,6 @@ unsigned char rgb[3];
 bool prev_vsync = 0;
 int frame_count = 0;
 
-bool vga_file_select = 0;
-
 bool prev_hsync = 0;
 int line_count = 0;
 
@@ -203,6 +201,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 static float values[90] = { 0 };
 static int values_offset = 0;
 
+bool dump_to_raw = 0;
+int dump_cnt = 0;
 
 vluint64_t main_time = 0;	// Current simulation time.
 
@@ -1557,6 +1557,54 @@ int verilate() {
 }
 
 
+int load_vram_dump(const char *name) {
+
+	FILE *pvrfile;
+	FILE *vram_file;
+	sprintf(my_string,"pvr_regs%s", name); pvrfile = fopen(my_string,"rb");
+	if(pvrfile != NULL) printf("\n%s dump loaded OK.\n\n", my_string);
+	else { printf("\n%s dump file not found!\n\n", my_string); return 0; }
+	fseek(pvrfile,0L,SEEK_END);
+	file_size = ftell(pvrfile);
+	fseek(pvrfile,0L,SEEK_SET);
+	fread(pvr_ptr,1,pvr_size,pvrfile);
+
+	top->rootp->simtop__DOT__pvr__DOT__PARAM_BASE    = pvr_ptr[0x020>>2];
+	top->rootp->simtop__DOT__pvr__DOT__REGION_BASE   = pvr_ptr[0x02C>>2];
+
+	top->rootp->simtop__DOT__pvr__DOT__TEXT_CONTROL  = pvr_ptr[0x0E4>>2];
+	top->rootp->simtop__DOT__pvr__DOT__PAL_RAM_CTRL  = pvr_ptr[0x108>>2];
+	top->rootp->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL = pvr_ptr[0x140>>2];
+
+	// Copy palette RAM from pvr_regs into actual palette RAM in the Texture Address module.
+	for(int i=0x0; i<0xffc; i+=4) {
+		top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_ram[i>>2] = pvr_ptr[(0x1000+i)>>2];
+	}
+
+	sprintf(my_string,"vram%s.bin",name); vram_file = fopen(my_string,"rb");
+	if(vram_file != NULL) printf("\n%s dump loaded OK.\n\n", my_string);
+	else { printf("\n%s dump file not found!\n\n", my_string); return 0; }
+	fseek(vram_file,0L,SEEK_END);
+	file_size = ftell(vram_file);
+	fseek(vram_file,0L,SEEK_SET);
+	fread(vram_ptr,1,vram_size,vram_file);
+
+	for(int i=0; i<vram_size; i+=4) {
+		uint8_t byte0 = vram_ptr[i+0];
+		uint8_t byte1 = vram_ptr[i+1];
+		uint8_t byte2 = vram_ptr[i+2];
+		uint8_t byte3 = vram_ptr[i+3];
+
+		vram_ptr[i+0] = byte3;
+		vram_ptr[i+1] = byte2;
+		vram_ptr[i+2] = byte1;
+		vram_ptr[i+3] = byte0;
+	}
+
+	fclose(pvrfile);
+	fclose(vram_file);
+}
+
 int my_count = 0;
 
 static MemoryEditor mem_edit_1;
@@ -1624,76 +1672,40 @@ int main(int argc, char** argv, char** env) {
 	fseek(biosfile, 0L, SEEK_SET);
 	fread(rom_ptr, 1, rom_size, biosfile);
 
-	FILE* pvrfile;
-	FILE* vram_file;
-	//pvrfile = fopen("pvr_regs_logo", "rb");			  vram_file = fopen("vram_logo.bin", "rb");
-	//pvrfile = fopen("pvr_regs_menu", "rb");			  vram_file = fopen("vram_menu.bin", "rb");
-	//pvrfile = fopen("pvr_regs_menu2", "rb");			  vram_file = fopen("vram_menu2.bin", "rb");
-	//pvrfile = fopen("pvr_regs_mem", "rb");			  vram_file = fopen("vram_mem.bin", "rb");
-	//pvrfile = fopen("pvr_regs_taxi", "rb");			  vram_file = fopen("vram_taxi.bin", "rb");
-	//pvrfile = fopen("pvr_regs_taxi2", "rb");			  vram_file = fopen("vram_taxi2.bin", "rb");
-	//pvrfile = fopen("pvr_regs_taxi3", "rb");			  vram_file = fopen("vram_taxi3.bin", "rb");
-	//pvrfile = fopen("pvr_regs_taxi4", "rb");			  vram_file = fopen("vram_taxi4.bin", "rb");
-	//pvrfile = fopen("pvr_regs_crazy_title", "rb");	  vram_file = fopen("vram_crazy_title.bin", "rb");
-	//pvrfile = fopen("pvr_regs_sonic", "rb");			  vram_file = fopen("vram_sonic.bin", "rb");
-	//pvrfile = fopen("pvr_regs_sonic_title", "rb");	  vram_file = fopen("vram_sonic_title.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hydro_title", "rb");	  vram_file = fopen("vram_hydro_title.bin", "rb");
-	//pvrfile = fopen("pvr_regs_looney_foghorn", "rb");	  vram_file = fopen("vram_looney_foghorn.bin", "rb");
-	pvrfile = fopen("pvr_regs_looney_startline", "rb"); vram_file = fopen("vram_looney_startline.bin", "rb");
-	//pvrfile = fopen("pvr_regs_sw_ep1_menu", "rb");	  vram_file = fopen("vram_sw_ep1_menu.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_title", "rb");	  vram_file = fopen("vram_hotd2_title.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_zombies", "rb");	  vram_file = fopen("vram_hotd2_zombies.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_selfie", "rb");	  vram_file = fopen("vram_hotd2_selfie.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_car_fire", "rb");	  vram_file = fopen("vram_hotd2_car_fire.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_boat", "rb");		  vram_file = fopen("vram_hotd2_boat.bin", "rb");
-	//pvrfile = fopen("pvr_regs_hotd2_gargoyle", "rb");	  vram_file = fopen("vram_hotd2_gargoyle.bin", "rb");
-	//pvrfile = fopen("pvr_regs_rayman_title", "rb");	  vram_file = fopen("vram_rayman_title.bin", "rb");
-	//pvrfile = fopen("pvr_regs_rayman_lights", "rb");	  vram_file = fopen("vram_rayman_lights.bin", "rb");
-	//pvrfile = fopen("pvr_regs_rayman_level", "rb");     vram_file = fopen("vram_rayman_level.bin", "rb");
-	//pvrfile = fopen("pvr_regs_xtreme_intro", "rb");	  vram_file = fopen("vram_xtreme_intro.bin", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_intro", "rb");	  vram_file = fopen("vram_daytona_intro.bin", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_behind", "rb");	  vram_file = fopen("vram_daytona_behind.bin", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_front", "rb");	  vram_file = fopen("vram_daytona_front.bin", "rb");
-	//pvrfile = fopen("pvr_regs_daytona_sanic", "rb");	  vram_file = fopen("vram_daytona_sanic.bin", "rb");
-	//pvrfile = fopen("pvr_regs_toy_front", "rb");		  vram_file = fopen("vram_toy_front.bin", "rb");
-	//pvrfile = fopen("pvr_regs_18wheel_select", "rb");	  vram_file = fopen("vram_18wheel_select.bin", "rb");
-	
-	if (pvrfile != NULL) printf("\npvr_regs dump loaded OK.\n\n");
-	else { printf("\npvr_regs dump file not found!\n\n"); return 0; }
-	fseek(pvrfile, 0L, SEEK_END);
-	file_size = ftell(pvrfile);
-	fseek(pvrfile, 0L, SEEK_SET);
-	fread(pvr_ptr, 1, pvr_size, pvrfile);
+	//load_vram_dump("_logo");
+	//load_vram_dump("_menu");
+	//load_vram_dump("_menu2");
+	//load_vram_dump("_mem");
+	//load_vram_dump("_taxi");
+	//load_vram_dump("_taxi2");
+	//load_vram_dump("_taxi3");
+	//load_vram_dump("_taxi4");
+	//load_vram_dump("_crazy_title");
+	//load_vram_dump("_sonic");
+	//load_vram_dump("_sonic_title");
+	//load_vram_dump("_hydro_title");
+	//load_vram_dump("_looney_foghorn");
+	//load_vram_dump("_looney_startline");
+	//load_vram_dump("_sw_ep1_menu");
+	//load_vram_dump("_hotd2_title");
+	//load_vram_dump("_hotd2_zombies");
+	//load_vram_dump("_hotd2_selfie");
+	//load_vram_dump("_hotd2_car_fire");
+	//load_vram_dump("_hotd2_boat");
+	//load_vram_dump("_hotd2_gargoyle");
+	//load_vram_dump("_rayman_title");
+	//load_vram_dump("_rayman_lights");
+	//load_vram_dump("_rayman_level");
+	//load_vram_dump("_xtreme_intro");
+	//load_vram_dump("_daytona_intro");
+	load_vram_dump("_daytona_behind");
+	//load_vram_dump("_daytona_front");
+	//load_vram_dump("_daytona_sanic");
+	//load_vram_dump("_toy_front");
+	//load_vram_dump("_18wheel_select");
 
-	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__TA_ALLOC_CTRL = pvr_ptr[ 0x140>>2 ];
-	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__REGION_BASE   = pvr_ptr[ 0x02C>>2 ];
-	top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__PARAM_BASE    = pvr_ptr[ 0x020>>2 ];
-	top->rootp->simtop__DOT__pvr__DOT__TEXT_CONTROL  = pvr_ptr[ 0x0E4>>2 ];
-	top->rootp->simtop__DOT__pvr__DOT__PAL_RAM_CTRL  = pvr_ptr[ 0x108>>2 ];
-
-	// Copy palette RAM from pvr_regs into actual palette RAM in the Texture Address module.
-	for (int i=0x0; i<0xffc; i+=4) {
-		top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_ram[ i>>2 ] = pvr_ptr[ (0x1000+i)>>2 ];
-	}
-
-	if (vram_file != NULL) printf("\nvram.bin dump loaded OK.\n\n");
-	else { printf("\nvram.bin dump file not found!\n\n"); return 0; }
-	fseek(vram_file, 0L, SEEK_END);
-	file_size = ftell(vram_file);
-	fseek(vram_file, 0L, SEEK_SET);
-	fread(vram_ptr, 1, vram_size, vram_file);
-
-	for (int i=0; i<vram_size; i+=4) {
-		uint8_t byte0 = vram_ptr[ i+0 ];
-		uint8_t byte1 = vram_ptr[ i+1 ];
-		uint8_t byte2 = vram_ptr[ i+2 ];
-		uint8_t byte3 = vram_ptr[ i+3 ];
-
-		vram_ptr[ i+0 ] = byte3;
-		vram_ptr[ i+1 ] = byte2;
-		vram_ptr[ i+2 ] = byte1;
-		vram_ptr[ i+3 ] = byte0;
-	}
+	//char name[20];
+	//itoa(dump_cnt, name, 10); load_vram_dump(name);
 
 	// Our state
 	bool show_demo_window = true;
@@ -1840,6 +1852,15 @@ int main(int argc, char** argv, char** env) {
 			multi_step = 1;
 		}
 		ImGui::SameLine(); ImGui::SliderInt("Step amount", &multi_step_amount, 4, 1024);
+		
+		if(ImGui::Button("Dump Image")) {
+			dump_to_raw = 1;
+		}
+		ImGui::SameLine();
+		if (ImGui::SliderInt("VRAM dump frame", &dump_cnt, 0, 119) ) {
+			char name[20];
+			itoa(dump_cnt,name,10); load_vram_dump(name);
+		}
 
 		ImGui::Image(my_tex_id, ImVec2(width<<zoom, height<<zoom), ImVec2(0, 0), ImVec2(1, 1), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
 		ImGui::End();
@@ -2214,6 +2235,22 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("    vert_d_off_col: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_off_col);
 		ImGui::End();
 
+		if (dump_to_raw) {
+			dump_to_raw = 0;
+			char my_string [20];
+			sprintf(my_string, "frame%d.raw", dump_cnt);
+			FILE *dump = fopen(my_string, "wb");
+			for (int y=0; y<480; y++) {
+				for (int x=0; x<640; x++) {
+					uint32_t addr = x + (y * 640);
+					rgb[2] = disp_ptr[ addr ] >> 16;
+					rgb[1] = disp_ptr[ addr ] >> 8;
+					rgb[0] = disp_ptr[ addr ] >> 0;
+					fwrite(rgb, 1, 3, dump);
+				}
+			}
+			fclose(dump);
+		}
 
 		// Update the texture for disp_ptr!
 		// D3D11_USAGE_DEFAULT MUST be set in the texture description (somewhere above) for this to work.
