@@ -79,6 +79,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel 
     VL_IN(&FX3,31,0);
     VL_IN(&FDX31,31,0);
     VL_IN(&FY3,31,0);
+    VL_IN(&FDY41,31,0);
+    VL_IN(&FX4,31,0);
+    VL_IN(&FDX41,31,0);
+    VL_IN(&FY4,31,0);
     VL_IN(&minx,31,0);
     VL_IN(&miny,31,0);
     VL_IN(&spanx,31,0);

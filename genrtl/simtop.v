@@ -106,6 +106,12 @@ module simtop (
 	input signed [31:0] FDX31,
 	input signed [31:0] FY3,
 	
+	//int C4 = FDY41 * FX4 - FDX41 * FY4;
+	input signed [31:0] FDY41,
+	input signed [31:0] FX4,
+	input signed [31:0] FDX41,
+	input signed [31:0] FY4,
+	
 	input signed [31:0] minx,
 	input signed [31:0] miny,
 	
@@ -290,6 +296,12 @@ pvr pvr (
 	.FX3( FX3 ),			// input signed [31:0]  
 	.FDX31( FDX31 ),		// input signed [31:0]  
 	.FY3( FY3 ),			// input signed [31:0]  
+	
+	//int C4 = FDY41 * FX4 - FDX41 * FY4;
+	.FDY41( FDY41 ),		// input signed [31:0]  
+	.FX4( FX4 ),			// input signed [31:0]  
+	.FDX41( FDX41 ),		// input signed [31:0]  
+	.FY4( FY4 ),			// input signed [31:0]  
 	
 	.minx( minx ),
 	.miny( miny ),

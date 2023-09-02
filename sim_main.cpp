@@ -786,7 +786,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 							   float z1, float z2, float z3, float z4,
 							   float u1, float u2, float u3, float u4,
 							   float v1, float v2, float v3, float v4) {
-	
+
 	// Lazy culling...
 	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
@@ -834,32 +834,12 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	//if (y2>479) y2 = 479;
 	//if (y3>479) y3 = 479;
 
-	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
-	bool sgn = (f_area > 0);
-	
-	/*
+	//float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
+	//bool sgn = (f_area > 0);
+
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	int sgn = 1;
 	if (f_area > 0) sgn = -1;
-	*/
-
-	/*
-	uint8_t cullmode = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode;
-
-	bool vertex_offset = 0;	// TESTING.
-
-	// cull
-	if (cullmode != 0) {
-		float abs_area = fabsf(f_area);
-
-		if (abs_area < top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL) return;
-
-		if (cullmode >= 2) {
-			uint32_t mode = vertex_offset ^ (cullmode & 1);
-			if ((mode == 0 && f_area < 0) || (mode == 1 && f_area > 0)) return;
-		}
-	}
-	*/
 
 	uint32_t area_left = 0;
 	uint32_t area_top = 0;
@@ -924,6 +904,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 
 
 	// Fixed-point Deltas
+	/*
 	const int FDX12 = sgn ? (FX2-FX1) : (FX1-FX2);
 	const int FDX23 = sgn ? (FX3-FX2) : (FX2-FX3);
 	const int FDX31 = sgn ? (FX1-FX3) : (FX3-FX1);
@@ -935,6 +916,19 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	const int FDY31 = sgn ? (FY1-FY3) : (FY3-FY1);
 	const int FDY41 = (x4 || y4) ? sgn ? (FY1-FY4) : (FY4-FY1) : 0;
 	//printf("fixed FDY12: %f  FDY23: %f  FDY31: %f\n", ((float)FDY12/1<<FRAC_BITS), ((float)FDY23/1<<FRAC_BITS), ((float)FDY31/1<<FRAC_BITS));
+	*/
+
+	// Half-edge constants
+	const float FDX12 = sgn * (FX1 - FX2);
+	const float FDX23 = sgn * (FX2 - FX3);
+	const float FDX31 = v4 ? sgn * (FX3 - FX4) : sgn * (FX3 - FX1);
+	const float FDX41 = v4 ? sgn * (FX4 - FX1) : 0;
+
+	const float FDY12 = sgn * (FY1 - FY2);
+	const float FDY23 = sgn * (FY2 - FY3);
+	const float FDY31 = v4 ? sgn * (FY3 - FY4) : sgn * (FY3 - FY1);
+	const float FDY41 = v4 ? sgn * (FY4 - FY1) : 0;
+
 
 	// Bounding rectangle
 	//int minx = min(FX1,FX2,FX3)>>16;
@@ -988,6 +982,21 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	float c3 = 0;
 
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		bool vertex_offset = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1;
+		uint8_t cullmode   = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode; // 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
+		
+		// cull
+		if(cullmode != 0) {
+			float abs_area = fabsf(f_area);
+			if (abs_area < *(float*)&top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL) return;
+
+			if(cullmode >= 2) {
+				uint32_t mode = vertex_offset ^ (cullmode&1);
+				//if ((mode==0 && f_area < 0) || (mode==1 && f_area > 0)) return;
+				//if (vertex_offset && ((mode==0 && f_area < 0) || (mode==1 && f_area > 0)) ) return;
+			}
+		}
+
 		top->rootp->spanx = spanx;
 		top->rootp->spany = spany;
 		top->rootp->minx = minx;
@@ -996,12 +1005,12 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 		top->rootp->FX1 = FX1;
 		top->rootp->FX2 = FX2;
 		top->rootp->FX3 = FX3;
-		//top->rootp->FX4 = FX4;
+		top->rootp->FX4 = FX4;
 
 		top->rootp->FY1 = FY1;
 		top->rootp->FY2 = FY2;
 		top->rootp->FY3 = FY3;
-		//top->rootp->FY4 = FY4;
+		top->rootp->FY4 = FY4;
 
 		top->rootp->FDX12 = FDX12;
 		top->rootp->FDY12 = FDY12;
@@ -1011,6 +1020,9 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 
 		top->rootp->FDX31 = FDX31;
 		top->rootp->FDY31 = FDY31;
+
+		top->rootp->FDX41 = FDX41;
+		top->rootp->FDY41 = FDY41;
 
 		Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 
@@ -1325,6 +1337,12 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			rgb[1] = (texel_argb>>8) &0xff;
 			rgb[2] = (texel_argb>>0) &0xff;
 
+			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1) {
+				//rgb[0] = 0xff;
+				//rgb[1] = 0x00;
+				//rgb[2] = 0xff;
+			}
+
 			if (alpha==0xff) disp_ptr[ my_fb_addr&0x7fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			else {
 				uint8_t old_pix[3];
@@ -1431,76 +1449,51 @@ int verilate() {
 				}
 			}
 		}
+			
+		float x1,x2,x3,x4 = 0;
+		float y1,y2,y3,y4 = 0;
+		float z1,z2,z3,z4 = 0;
+		float u1,u2,u3,u4 = 0;
+		float v1,v2,v3,v4 = 0;
 
 		//X1: 43C994E8 403.163330  X2: 43C994E8 403.163330  X3: 43BC780C 376.937866  X4: 00000000 0.000000
 		//Y1: 43074970 135.286865  Y2: 4391829E 291.020447  Y3: 43074970 135.286865  Y4: 00000000 0.000000
-		float x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
-		float x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
-		float x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
-		float x4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x;
+		x1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x;
+		x2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_x;
+		x3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_x;
+		x4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_x;
 
-		float y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
-		float y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
-		float y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
-		float y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
+		y1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y;
+		y2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_y;
+		y3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_y;
+		y4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_y;
 
-		float z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
-		float z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
-		float z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
-		float z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
+		z1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z;
+		z2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z;
+		z3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_z;
+		z4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_z;
+
+		u1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
+		u2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0;
+		u3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0;
+		u4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0;
+
+		v1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
+		v2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0;
+		v3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0;
+		v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
 
 		//if (z2 > 1.2) run_enable = 0;	// H O T D 2 Title has some verts a tiny bit above 1.0? We only want to detect wildly wrong Z values here.
 		//if (z3 > 1.2) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x13720 &&
-			//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt==1) run_enable = 0;
+		//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt==1) run_enable = 0;
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x26e4c) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x23c44) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x23f3c) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x47e024) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x4eab0) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x428a58) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x159c) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x30b08) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x41F960) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x04CF58) run_enable = 0;
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
-
-		float u1,u2,u3,u4 = 0;
-		float v1,v2,v3,v4 = 0;
-
-		if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit) {
-			uint32_t u1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0&0xffff0000;
-			uint32_t u2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0&0xffff0000;
-			uint32_t u3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0&0xffff0000;
-			uint32_t u4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0&0xffff0000;
-			u1 = *(float*)&u1_temp;
-			u2 = *(float*)&u2_temp;
-			u3 = *(float*)&u3_temp;
-			u4 = *(float*)&u4_temp;
-
-			// U and V are BOTH taken from the u0 regs!...
-			uint32_t v1_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0<<16;
-			uint32_t v2_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0<<16;
-			uint32_t v3_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0<<16;
-			uint32_t v4_temp = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0<<16;
-			v1 = *(float*)&v1_temp;
-			v2 = *(float*)&v2_temp;
-			v3 = *(float*)&v3_temp;
-			v4 = *(float*)&v4_temp;
-			//printf("uv_16_bit u1: %f  v1: %f\n", u1, v1);
-		}
-		else {
-			u1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0;
-			u2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_u0;
-			u3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_u0;
-			u4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_u0;
-
-			v1 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_v0;
-			v2 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_v0;
-			v3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0;
-			v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
-		}
 
 		top->clk = 1;
 		top->eval();            // Evaluate model!
@@ -1614,6 +1607,7 @@ int load_vram_dump(const char *name) {
 
 	top->rootp->simtop__DOT__pvr__DOT__PARAM_BASE    = pvr_ptr[0x020>>2];
 	top->rootp->simtop__DOT__pvr__DOT__REGION_BASE   = pvr_ptr[0x02C>>2];
+	top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL  = pvr_ptr[0x078>>2];
 
 	top->rootp->simtop__DOT__pvr__DOT__TEXT_CONTROL  = pvr_ptr[0x0E4>>2];
 	top->rootp->simtop__DOT__pvr__DOT__PAL_RAM_CTRL  = pvr_ptr[0x108>>2];
@@ -1735,7 +1729,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_hotd2_selfie");
 	//load_vram_dump("_hotd2_car_fire");
 	//load_vram_dump("_hotd2_boat");
-	load_vram_dump("_hotd2_gargoyle");
+	//load_vram_dump("_hotd2_gargoyle");
 	//load_vram_dump("_rayman_title");
 	//load_vram_dump("_rayman_lights");
 	//load_vram_dump("_rayman_level");
@@ -1743,7 +1737,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_daytona_intro");
 	//load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
-	//load_vram_dump("_daytona_sanic");
+	load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
 	//load_vram_dump("_18wheel_select");
 

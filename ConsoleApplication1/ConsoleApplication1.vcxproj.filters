@@ -18,6 +18,9 @@
     <Filter Include="Source Files\Vsimtop">
       <UniqueIdentifier>{34b1dc6b-c0ee-4fd5-8894-c181530bc1cb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\EasyBMP">
+      <UniqueIdentifier>{1b37bceb-f90f-4089-a9f6-72058b84f45b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="C:\linux_temp\imgui\imgui.cpp">
@@ -53,6 +56,9 @@
     <ClCompile Include="..\..\verilator\include\verilated_threads.cpp">
       <Filter>Source Files\verilator</Filter>
     </ClCompile>
+    <ClCompile Include="..\EasyBMP.cpp">
+      <Filter>Source Files\EasyBMP</Filter>
+    </ClCompile>
     <ClCompile Include="..\out\Vsimtop.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
@@ -73,9 +79,6 @@
     </ClCompile>
     <ClCompile Include="..\out\Vsimtop__Syms.cpp">
       <Filter>Source Files\Vsimtop</Filter>
-    </ClCompile>
-    <ClCompile Include="..\EasyBMP.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -136,6 +139,18 @@
     <ClInclude Include="..\..\verilator\include\verilated_threads.h">
       <Filter>Source Files\verilator</Filter>
     </ClInclude>
+    <ClInclude Include="..\EasyBMP.h">
+      <Filter>Source Files\EasyBMP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\EasyBMP_BMP.h">
+      <Filter>Source Files\EasyBMP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\EasyBMP_DataStructures.h">
+      <Filter>Source Files\EasyBMP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\EasyBMP_VariousBMPutilities.h">
+      <Filter>Source Files\EasyBMP</Filter>
+    </ClInclude>
     <ClInclude Include="..\out\Vsimtop.h">
       <Filter>Source Files\Vsimtop</Filter>
     </ClInclude>
@@ -144,18 +159,6 @@
     </ClInclude>
     <ClInclude Include="..\out\Vsimtop__Syms.h">
       <Filter>Source Files\Vsimtop</Filter>
-    </ClInclude>
-    <ClInclude Include="..\EasyBMP.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\EasyBMP_DataStructures.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\EasyBMP_BMP.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\EasyBMP_VariousBMPutilities.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

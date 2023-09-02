@@ -65,6 +65,10 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , FX3{vlSymsp->TOP.FX3}
     , FDX31{vlSymsp->TOP.FDX31}
     , FY3{vlSymsp->TOP.FY3}
+    , FDY41{vlSymsp->TOP.FDY41}
+    , FX4{vlSymsp->TOP.FX4}
+    , FDX41{vlSymsp->TOP.FDX41}
+    , FY4{vlSymsp->TOP.FY4}
     , minx{vlSymsp->TOP.minx}
     , miny{vlSymsp->TOP.miny}
     , spanx{vlSymsp->TOP.spanx}
