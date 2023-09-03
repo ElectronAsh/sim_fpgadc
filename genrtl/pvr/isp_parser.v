@@ -186,6 +186,7 @@ reg [7:0] isp_state;
 reg [2:0] strip_cnt;
 reg [3:0] array_cnt;
 
+wire is_tri_strip  = !opb_word[31];
 wire is_tri_array  = opb_word[31:29]==3'b100;
 wire is_quad_array = opb_word[31:29]==3'b101;
 
@@ -220,24 +221,21 @@ else begin
 
 	case (isp_state)
 		0: begin
-			vert_d_x <= 32'd0;
-			vert_d_y <= 32'd0;
-		
 			if (render_poly) begin
 				isp_vram_addr <= poly_addr;
 				
-				if (!opb_word[31]) begin	// TriangleStrips.
+				if (is_tri_strip) begin		// TriangleStrip.
 					if (strip_mask==0) begin	// Nothing to draw for this strip.
-						strip_cnt <= 3'd0;	// Sanity check.
-						array_cnt <= 4'd0;	// Sanity check.
+						strip_cnt <= 3'd0;		// Sanity check.
+						array_cnt <= 4'd0;		// Sanity check.
 						poly_drawn <= 1'b1;
 					end
 					else begin
 						// Better in some renders without the +1, if neg_xy culling is disabled...
-						strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5] +1;	
+						strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5];
 						array_cnt <= 4'd0;	// Sanity check.
 						isp_vram_rd <= 1'b1;
-						isp_state <= 8'd1;
+						isp_state <= 8'd1;	// Only go to the next state if any strip_mask bits are set.
 					end
 				end
 				else if (is_tri_array || is_quad_array) begin	// Triangle Array or Quad Array.
@@ -379,7 +377,16 @@ else begin
 		// if Offset colour...
 		35: begin vert_c_off_col <= isp_vram_din;				// if Offset colour.
 			if (is_quad_array) isp_state <= 8'd36;	// If a Quad
-			else isp_state <= 8'd46;
+			else begin
+				/*
+				vert_d_x <= 32'd0;
+				vert_d_y <= 32'd0;
+				vert_d_z <= 32'd0;
+				vert_d_u0 <= 32'd0;
+				vert_d_v0 <= 32'd0;
+				*/
+				isp_state <= 8'd46;
+			end
 		end
 		
 		36: vert_d_x <= isp_vram_din;
@@ -437,18 +444,20 @@ else begin
 				vert_b_off_col <= vert_temp_off_col;
 			end
 			*/
+			
+			if (strip_cnt>0) strip_cnt <= strip_cnt - 3'd1;
 			isp_entry_valid <= 1'b1;
 			isp_state <= 8'd48;
 		end
 		
 		47: begin
-			if (!opb_word[31]) begin		// Triangle Strip.
+			if (is_tri_strip) begin			// Triangle Strip.
 				if (strip_cnt==3'd0) begin		// If TriangleStrip is done...
 					poly_drawn <= 1'b1;
 					isp_state <= 8'd0;
 				end
 				else begin	// Do TriangleStrip...
-					strip_cnt <= strip_cnt - 3'd1;
+					//strip_cnt <= strip_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New into A,B,C.
 					isp_state <= 8'd6;											// (plus one extra word, due to the isp_vram_addr++ thing).
 				end
@@ -530,13 +539,13 @@ else begin
 
 			isp_state <= isp_state + 8'd1;
 		end
-		
+
 		49: begin
 			//if (y_ps < miny+spany) begin	// Per-poly rendering.
 			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
 				//if (x_ps < minx+spanx) begin	// Per-poly rendering.
 				if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
-					if (inTriangle && !ovr_xy && !neg_xy && !neg_z) begin
+					if (inTriangle && !ovr_xy /*&& !neg_xy*/ && !neg_z) begin
 						isp_vram_addr <= x_ps + (y_ps * 640);
 						isp_vram_wr <= 1'b1;
 						isp_vram_dout <= (texture) ? texel_argb:	// ABGR, for sim display.
@@ -575,9 +584,10 @@ wire [22:0] man = test_float[22:00];
 wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
 									   {1'b1, man}>>(127-exp);
 
-reg signed [31:0] x_ps;
-reg signed [31:0] y_ps;
-
+//reg signed [31:0] x_ps;
+//reg signed [31:0] y_ps;
+reg [11:0] x_ps;
+reg [11:0] y_ps;
 
 parameter FRAC_BITS = 8;
 
@@ -600,7 +610,7 @@ wire signed [31:0] C3 = (mult5 - mult6) >>FRAC_BITS;
 //int C4 = FDY41 * FX4 - FDX41 * FY4;
 reg signed [47:0] mult7;
 reg signed [47:0] mult8;
-wire signed [31:0] C4 = (mult7 - mult8) >>FRAC_BITS;
+wire signed [31:0] C4 = (is_quad_array) ? (mult7 - mult8)>>FRAC_BITS : 1;
 
 
 //int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
@@ -608,24 +618,24 @@ wire signed [31:0] C4 = (mult7 - mult8) >>FRAC_BITS;
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
 
 // These mults for C1,C2,C3 will probably work OK without the FRAC_BITS stuff?
-wire signed [47:0] mult9  = (FDX12 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [47:0] mult10  = (FDY12 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [31:0] Xhs12 = C1 + (mult9 - mult10);
+wire signed [63:0] mult9  = (FDX12 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [63:0] mult10 = (FDY12 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [31:0] Xhs12  = C1 + (mult9 - mult10);
 
-wire signed [47:0] mult11  = (FDX23 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [47:0] mult12 = (FDY23 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [31:0] Xhs23 = C2 + (mult11 - mult12);
+wire signed [63:0] mult11 = (FDX23 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [63:0] mult12 = (FDY23 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [31:0] Xhs23  = C2 + (mult11 - mult12);
 
-wire signed [47:0] mult13 = (FDX31 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [47:0] mult14 = (FDY31 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [31:0] Xhs31 = C3 + (mult13 - mult14);
+wire signed [63:0] mult13 = (FDX31 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [63:0] mult14 = (FDY31 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [31:0] Xhs31  = C3 + (mult13 - mult14);
 
-wire signed [47:0] mult15 = (FDX41 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [47:0] mult16 = (FDY41 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [31:0] Xhs41 = (is_quad_array) ? C4 + (mult15 - mult16) : 1;
+wire signed [63:0] mult15 = (FDX41 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [63:0] mult16 = (FDY41 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [31:0] Xhs41  = C4 + (mult15 - mult16);
 
-wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
-//wire inTriangle;
+//wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
+wire inTriangle;
 
 texture_address  texture_address_inst (
 	.clock( clock ),

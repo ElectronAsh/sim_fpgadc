@@ -170,6 +170,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop___024root final : public VerilatedMod
     CData/*7:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state;
     CData/*2:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt;
     CData/*3:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt;
+    CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_strip;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_array;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array;
     CData/*0:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__quad_done;
@@ -231,6 +232,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop___024root final : public VerilatedMod
     SData/*15:0*/ simtop__DOT__trace_instr1;
     SData/*15:0*/ simtop__DOT__pvr__DOT__pvr_addr;
     SData/*15:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pal_addr;
+    SData/*11:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
+    SData/*11:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
     SData/*15:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_addr;
     SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui;
     SData/*9:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi;
@@ -555,8 +558,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop___024root final : public VerilatedMod
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float;
     IData/*22:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
-    IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2;
     IData/*31:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3;
@@ -612,14 +613,14 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop___024root final : public VerilatedMod
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult6;
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7;
     QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult8;
-    QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9;
-    QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10;
-    QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11;
-    QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12;
-    QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult13;
-    QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult14;
-    QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult15;
-    QData/*47:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult16;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult13;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult14;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult15;
+    QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult16;
     QData/*63:0*/ simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_din;
     VlTriggerVec<1> __VstlTriggered;
     VlTriggerVec<1> __VicoTriggered;

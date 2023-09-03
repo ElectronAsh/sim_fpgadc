@@ -781,13 +781,14 @@ uint32_t vram_word_addr;
 
 uint32_t vq_index_addr = 0;
 
-void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
-							   float y1, float y2, float y3, float y4,
-							   float z1, float z2, float z3, float z4,
-							   float u1, float u2, float u3, float u4,
-							   float v1, float v2, float v3, float v4) {
+void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
+							  float y1, float y2, float y3, float y4,
+							  float z1, float z2, float z3, float z4,
+							  float u1, float u2, float u3, float u4,
+							  float v1, float v2, float v3, float v4) {
 
 	// Lazy culling...
+	// (now done in Verilog / isp_parser).
 	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
 
@@ -834,22 +835,19 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	//if (y2>479) y2 = 479;
 	//if (y3>479) y3 = 479;
 
-	//float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
-	//bool sgn = (f_area > 0);
-
+	/*
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
-	int sgn = 1;
-	if (f_area > 0) sgn = -1;
-
-	uint32_t area_left = 0;
-	uint32_t area_top = 0;
-	uint32_t area_right = 0;
-	uint32_t area_bottom = 0;
+	bool sgn = (f_area > 0);
+	*/
 
 	// Bounding rectangle
+	// Only for per-poly rendering...
+	uint32_t area_left = 0;
+	uint32_t area_top = 0;
+	uint32_t area_right = 640;
+	uint32_t area_bottom = 480;
 	int minx = mmin(x1, x2, x3, area_left);
 	int miny = mmin(y1, y2, y3, area_top);
-
 	int spanx = mmax(x1+1, x2+1, x3+1, area_right-1)  - minx+1;
 	int spany = mmax(y1+1, y2+1, y3+1, area_bottom-1) - miny+1;
 
@@ -902,7 +900,6 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	//printf("v3a_sub_v1a = 0x%08X \n", top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3a_sub_v1a);
 	//printf("v2y_sub_v1y = 0x%08X \n\n", top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2y_sub_v1y);
 
-
 	// Fixed-point Deltas
 	/*
 	const int FDX12 = sgn ? (FX2-FX1) : (FX1-FX2);
@@ -918,17 +915,53 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	//printf("fixed FDY12: %f  FDY23: %f  FDY31: %f\n", ((float)FDY12/1<<FRAC_BITS), ((float)FDY23/1<<FRAC_BITS), ((float)FDY31/1<<FRAC_BITS));
 	*/
 
-	// Half-edge constants
-	const float FDX12 = sgn * (FX1 - FX2);
-	const float FDX23 = sgn * (FX2 - FX3);
-	const float FDX31 = v4 ? sgn * (FX3 - FX4) : sgn * (FX3 - FX1);
-	const float FDX41 = v4 ? sgn * (FX4 - FX1) : 0;
+	uint32_t core_x_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
+	uint32_t core_y_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
 
-	const float FDY12 = sgn * (FY1 - FY2);
-	const float FDY23 = sgn * (FY2 - FY3);
-	const float FDY31 = v4 ? sgn * (FY3 - FY4) : sgn * (FY3 - FY1);
-	const float FDY41 = v4 ? sgn * (FY4 - FY1) : 0;
+	// Half-edge constants (float version).
+	float c1 = 0;
+	float c2 = 0;
+	float c3 = 0;
+	float c4 = 0;
 
+	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
+	int sgn = 1;
+	if (f_area > 0) sgn = -1;
+
+	bool is_quad_array = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array;
+
+	const float fdx12 = sgn * (x1 - x2);
+	const float fdx23 = sgn * (x2 - x3);
+	const float fdx31 = (is_quad_array) ? sgn * (x3 - x4) : sgn * (x3 - x1);
+	const float fdx41 = (is_quad_array) ? sgn * (x4 - x1) : 0;
+
+	const float fdy12 = sgn * (y1 - y2);
+	const float fdy23 = sgn * (y2 - y3);
+	const float fdy31 = (is_quad_array) ? sgn * (y3 - y4) : sgn * (y3 - y1);
+	const float fdy41 = (is_quad_array) ? sgn * (y4 - y1) : 0;
+
+	c1 = (fdy12 * x1) - (fdx12 * y1);
+	c2 = (fdy23 * x2) - (fdx23 * y2);
+	c3 = (fdy31 * x3) - (fdx31 * y3);
+	c4 = (is_quad_array) ? (fdy41 * x4) - (fdx41 * y4) : 1;
+
+	float Xhs12 = c1 + (fdx12*core_y_ps) - (fdy12*core_x_ps);
+	float Xhs23 = c2 + (fdx23*core_y_ps) - (fdy23*core_x_ps);
+	float Xhs31 = c3 + (fdx31*core_y_ps) - (fdy31*core_x_ps);
+	float Xhs41 = c4 + (fdx41*core_y_ps) - (fdy41*core_x_ps);
+
+	top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = (Xhs12>=0) && (Xhs23>=0) && (Xhs31>=0) && (Xhs41>=0);
+
+
+	int32_t FDX12 = float_to_fixed(fdx12,FRAC_BITS);
+	int32_t FDX23 = float_to_fixed(fdx23,FRAC_BITS);
+	int32_t FDX31 = float_to_fixed(fdx31,FRAC_BITS);
+	int32_t FDX41 = float_to_fixed(fdx41,FRAC_BITS);
+
+	int32_t FDY12 = float_to_fixed(fdy12,FRAC_BITS);
+	int32_t FDY23 = float_to_fixed(fdy23,FRAC_BITS);
+	int32_t FDY31 = float_to_fixed(fdy31,FRAC_BITS);
+	int32_t FDY41 = float_to_fixed(fdy41,FRAC_BITS);
 
 	// Bounding rectangle
 	//int minx = min(FX1,FX2,FX3)>>16;
@@ -941,6 +974,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	//int C2 = FDY23 * FX2 - FDX23 * FY2;
 	//int C3 = FDY31 * FX3 - FDX31 * FY3;
 	//int C4 = FDY41 * FX4 - FDX41 * FY1;
+	/*
 	int FDY12_MULT = MUL_PREC(FDY12, FX1, FRAC_BITS); int FDX12_MULT = MUL_PREC(FDX12, FY1, FRAC_BITS);
 	int FDY23_MULT = MUL_PREC(FDY23, FX2, FRAC_BITS); int FDX23_MULT = MUL_PREC(FDX23, FY2, FRAC_BITS);
 	int FDY31_MULT = MUL_PREC(FDY31, FX3, FRAC_BITS); int FDX31_MULT = MUL_PREC(FDX31, FY3, FRAC_BITS);
@@ -951,6 +985,7 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	int C2 = FDY23_MULT - FDX23_MULT;
 	int C3 = FDY31_MULT - FDX31_MULT;
 	int C4 = (x4 || y4) ? FDY41_MULT - FDX41_MULT : 1;
+	*/
 	//printf("fixed C1: %f  fixed C2: %f  fixed C3: %f\n\n", ((float)C1/1<<FRAC_BITS), ((float)C2/1<<FRAC_BITS), ((float)C3/1<<FRAC_BITS));
 
 	// Correct for fill convention
@@ -962,29 +997,14 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	uint32_t tex_u_size_full = 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_size&7);
 	uint32_t tex_v_size_full = 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size&7);
 
-	uint8_t alpha = 0xff;
-
 	//int halfpixel = 1<<(FRAC_BITS-1);
 	int y_ps = miny /*+ halfpixel*/;
 	int minx_ps = minx /*+ halfpixel*/;
 
-
-	float dx12 = 0;
-	float dx23 = 0;
-	float dx31 = 0;
-
-	float dy12 = 0;
-	float dy23 = 0;
-	float dy31 = 0;
-
-	float c1 = 0;
-	float c2 = 0;
-	float c3 = 0;
-
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 		bool vertex_offset = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1;
 		uint8_t cullmode   = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode; // 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
-		
+
 		// cull
 		if(cullmode != 0) {
 			float abs_area = fabsf(f_area);
@@ -997,10 +1017,12 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			}
 		}
 
+		// Only for per-poly rendering...
 		top->rootp->spanx = spanx;
 		top->rootp->spany = spany;
 		top->rootp->minx = minx;
 		top->rootp->miny = miny;
+
 
 		top->rootp->FX1 = FX1;
 		top->rootp->FX2 = FX2;
@@ -1032,34 +1054,9 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 		V.Setup(x1,x2,x3, y1,y2,y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
 	}
 
-	uint32_t core_x_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
-	uint32_t core_y_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
-	
-	// TESTING float version !!
-	/*
-	dx12 = sgn ? (x2-x1) : (x1-x2);
-	dx23 = sgn ? (x3-x2) : (x2-x3);
-	dx31 = sgn ? (x1-x3) : (x3-x1);
-
-	dy12 = sgn ? (y2-y1) : (y1-y2);
-	dy23 = sgn ? (y3-y2) : (y2-y3);
-	dy31 = sgn ? (y1-y3) : (y3-y1);
-
-	c1 = (dy12 * x1) - (dx12 * y1);
-	c2 = (dy23 * x2) - (dx23 * y2);
-	c3 = (dy31 * x3) - (dx31 * y3);
-
-	float Xhs12 = c1 + (dx12*(float)core_y_ps) - (dy12*(float)core_x_ps);
-	float Xhs23 = c2 + (dx23*(float)core_y_ps) - (dy23*(float)core_x_ps);
-	float Xhs31 = c3 + (dx31*(float)core_y_ps) - (dy31*(float)core_x_ps);
-
-	top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = (Xhs12>=0) && (Xhs23>=0) && (Xhs31>=0);
-	*/
-
-	float invW = Z.Ip(core_x_ps, core_y_ps);	// Interpolate the Z value, based on X and Y.
-
-	float u = U.Ip((float)core_x_ps, (float)core_y_ps) * 1/invW;
-	float v = V.Ip((float)core_x_ps, (float)core_y_ps) * 1/invW;
+	float invW = Z.Ip((float)core_x_ps,(float)core_y_ps);			// Interpolate the Z value, based on X and Y.
+	float u = U.Ip((float)core_x_ps, (float)core_y_ps) * 1/invW;	// Interpolate the U value, based on X and Y. Mult with 1/invW.
+	float v = V.Ip((float)core_x_ps, (float)core_y_ps) * 1/invW;	// Interpolate the V value, based on X and Y. Mult with 1/invW.
 
 	bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 	bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
@@ -1079,6 +1076,8 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 	top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi = vi;
 
 	vram_word_addr = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_word_addr<<2;
+
+	uint8_t alpha = 0xff;
 
 	/*
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture) {
@@ -1337,11 +1336,13 @@ void rasterize_triangle_fixed (float x1, float x2, float x3, float x4,
 			rgb[1] = (texel_argb>>8) &0xff;
 			rgb[2] = (texel_argb>>0) &0xff;
 
+			/*
 			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1) {
-				//rgb[0] = 0xff;
-				//rgb[1] = 0x00;
-				//rgb[2] = 0xff;
+				rgb[0] = 0xff;
+				rgb[1] = 0x00;
+				rgb[2] = 0xff;
 			}
+			*/
 
 			if (alpha==0xff) disp_ptr[ my_fb_addr&0x7fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			else {
@@ -1495,13 +1496,13 @@ int verilate() {
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
 
+		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, u1, u2, u3, u4, v1, v2, v3, v4);
+
 		top->clk = 1;
 		top->eval();            // Evaluate model!
 		top->clk = 0;
 		top->eval();            // Evaluate model!
 		main_time++;            // Time passes...
-
-		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, u1, u2, u3, u4, v1, v2, v3, v4);
 
 		/*
 		tex_addr = 0x34a190;	// Crazy Taxi title.
@@ -1727,7 +1728,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_hotd2_title");
 	//load_vram_dump("_hotd2_zombies");
 	//load_vram_dump("_hotd2_selfie");
-	//load_vram_dump("_hotd2_car_fire");
+	load_vram_dump("_hotd2_car_fire");
 	//load_vram_dump("_hotd2_boat");
 	//load_vram_dump("_hotd2_gargoyle");
 	//load_vram_dump("_rayman_title");
@@ -1737,7 +1738,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_daytona_intro");
 	//load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
-	load_vram_dump("_daytona_sanic");
+	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
 	//load_vram_dump("_18wheel_select");
 
@@ -2175,10 +2176,10 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Begin(" ISP Parser");
 		ImGui::Text("         isp_state: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state);
 		ImGui::Separator();
-		ImGui::Text("         core minx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__minx);
-		ImGui::Text("         core miny: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny);
-		ImGui::Text("        core spanx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx);
-		ImGui::Text("        core spany: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany);
+		//ImGui::Text("         core minx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__minx);
+		//ImGui::Text("         core miny: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny);
+		//ImGui::Text("        core spanx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx);
+		//ImGui::Text("        core spany: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany);
 		ImGui::Text("         core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
 		ImGui::Text("         core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
 		ImGui::Text("   core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);

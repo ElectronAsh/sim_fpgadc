@@ -255,6 +255,9 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_wait 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_wait;
     vlSelf->simtop__DOT__bios_cs = (0x1fffffU >= vlSelf->im_req_addr);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_strip 
+        = (1U & (~ (vlSelf->simtop__DOT__pvr__DOT__opb_word 
+                    >> 0x1fU)));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_array 
         = (4U == (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                   >> 0x1dU));
@@ -287,8 +290,8 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__TA_ALLOC_CTRL 
                  >> 0x14U));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__ovr_xy 
-        = (VL_LTS_III(32, 0x27fU, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps) 
-           | VL_LTS_III(32, 0x1dfU, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps));
+        = ((0x27fU < (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps)) 
+           | (0x1dfU < (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps)));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__neg_z 
         = ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z 
             | (vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_b_z 
@@ -402,6 +405,42 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                      (vlSelf->dm_req_wdata 
                                                       >> 0U));
     vlSelf->vram_wr = vlSelf->simtop__DOT__pvr__DOT__isp_vram_wr;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1 
+        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 
+                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult2) 
+                                      >> 8U)));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2 
+        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult3 
+                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult4) 
+                                      >> 8U)));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3 
+        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult5 
+                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult6) 
+                                      >> 8U)));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9 
+        = (((QData)((IData)(vlSelf->FDX12)) * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))) 
+           >> 8U);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10 
+        = (((QData)((IData)(vlSelf->FDY12)) * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))) 
+           >> 8U);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11 
+        = (((QData)((IData)(vlSelf->FDX23)) * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))) 
+           >> 8U);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12 
+        = (((QData)((IData)(vlSelf->FDY23)) * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))) 
+           >> 8U);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult13 
+        = (((QData)((IData)(vlSelf->FDX31)) * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))) 
+           >> 8U);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult14 
+        = (((QData)((IData)(vlSelf->FDY31)) * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))) 
+           >> 8U);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult15 
+        = (((QData)((IData)(vlSelf->FDX41)) * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))) 
+           >> 8U);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult16 
+        = (((QData)((IData)(vlSelf->FDY41)) * (QData)((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))) 
+           >> 8U);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__neg_xy 
         = ((vlSelf->FX1 | (vlSelf->FX2 | (vlSelf->FX3 
                                           | (vlSelf->FY1 
@@ -432,76 +471,12 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__eol 
         = (1U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                  >> 0x1cU));
-    vlSelf->simtop__DOT__clk = vlSelf->clk;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array 
         = (5U == (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                   >> 0x1dU));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1 
-        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 
-                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult2) 
-                                      >> 8U)));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2 
-        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult3 
-                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult4) 
-                                      >> 8U)));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3 
-        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult5 
-                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult6) 
-                                      >> 8U)));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9 
-        = (0xffffffffffULL & (VL_MULS_QQQ(48, (0xffffffffffffULL 
-                                               & VL_EXTENDS_QI(48,32, vlSelf->FDX12)), 
-                                          (0xffffffffffffULL 
-                                           & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))) 
-                              >> 8U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10 
-        = (0xffffffffffULL & (VL_MULS_QQQ(48, (0xffffffffffffULL 
-                                               & VL_EXTENDS_QI(48,32, vlSelf->FDY12)), 
-                                          (0xffffffffffffULL 
-                                           & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))) 
-                              >> 8U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11 
-        = (0xffffffffffULL & (VL_MULS_QQQ(48, (0xffffffffffffULL 
-                                               & VL_EXTENDS_QI(48,32, vlSelf->FDX23)), 
-                                          (0xffffffffffffULL 
-                                           & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))) 
-                              >> 8U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12 
-        = (0xffffffffffULL & (VL_MULS_QQQ(48, (0xffffffffffffULL 
-                                               & VL_EXTENDS_QI(48,32, vlSelf->FDY23)), 
-                                          (0xffffffffffffULL 
-                                           & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))) 
-                              >> 8U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult13 
-        = (0xffffffffffULL & (VL_MULS_QQQ(48, (0xffffffffffffULL 
-                                               & VL_EXTENDS_QI(48,32, vlSelf->FDX31)), 
-                                          (0xffffffffffffULL 
-                                           & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))) 
-                              >> 8U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult14 
-        = (0xffffffffffULL & (VL_MULS_QQQ(48, (0xffffffffffffULL 
-                                               & VL_EXTENDS_QI(48,32, vlSelf->FDY31)), 
-                                          (0xffffffffffffULL 
-                                           & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))) 
-                              >> 8U));
+    vlSelf->simtop__DOT__clk = vlSelf->clk;
     vlSelf->simtop__DOT____Vcellinp__pvr__reset_n = 
         (1U & (~ (IData)(vlSelf->simtop__DOT__rst_reg)));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C4 
-        = (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7 
-                                       - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult8) 
-                                      >> 8U)));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult15 
-        = (0xffffffffffULL & (VL_MULS_QQQ(48, (0xffffffffffffULL 
-                                               & VL_EXTENDS_QI(48,32, vlSelf->FDX41)), 
-                                          (0xffffffffffffULL 
-                                           & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps))) 
-                              >> 8U));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult16 
-        = (0xffffffffffULL & (VL_MULS_QQQ(48, (0xffffffffffffULL 
-                                               & VL_EXTENDS_QI(48,32, vlSelf->FDY41)), 
-                                          (0xffffffffffffULL 
-                                           & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps))) 
-                              >> 8U));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__tex_word_addr 
         = (0x1fffffU & vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__pal_selector 
@@ -1392,6 +1367,18 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__pal_din 
         = vlSelf->simtop__DOT__pvr__DOT__pvr_din;
     vlSelf->simtop__DOT__vram_wr = vlSelf->vram_wr;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 
+        = ((IData)(VL_EXTENDS_QI(64,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1)) 
+           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9) 
+              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10)));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23 
+        = ((IData)(VL_EXTENDS_QI(64,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2)) 
+           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11) 
+              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12)));
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31 
+        = ((IData)(VL_EXTENDS_QI(64,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3)) 
+           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult13) 
+              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult14)));
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_tiley 
         = vlSelf->simtop__DOT__pvr__DOT__ra_cont_tiley;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tiley 
@@ -1433,26 +1420,13 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
                                                  >> 0x1cU)) 
                                           | (1U & (vlSelf->simtop__DOT__pvr__DOT__opb_word 
                                                    >> 0x1eU)))))));
-    vlSelf->simtop__DOT__pvr__DOT__clock = vlSelf->simtop__DOT__clk;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 
-        = ((IData)((0xffffffffffffULL & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1))) 
-           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9) 
-              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10)));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23 
-        = ((IData)((0xffffffffffffULL & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C2))) 
-           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11) 
-              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12)));
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31 
-        = ((IData)((0xffffffffffffULL & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C3))) 
-           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult13) 
-              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult14)));
-    vlSelf->simtop__DOT__pvr__DOT__reset_n = vlSelf->simtop__DOT____Vcellinp__pvr__reset_n;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs41 
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C4 
         = ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array)
-            ? ((IData)((0xffffffffffffULL & VL_EXTENDS_QI(48,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C4))) 
-               + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult15) 
-                  - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult16)))
-            : 1U);
+            ? (IData)((0xffffffffffULL & ((vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7 
+                                           - vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult8) 
+                                          >> 8U))) : 1U);
+    vlSelf->simtop__DOT__pvr__DOT__clock = vlSelf->simtop__DOT__clk;
+    vlSelf->simtop__DOT__pvr__DOT__reset_n = vlSelf->simtop__DOT____Vcellinp__pvr__reset_n;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vq_comp 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vq_comp;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din 
@@ -1603,6 +1577,10 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
         = vlSelf->simtop__DOT__pvr__DOT__pvr_wr;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_mask 
         = vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__strip_mask;
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs41 
+        = ((IData)(VL_EXTENDS_QI(64,32, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C4)) 
+           + ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult15) 
+              - (IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult16)));
     vlSelf->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__clock 
         = vlSelf->simtop__DOT__pvr__DOT__clock;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__clock 
@@ -1611,11 +1589,6 @@ VL_ATTR_COLD void Vsimtop___024root___stl_sequent__TOP__0(Vsimtop___024root* vlS
         = vlSelf->simtop__DOT__pvr__DOT__reset_n;
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__reset_n 
         = vlSelf->simtop__DOT__pvr__DOT__reset_n;
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle 
-        = (VL_LTES_III(32, 0U, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12) 
-           & (VL_LTES_III(32, 0U, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23) 
-              & (VL_LTES_III(32, 0U, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31) 
-                 & VL_LTES_III(32, 0U, vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs41))));
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vram_din 
         = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din;
     vlSelf->simtop__DOT__pvr__DOT__ta_fifo_cs = vlSelf->simtop__DOT__ta_fifo_cs;
@@ -2913,6 +2886,7 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state = VL_RAND_RESET_I(8);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt = VL_RAND_RESET_I(3);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__array_cnt = VL_RAND_RESET_I(4);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_strip = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_array = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__quad_done = VL_RAND_RESET_I(1);
@@ -2925,8 +2899,8 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp = VL_RAND_RESET_I(8);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man = VL_RAND_RESET_I(23);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps = VL_RAND_RESET_I(32);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps = VL_RAND_RESET_I(12);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps = VL_RAND_RESET_I(12);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult2 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C1 = VL_RAND_RESET_I(32);
@@ -2939,17 +2913,17 @@ VL_ATTR_COLD void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf) 
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult7 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult8 = VL_RAND_RESET_Q(48);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__C4 = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9 = VL_RAND_RESET_Q(48);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10 = VL_RAND_RESET_Q(48);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult9 = VL_RAND_RESET_Q(64);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult10 = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs12 = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11 = VL_RAND_RESET_Q(48);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12 = VL_RAND_RESET_Q(48);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult11 = VL_RAND_RESET_Q(64);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult12 = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs23 = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult13 = VL_RAND_RESET_Q(48);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult14 = VL_RAND_RESET_Q(48);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult13 = VL_RAND_RESET_Q(64);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult14 = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs31 = VL_RAND_RESET_I(32);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult15 = VL_RAND_RESET_Q(48);
-    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult16 = VL_RAND_RESET_Q(48);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult15 = VL_RAND_RESET_Q(64);
+    vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult16 = VL_RAND_RESET_Q(64);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__Xhs41 = VL_RAND_RESET_I(32);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = VL_RAND_RESET_I(1);
     vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__read_codebook = VL_RAND_RESET_I(1);
