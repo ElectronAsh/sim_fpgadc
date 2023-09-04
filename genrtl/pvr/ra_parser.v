@@ -100,36 +100,36 @@ else begin
 		end
 		
 		1: begin
-			ra_vram_rd <= 1'b1;
 			ra_vram_addr <= REGION_BASE[23:0];	// Allowing the full 16MB VRAM address here.
+			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
 		2: begin
-			ra_vram_rd <= 1'b1;
 			ra_control <= ra_vram_din;
 			ra_vram_addr <= ra_vram_addr + 4;
+			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
 		3: begin
-			ra_vram_rd <= 1'b1;
 			ra_opaque <= ra_vram_din;
 			ra_vram_addr <= ra_vram_addr + 4;
+			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
 		4: begin
-			ra_vram_rd <= 1'b1;
 			ra_opaque_mod <= ra_vram_din;
 			ra_vram_addr <= ra_vram_addr + 4;
+			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
 		5: begin
-			ra_vram_rd <= 1'b1;
 			ra_trans <= ra_vram_din;
 			ra_vram_addr <= ra_vram_addr + 4;
+			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
@@ -139,7 +139,7 @@ else begin
 			if (FPU_PARAM_CFG[21]) begin	// fmt v2 (grab puncht value in next ra_state).
 				ra_vram_rd <= 1'b1;
 				ra_vram_addr <= ra_vram_addr + 4;
-				ra_state <= ra_state + 1;
+				ra_state <= 8'd7;
 			end
 			else begin						// fmt v1.
 				ra_puncht <= 32'h80000000;	// (mark ra_puncht as Unused).
@@ -169,15 +169,15 @@ else begin
 				//
 				// o_opb,om_opb,t_opb,tm_opb,pt_opb gives the OPB size for each prim type...
 				// 0=No List, 1=8 Words, 2=16 Words, 3=32 Words.
-				// TODO: Shift won't work for o_opb==0 etc.
+				// TODO: Shift won't work for o_opb==0 etc. (we now check for o_opb>0 etc.)
 				//
 				// Note: No need to add PARAM_BASE to ra_opaque etc. ra_opaque is already the Absolute VRAM address! ElectronAsh.
 				//
-				0: if (!ra_opaque[31])     begin ra_vram_addr <= ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				1: if (!ra_opaque_mod[31]) begin ra_vram_addr <= ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				2: if (!ra_trans[31])      begin ra_vram_addr <= ra_trans[23:0];      ol_jump_bytes <= (4<<t_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				3: if (!ra_trans_mod[31])  begin ra_vram_addr <= ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				4: if (!ra_puncht[31])     begin ra_vram_addr <= ra_puncht[23:0];     ol_jump_bytes <= (4<<pt_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				0: if (!ra_opaque[31] && o_opb>0)     begin ra_vram_addr <= ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb )*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				1: if (!ra_opaque_mod[31] && o_opb>0) begin ra_vram_addr <= ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				2: if (!ra_trans[31] && t_opb>0)      begin ra_vram_addr <= ra_trans[23:0];      ol_jump_bytes <= (4<<t_opb )*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				3: if (!ra_trans_mod[31] && tm_opb>0) begin ra_vram_addr <= ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				4: if (!ra_puncht[31] && pt_opb>0)    begin ra_vram_addr <= ra_puncht[23:0];     ol_jump_bytes <= (4<<pt_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
 				5: ra_state <= 8'd15;	// All prim TYPES in this Object are done!
 				default: ;
 			endcase

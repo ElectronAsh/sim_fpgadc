@@ -258,7 +258,7 @@ else begin
 			end
 			else if (is_tri_array || is_quad_array) begin	// Triangle Array or Quad Array.
 				quad_done <= 1'b0;							// Ready for drawing the first half of a Quad.			
-				array_cnt <= num_prims;
+				array_cnt <= num_prims;	// Shouldn't need a +1 here, because it will render the first triangle with array_cnt==0 anyway. ElectronAsh.
 				isp_vram_rd <= 1'b1;
 				isp_state <= 8'd2;
 			end
@@ -512,7 +512,7 @@ else begin
 						isp_vram_wr <= 1'b1;
 						isp_vram_dout <= final_argb;	// ABGR, for sim display.
 					end
-					if (x_ps == (tilex*32)+32) begin
+					if (x_ps == (tilex*32)+33) begin
 						x_ps <= tilex*32;
 						y_ps <= y_ps + 12'd1;
 					end
@@ -547,7 +547,7 @@ wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
 reg [11:0] x_ps;
 reg [11:0] y_ps;
 
-parameter FRAC_BITS = 12;
+parameter FRAC_BITS = 8;
 
 // Half-edge constants
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
@@ -592,7 +592,7 @@ wire signed [63:0] mult15 = (FDX41 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
 wire signed [63:0] mult16 = (FDY41 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
 wire signed [31:0] Xhs41  = C4 + (mult15 - mult16);
 
-//wire inTriangle = Xhs12 >= 0 && Xhs23 >= 0 && Xhs31 >= 0 && Xhs41 >= 0;
+//wire inTriangle = !Xhs12[31] && !Xhs23[31] && !Xhs31[31] && !Xhs41[31];
 wire inTriangle;
 
 texture_address  texture_address_inst (
@@ -941,37 +941,48 @@ always @(*) begin
 	case (shade_inst)
 		0: begin						// Decal.
 			blend_argb[31:24] = texel_argb[31:24];	// Blend Alpha <- Texel Alpha.  Texel_RGB + Offset_RGB.
-			blend_argb[23:16] = texel_argb[23:16] + offs_argb[23:16];	// Red.
-			blend_argb[15:08] = texel_argb[15:08] + offs_argb[15:08];	// Green.
-			blend_argb[07:00] = texel_argb[07:00] + offs_argb[07:00];	// Blue.
+			blend_argb[23:16] = texel_argb[23:16];	// Red.
+			blend_argb[15:08] = texel_argb[15:08];	// Green.
+			blend_argb[07:00] = texel_argb[07:00];	// Blue.
 		end
 		
 		1: begin						// Modulate.
 			blend_argb[31:24] = texel_argb[31:24];	// Blend Alpha <- Texel Alpha.  (Texel_RGB * Base_RGB) + Offset_RGB.
-			blend_argb[23:16] = ((texel_argb[23:16] * base_argb[23:16]) /256) + offs_argb[23:16];	// Red.
-			blend_argb[15:08] = ((texel_argb[15:08] * base_argb[15:08]) /256) + offs_argb[15:08];	// Green.
-			blend_argb[07:00] = ((texel_argb[07:00] * base_argb[07:00]) /256) + offs_argb[07:00];	// Blue.
+			blend_argb[23:16] = ((texel_argb[23:16] * base_argb[23:16]) /256);	// Red.
+			blend_argb[15:08] = ((texel_argb[15:08] * base_argb[15:08]) /256);	// Green.
+			blend_argb[07:00] = ((texel_argb[07:00] * base_argb[07:00]) /256);	// Blue.
 		end
 		
 		2: begin						// Decal Alpha.
 			blend_argb[31:24] = base_argb[31:24];	// Blend Alpha <- Base Alpha.  (Texel_RGB * Texel_Alpha) + (Base_RGB * (255-Texel_Alpha)) + Offset_RGB.
-			blend_argb[23:16] = ((texel_argb[23:16] * texel_argb[31:24]) /256) + ((base_argb[23:16] * (255-texel_argb[31:24])) /256) + offs_argb[23:16];	// Red.
-			blend_argb[15:08] = ((texel_argb[15:08] * texel_argb[31:24]) /256) + ((base_argb[15:08] * (255-texel_argb[31:24])) /256) + offs_argb[15:08];	// Green.
-			blend_argb[07:00] = ((texel_argb[07:00] * texel_argb[31:24]) /256) + ((base_argb[07:00] * (255-texel_argb[31:24])) /256) + offs_argb[07:00];	// Blue.
+			blend_argb[23:16] = ((texel_argb[23:16] * texel_argb[31:24]) /256) + ((base_argb[23:16] * (255-texel_argb[31:24])) /256);	// Red.
+			blend_argb[15:08] = ((texel_argb[15:08] * texel_argb[31:24]) /256) + ((base_argb[15:08] * (255-texel_argb[31:24])) /256);	// Green.
+			blend_argb[07:00] = ((texel_argb[07:00] * texel_argb[31:24]) /256) + ((base_argb[07:00] * (255-texel_argb[31:24])) /256);	// Blue.
 		end
 		
 		3: begin						// Modulate Alpha.
-			blend_argb[31:24] = (texel_argb[31:24] * base_argb[31:24]) /256;	// Texel ARGB multiplied by Base ARGB.
-			blend_argb[23:16] = (texel_argb[23:16] * base_argb[23:16]) /256;	// Red.
-			blend_argb[15:08] = (texel_argb[15:08] * base_argb[15:08]) /256;	// Green.
-			blend_argb[07:00] = (texel_argb[07:00] * base_argb[07:00]) /256;	// Blue.
+			blend_argb[31:24] = (texel_argb[31:24] * base_argb[31:24]) /256;	// (Texel_ARGB * Base_ARGB) + Offset_RGB.
+			blend_argb[23:16] = ((texel_argb[23:16] * base_argb[23:16]) /256);	// Red.
+			blend_argb[15:08] = ((texel_argb[15:08] * base_argb[15:08]) /256);	// Green.
+			blend_argb[07:00] = ((texel_argb[07:00] * base_argb[07:00]) /256);	// Blue.
 		end
 	endcase
 
-	final_argb = blend_argb;
+	final_argb = (texture) ? blend_offs_argb : base_argb;
 end
 
 reg [31:0] blend_argb;
+
+wire [15:0] blend_plus_offs_r = blend_argb[23:16] + offs_argb[23:16];
+wire [15:0] blend_plus_offs_g = blend_argb[15:08] + offs_argb[15:08];
+wire [15:0] blend_plus_offs_b = blend_argb[07:00] + offs_argb[07:00];
+
+wire [7:0] offs_r_clamped = (blend_plus_offs_r>255) ? 8'd255 : blend_plus_offs_r;
+wire [7:0] offs_g_clamped = (blend_plus_offs_g>255) ? 8'd255 : blend_plus_offs_g;
+wire [7:0] offs_b_clamped = (blend_plus_offs_b>255) ? 8'd255 : blend_plus_offs_b;
+
+wire [31:0] blend_offs_argb = {blend_argb[31:24], offs_r_clamped, offs_g_clamped, offs_b_clamped};
+
 
 reg [31:0] pal_raw;
 reg [31:0] pal_final;

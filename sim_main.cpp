@@ -722,7 +722,7 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
-#define FRAC_BITS 12
+#define FRAC_BITS 8
 
 PlaneStepper3 Z;
 PlaneStepper3 U;
@@ -1314,6 +1314,14 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 
 		float old_z = z_ptr[ my_fb_addr&0x7fffff ];
 		uint8_t depth_mode = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__depth_comp;
+
+		/*
+		uint8_t type_cnt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__type_cnt;
+		if (type_cnt==4) depth_mode = 6;	// PunchThrough.
+		else if (type_cnt==2 || type_cnt==3) depth_mode = 3;	// Translucent.
+		else if (type_cnt==1 || type_cnt==3) depth_mode = 6;	// Modifier.
+		*/
+
 		//if (render_mode == RM_PUNCHTHROUGH) depth_mode = 6;		// TODO: FIXME
 		//else if (render_mode == RM_TRANSLUCENT) depth_mode = 3;	// TODO: FIXME
 		//else if (render_mode == RM_MODIFIER) depth_mode = 6;
@@ -1339,14 +1347,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 			rgb[0] = (texel_argb>>16)&0xff;
 			rgb[1] = (texel_argb>>8) &0xff;
 			rgb[2] = (texel_argb>>0) &0xff;
-
-			/*
-			if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1) {
-				rgb[0] = 0xff;
-				rgb[1] = 0x00;
-				rgb[2] = 0xff;
-			}
-			*/
 
 			if (alpha==0xff) disp_ptr[ my_fb_addr&0x7fffff ] = 0xff<<24 | rgb[2]<<16 | rgb[1]<<8 | rgb[0];
 			else {
@@ -1496,7 +1496,7 @@ int verilate() {
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x26e4c) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x23c44) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x41F960) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x0477164) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x62dec) run_enable = 0;
 		
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array) run_enable = 0;
 
@@ -1757,10 +1757,10 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	load_vram_dump("_daytona_behind");
+	//load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
-	//load_vram_dump("_toy_front");
+	load_vram_dump("_toy_front");
 	//load_vram_dump("_18wheel_select");
 
 	//char name[20];
@@ -2156,11 +2156,11 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("   ra_cont_tilex: %d", top->rootp->simtop__DOT__pvr__DOT__ra_cont_tilex);
 		ImGui::Separator();
 		ImGui::Text("        type_cnt: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__type_cnt);
-		ImGui::Text("       ra_opaque: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_opaque);
-		ImGui::Text("   ra_opaque_mod: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_opaque_mod);
-		ImGui::Text("        ra_trans: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans);
-		ImGui::Text("    ra_trans_mod: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans_mod);
-		ImGui::Text("       ra_puncht: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_puncht);
+		ImGui::Text("       ra_opaque: 0x%08X (0)", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_opaque);
+		ImGui::Text("   ra_opaque_mod: 0x%08X (1)", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_opaque_mod);
+		ImGui::Text("        ra_trans: 0x%08X (2)", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans);
+		ImGui::Text("    ra_trans_mod: 0x%08X (3)", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_trans_mod);
+		ImGui::Text("       ra_puncht: 0x%08X (4)", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_puncht);
 		ImGui::Separator();
 		uint8_t s_mask = top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__strip_mask;
 		ImGui::Text("        opb_word: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word);
@@ -2226,10 +2226,11 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("          stride_f: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride_flag);
 		ImGui::SameLine();
 		ImGui::Text(" stride: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride);
+		ImGui::Text("        shade_inst: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__shade_inst);
 		//ImGui::Text("         tex_addr: 0x%08X", tex_addr);
 		//ImGui::Text("       texel_offs: 0x%05X", texel_offs);
 		//ImGui::Text("tex_byte_addr sim (byte): 0x%08X", tex_byte_addr<<3);
-		ImGui::Text("vram_word_addr_cor: 0x%08X",vram_word_addr);
+		ImGui::Text("  vram_(byte)_addr: 0x%06X",vram_word_addr);
 		//ImGui::Text("     vq_index_addr: 0x%08X",vq_index_addr );
 		ImGui::Text("         twop core: 0x%05X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__twop);
 		ImGui::Separator();
