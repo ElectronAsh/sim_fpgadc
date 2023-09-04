@@ -1754,10 +1754,10 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_hotd2_gargoyle");
 	//load_vram_dump("_rayman_title");
 	//load_vram_dump("_rayman_lights");
-	load_vram_dump("_rayman_level");
+	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	//load_vram_dump("_daytona_behind");
+	load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");

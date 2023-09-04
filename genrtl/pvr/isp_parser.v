@@ -510,8 +510,7 @@ else begin
 					if (inTriangle /*&& !neg_xy && !neg_z*/) begin
 						isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
 						isp_vram_wr <= 1'b1;
-						isp_vram_dout <= (texture) ? final_argb:	// ABGR, for sim display.
-							   {8'hff, vert_c_base_col_0[23:0]};	// Flat-shaded.
+						isp_vram_dout <= final_argb;	// ABGR, for sim display.
 					end
 					if (x_ps == (tilex*32)+32) begin
 						x_ps <= tilex*32;
@@ -941,35 +940,35 @@ always @(*) begin
 	
 	case (shade_inst)
 		0: begin						// Decal.
-			blend_argb[31:24] = texel_argb[31:24];	// Final Alpha <- Texel Alpha.
-			blend_argb[24:16] = texel_argb[24:16] + offs_argb[24:16];	// Red.
+			blend_argb[31:24] = texel_argb[31:24];	// Blend Alpha <- Texel Alpha.  Texel_RGB + Offset_RGB.
+			blend_argb[23:16] = texel_argb[23:16] + offs_argb[23:16];	// Red.
 			blend_argb[15:08] = texel_argb[15:08] + offs_argb[15:08];	// Green.
 			blend_argb[07:00] = texel_argb[07:00] + offs_argb[07:00];	// Blue.
 		end
 		
 		1: begin						// Modulate.
-			blend_argb[31:24] = texel_argb[31:24];	// Final Alpha <- Texel Alpha.
+			blend_argb[31:24] = texel_argb[31:24];	// Blend Alpha <- Texel Alpha.  (Texel_RGB * Base_RGB) + Offset_RGB.
 			blend_argb[23:16] = ((texel_argb[23:16] * base_argb[23:16]) /256) + offs_argb[23:16];	// Red.
 			blend_argb[15:08] = ((texel_argb[15:08] * base_argb[15:08]) /256) + offs_argb[15:08];	// Green.
 			blend_argb[07:00] = ((texel_argb[07:00] * base_argb[07:00]) /256) + offs_argb[07:00];	// Blue.
 		end
 		
 		2: begin						// Decal Alpha.
-			blend_argb[31:24] = base_argb[31:24];	// Final Alpha <- Base Alpha.
-			blend_argb[23:16] = ((texel_argb[23:16] * texel_argb[31:24])/256) + ((base_argb[23:16] * (255-texel_argb[31:24]))/256) + offs_argb[23:16];	// Red.
-			blend_argb[15:08] = ((texel_argb[15:08] * texel_argb[31:24])/256) + ((base_argb[15:08] * (255-texel_argb[31:24]))/256) + offs_argb[15:08];	// Green.
-			blend_argb[07:00] = ((texel_argb[07:00] * texel_argb[31:24])/256) + ((base_argb[07:00] * (255-texel_argb[31:24]))/256) + offs_argb[07:00];	// Blue.
+			blend_argb[31:24] = base_argb[31:24];	// Blend Alpha <- Base Alpha.  (Texel_RGB * Texel_Alpha) + (Base_RGB * (255-Texel_Alpha)) + Offset_RGB.
+			blend_argb[23:16] = ((texel_argb[23:16] * texel_argb[31:24]) /256) + ((base_argb[23:16] * (255-texel_argb[31:24])) /256) + offs_argb[23:16];	// Red.
+			blend_argb[15:08] = ((texel_argb[15:08] * texel_argb[31:24]) /256) + ((base_argb[15:08] * (255-texel_argb[31:24])) /256) + offs_argb[15:08];	// Green.
+			blend_argb[07:00] = ((texel_argb[07:00] * texel_argb[31:24]) /256) + ((base_argb[07:00] * (255-texel_argb[31:24])) /256) + offs_argb[07:00];	// Blue.
 		end
 		
 		3: begin						// Modulate Alpha.
 			blend_argb[31:24] = (texel_argb[31:24] * base_argb[31:24]) /256;	// Texel ARGB multiplied by Base ARGB.
-			blend_argb[24:16] = (texel_argb[24:16] + base_argb[24:16]) /256;	// Red.
-			blend_argb[15:08] = (texel_argb[15:08] + base_argb[15:08]) /256;	// Green.
-			blend_argb[07:00] = (texel_argb[07:00] + base_argb[07:00]) /256;	// Blue.
+			blend_argb[23:16] = (texel_argb[23:16] * base_argb[23:16]) /256;	// Red.
+			blend_argb[15:08] = (texel_argb[15:08] * base_argb[15:08]) /256;	// Green.
+			blend_argb[07:00] = (texel_argb[07:00] * base_argb[07:00]) /256;	// Blue.
 		end
 	endcase
 
-	final_argb = (texture) ? texel_argb : base_argb;
+	final_argb = blend_argb;
 end
 
 reg [31:0] blend_argb;
