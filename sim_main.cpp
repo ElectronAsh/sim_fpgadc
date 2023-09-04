@@ -1500,7 +1500,6 @@ int verilate() {
 		
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array) run_enable = 0;
 
-
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
 
 		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, u1, u2, u3, u4, v1, v2, v3, v4);
@@ -1739,7 +1738,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_taxi");
 	//load_vram_dump("_taxi2");
 	//load_vram_dump("_taxi3");
-	load_vram_dump("_taxi4");
+	//load_vram_dump("_taxi4");
 	//load_vram_dump("_crazy_title");
 	//load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
@@ -1755,7 +1754,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_hotd2_gargoyle");
 	//load_vram_dump("_rayman_title");
 	//load_vram_dump("_rayman_lights");
-	//load_vram_dump("_rayman_level");
+	load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
 	//load_vram_dump("_daytona_behind");
@@ -1806,7 +1805,6 @@ int main(int argc, char** argv, char** env) {
 	// Store our identifier
 	ImTextureID my_tex_id = (ImTextureID)g_pFontTextureView;
 
-	
 	// Create texture sampler
 	{
 		D3D11_SAMPLER_DESC desc;

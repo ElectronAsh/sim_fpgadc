@@ -506,14 +506,14 @@ else begin
 		end
 
 		50: begin
-			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
+			if (y_ps < (tiley*32)+32) begin
 					if (inTriangle /*&& !neg_xy && !neg_z*/) begin
 						isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
 						isp_vram_wr <= 1'b1;
-						isp_vram_dout <= (texture) ? texel_argb:	// ABGR, for sim display.
+						isp_vram_dout <= (texture) ? final_argb:	// ABGR, for sim display.
 							   {8'hff, vert_c_base_col_0[23:0]};	// Flat-shaded.
 					end
-					if (x_ps == (tilex*32)+32 ) begin
+					if (x_ps == (tilex*32)+32) begin
 						x_ps <= tilex*32;
 						y_ps <= y_ps + 12'd1;
 					end
@@ -619,10 +619,14 @@ texture_address  texture_address_inst (
 	//.ui( ui ),						// input [9:0]  ui. From rasterizer/interp...
 	//.vi( vi ),						// input [9:0]  ui.
 	
-	.vram_word_addr( vram_word_addr ),// output [20:0]  vram_word_addr. 64-bit WORD address!
-	.vram_din( isp_vram_din ),		// input [63:0]  vram_din. Full 64-bit data for texture reads.
+	.vram_word_addr( vram_word_addr ),	// output [20:0]  vram_word_addr. 64-bit WORD address!
+	.vram_din( isp_vram_din ),			// input [63:0]  vram_din. Full 64-bit data for texture reads.
 	
-	.texel_argb( texel_argb )		// output [31:0]  texel_argb. Final texel ARGB 8888 output.
+	.base_argb( vert_c_base_col_0 ),	// input [31:0]  base_argb.  Flat-shading colour input. (will also do Gouraud eventually).
+	.offs_argb( vert_c_off_col ),		// input [31:0]  offs_argb.  Offset colour input.
+	
+	.texel_argb( texel_argb ),			// output [31:0]  texel_argb. Texel ARGB 8888 output.
+	.final_argb( final_argb )			// output [31:0]  final_argb. Final blended ARGB 8888 output.
 );
 
 reg read_codebook;
@@ -632,7 +636,9 @@ wire tex_wait;
 //reg [9:0] vi;
 
 wire [20:0] vram_word_addr;
+
 wire [31:0] texel_argb;
+wire [31:0] final_argb;
 
 endmodule
 
@@ -663,7 +669,11 @@ module texture_address (
 	output reg [20:0] vram_word_addr,	// 64-bit WORD address!
 	input [63:0] vram_din,				// Full 64-bit data for texture reads.
 	
-	output reg [31:0] texel_argb	// Final texel ARGB 8888 output.
+	input [31:0] base_argb,				// Flat-shading colour input. (will also do Gouraud eventually).
+	input [31:0] offs_argb,				// Offset colour input.
+	
+	output reg [31:0] texel_argb,		// Texel ARGB 8888 output.
+	output reg [31:0] final_argb		// Final blended ARGB 8888 output.
 );
 
 reg [9:0] ui;
@@ -691,6 +701,7 @@ wire tex_u_flip = tsp_inst[18];
 wire tex_v_flip = tsp_inst[17];
 wire tex_u_clamp = tsp_inst[16];
 wire tex_v_clamp = tsp_inst[15];
+wire [1:0] shade_inst = tsp_inst[7:6];
 wire [2:0] tex_u_size = tsp_inst[5:3];
 wire [2:0] tex_v_size = tsp_inst[2:0];
 
@@ -707,9 +718,9 @@ wire [20:0] tex_word_addr = tcw_word[20:0];		// 64-bit WORD address!
 
 // TEXT_CONTROL PVR reg. (not to be confused with TCW above!).
 wire code_book_endian = TEXT_CONTROL[17];
-wire index_endian   = TEXT_CONTROL[16];
-wire [5:0] bank_bit = TEXT_CONTROL[12:8];
-wire [4:0] stride   = TEXT_CONTROL[4:0];
+wire index_endian     = TEXT_CONTROL[16];
+wire [5:0] bank_bit   = TEXT_CONTROL[12:8];
+wire [4:0] stride     = TEXT_CONTROL[4:0];
 
 
 // tex_u_size and tex_v_size (raw value vs actual)...
@@ -927,7 +938,41 @@ always @(*) begin
 		6: texel_argb = pal_final;	// Palette format read from PAL_RAM_CTRL[1:0].
 		7: texel_argb = { {8{pix16[15]}},    pix16[14:10],pix16[14:12], pix16[09:05],pix16[09:07], pix16[04:00],pix16[04:02] };	// Reserved (considered ARGB 1555).
 	endcase
+	
+	case (shade_inst)
+		0: begin						// Decal.
+			blend_argb[31:24] = texel_argb[31:24];	// Final Alpha <- Texel Alpha.
+			blend_argb[24:16] = texel_argb[24:16] + offs_argb[24:16];	// Red.
+			blend_argb[15:08] = texel_argb[15:08] + offs_argb[15:08];	// Green.
+			blend_argb[07:00] = texel_argb[07:00] + offs_argb[07:00];	// Blue.
+		end
+		
+		1: begin						// Modulate.
+			blend_argb[31:24] = texel_argb[31:24];	// Final Alpha <- Texel Alpha.
+			blend_argb[23:16] = ((texel_argb[23:16] * base_argb[23:16]) /256) + offs_argb[23:16];	// Red.
+			blend_argb[15:08] = ((texel_argb[15:08] * base_argb[15:08]) /256) + offs_argb[15:08];	// Green.
+			blend_argb[07:00] = ((texel_argb[07:00] * base_argb[07:00]) /256) + offs_argb[07:00];	// Blue.
+		end
+		
+		2: begin						// Decal Alpha.
+			blend_argb[31:24] = base_argb[31:24];	// Final Alpha <- Base Alpha.
+			blend_argb[23:16] = ((texel_argb[23:16] * texel_argb[31:24])/256) + ((base_argb[23:16] * (255-texel_argb[31:24]))/256) + offs_argb[23:16];	// Red.
+			blend_argb[15:08] = ((texel_argb[15:08] * texel_argb[31:24])/256) + ((base_argb[15:08] * (255-texel_argb[31:24]))/256) + offs_argb[15:08];	// Green.
+			blend_argb[07:00] = ((texel_argb[07:00] * texel_argb[31:24])/256) + ((base_argb[07:00] * (255-texel_argb[31:24]))/256) + offs_argb[07:00];	// Blue.
+		end
+		
+		3: begin						// Modulate Alpha.
+			blend_argb[31:24] = (texel_argb[31:24] * base_argb[31:24]) /256;	// Texel ARGB multiplied by Base ARGB.
+			blend_argb[24:16] = (texel_argb[24:16] + base_argb[24:16]) /256;	// Red.
+			blend_argb[15:08] = (texel_argb[15:08] + base_argb[15:08]) /256;	// Green.
+			blend_argb[07:00] = (texel_argb[07:00] + base_argb[07:00]) /256;	// Blue.
+		end
+	endcase
+
+	final_argb = (texture) ? texel_argb : base_argb;
 end
+
+reg [31:0] blend_argb;
 
 reg [31:0] pal_raw;
 reg [31:0] pal_final;
