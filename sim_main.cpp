@@ -1002,7 +1002,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	int minx_ps = minx /*+ halfpixel*/;
 
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
-		bool vertex_offset = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1;
+		//bool vertex_offset = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1;
 		uint8_t cullmode   = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode; // 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
 
 		// cull
@@ -1011,7 +1011,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 			if (abs_area < *(float*)&top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL) return;
 
 			if(cullmode >= 2) {
-				uint32_t mode = vertex_offset ^ (cullmode&1);
+				uint32_t mode = /*vertex_offset ^*/ (cullmode&1);
 				//if ((mode==0 && f_area < 0) || (mode==1 && f_area > 0)) return;
 				//if (vertex_offset && ((mode==0 && f_area < 0) || (mode==1 && f_area > 0)) ) return;
 			}
@@ -1055,8 +1055,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	}
 
 	float invW = Z.Ip((float)core_x_ps,(float)core_y_ps);			// Interpolate the Z value, based on X and Y.
-	float u = U.Ip((float)core_x_ps, (float)core_y_ps) * 1/invW;	// Interpolate the U value, based on X and Y. Mult with 1/invW.
-	float v = V.Ip((float)core_x_ps, (float)core_y_ps) * 1/invW;	// Interpolate the V value, based on X and Y. Mult with 1/invW.
+	float u = U.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the U value, based on X and Y. Mult with 1/invW.
+	float v = V.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the V value, based on X and Y. Mult with 1/invW.
 
 	bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 	bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
@@ -1606,6 +1606,21 @@ int load_vram_dump(const char *name) {
 	fseek(pvrfile,0L,SEEK_SET);
 	fread(pvr_ptr,1,pvr_size,pvrfile);
 
+	/*
+	for (int i=0; i<8192; i++) {
+		top->rootp->simtop__DOT__pvr_reg_cs = 1;
+		top->rootp->simtop__DOT__pvr_wr = 1;
+		top->rootp->simtop__DOT__dm_req_addr  = 0x005f7c00 + (i<<2);	// dm_req_addr is the BYTE address!
+		top->rootp->simtop__DOT__dm_req_wdata = pvr_ptr[i];	// 32-bit WORD address!
+		top->clk = 1;
+		top->eval();            // Evaluate model!
+		top->clk = 0;
+		top->eval();            // Evaluate model!
+	}
+	top->rootp->simtop__DOT__pvr_reg_cs = 0;
+	top->rootp->simtop__DOT__pvr_wr = 0;
+	*/
+
 	top->rootp->simtop__DOT__pvr__DOT__PARAM_BASE    = pvr_ptr[0x020>>2];
 	top->rootp->simtop__DOT__pvr__DOT__REGION_BASE   = pvr_ptr[0x02C>>2];
 	top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL  = pvr_ptr[0x078>>2];
@@ -1728,9 +1743,9 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_hotd2_title");
 	//load_vram_dump("_hotd2_zombies");
 	//load_vram_dump("_hotd2_selfie");
-	load_vram_dump("_hotd2_car_fire");
+	//load_vram_dump("_hotd2_car_fire");
 	//load_vram_dump("_hotd2_boat");
-	//load_vram_dump("_hotd2_gargoyle");
+	load_vram_dump("_hotd2_gargoyle");
 	//load_vram_dump("_rayman_title");
 	//load_vram_dump("_rayman_lights");
 	//load_vram_dump("_rayman_level");
@@ -1745,9 +1760,6 @@ int main(int argc, char** argv, char** env) {
 	//char name[20];
 	//itoa(dump_cnt, name, 10); load_vram_dump(name);
 
-	// Our state
-	bool show_demo_window = true;
-	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	// Build texture atlas
@@ -1833,15 +1845,6 @@ int main(int argc, char** argv, char** env) {
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
-
-		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		//if (show_demo_window)
-		//	ImGui::ShowDemoWindow(&show_demo_window);
-
-		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-		static float f = 0.1f;
-		static int counter = 0;
-
 		ImGui::Begin("Virtual Dev Board v1.0");		// Create a window called "Virtual Dev Board v1.0" and append into it.
 
 		ShowMyExampleAppConsole(&show_app_console);
@@ -2162,7 +2165,8 @@ int main(int argc, char** argv, char** env) {
 		else if ( (top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__opb_word&0xE0000000)==0xA0000000 ) ImGui::Text("      Quad Array");
 		else ImGui::Text("   Unknown Prim!");
 
-		ImGui::Text("      strip_mask: 0b%d%d%d%d%d%d", (s_mask&1), (s_mask&2)>>1, (s_mask&4)>>2, (s_mask&8)>>3, (s_mask&16)>>4, (s_mask&32)>>5, (s_mask&64)>>6 );
+		ImGui::Text("  isp  strip_cnt: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt);
+		ImGui::Text("      strip_mask: 0b%d%d%d%d%d%d", (s_mask&32)>>5, (s_mask&16)>>4, (s_mask&8)>>3, (s_mask&4)>>2, (s_mask&2)>>1, (s_mask&1) );
 		ImGui::Text("       num_prims: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__num_prims);
 		ImGui::Text("          shadow: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__shadow);
 		ImGui::Text("            skip: %d", top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__skip);

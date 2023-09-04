@@ -243,7 +243,7 @@ pvr pvr (
 	.ta_yuv_cs( ta_yuv_cs ),	// input  ta_yuv_cs
 	.ta_tex_cs( ta_tex_cs ),	// input  ta_tex_cs
 	
-	.pvr_addr( dm_req_addr[15:0] ),	// input [15:0]  pvr_addr
+	.pvr_addr( dm_req_addr[15:0] ),	// input [15:0]  pvr_addr  BYTE Address!
 	.pvr_din( dm_req_wdata ),		// input [31:0]  pvr_din
 	.pvr_rd( pvr_rd ),			// input  pvr_rd
 	.pvr_wr( pvr_wr ),			// input  pvr_wr

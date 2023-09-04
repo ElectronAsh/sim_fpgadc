@@ -70,7 +70,7 @@ module isp_parser (
 
 reg [23:0] isp_vram_addr;
 
-assign isp_vram_addr_out = (tex_wait || isp_state==8'd49) ? (vram_word_addr<<2) :	// Output texture WORD address as a BYTE address.
+assign isp_vram_addr_out = (tex_wait || isp_state==8'd50) ? (vram_word_addr<<2) :	// Output texture WORD address as a BYTE address.
 															 isp_vram_addr;			// Output ISP Parser BYTE address.
 
 // OL Word bit decodes...
@@ -213,170 +213,183 @@ else begin
 	
 	read_codebook <= 1'b0;
 
-	if (isp_state > 0) begin
+	if (isp_state > 1) begin
 		//if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47 || isp_state != 8'd48 || isp_state != 8'd49 || isp_state != 8'd50) isp_state <= isp_state + 8'd1;
-		if (!tex_wait && isp_state < 8'd46) isp_state <= isp_state + 8'd1;
-		if (!tex_wait && isp_state < 8'd47) isp_vram_addr <= isp_vram_addr + 4;
+		if (!tex_wait && isp_state < 8'd47) isp_state <= isp_state + 8'd1;
+		if (!tex_wait && isp_state > 8'd1 && isp_state < 8'd48) isp_vram_addr <= isp_vram_addr + 4;
 	end
 
 	case (isp_state)
 		0: begin
 			if (render_poly) begin
 				isp_vram_addr <= poly_addr;
-				
-				if (is_tri_strip) begin		// TriangleStrip.
-					if (strip_mask==0) begin	// Nothing to draw for this strip.
-						strip_cnt <= 3'd0;		// Sanity check.
-						array_cnt <= 4'd0;		// Sanity check.
-						poly_drawn <= 1'b1;
-					end
-					else begin
-						// Better in some renders without the +1, if neg_xy culling is disabled...
-						strip_cnt <= strip_mask[0] + strip_mask[1] + strip_mask[2] + strip_mask[3] + strip_mask[4] + strip_mask[5];
-						array_cnt <= 4'd0;	// Sanity check.
-						isp_vram_rd <= 1'b1;
-						isp_state <= 8'd1;	// Only go to the next state if any strip_mask bits are set.
-					end
-				end
-				else if (is_tri_array || is_quad_array) begin	// Triangle Array or Quad Array.
-					if (is_quad_array) quad_done <= 1'b0;	// if a Quad.			
-					strip_cnt <= 3'd0;
-					array_cnt <= num_prims /*+1*/;
-					isp_vram_rd <= 1'b1;
-					isp_state <= 8'd1;
-				end
-				else begin
-					strip_cnt <= 3'd0;	// Sanity check.
-					array_cnt <= 4'd0;	// Sanity check.
-					poly_drawn <= 1'b1;	// No idea which prim type, so skip!
-				end
+				strip_cnt <= 3'd0;
+				array_cnt <= 4'd0;
+				isp_state <= 8'd1;
 			end
 		end
-		1: isp_inst <= isp_vram_din;
-		2: tsp_inst <= isp_vram_din;
-		3: begin
+		
+		1: begin
+			if (is_tri_strip) begin		// TriangleStrip.
+				if (strip_mask==6'b000000) begin	// Nothing to draw for this strip.
+					poly_drawn <= 1'b1;				// Tell the RA we're done.
+					isp_state <= 8'd0;				// Go back to idle state.
+				end
+				else if (strip_cnt < 6) begin	// Check strip_mask bits 0 through 5...
+					if (strip_mask[strip_cnt]) begin
+						isp_vram_rd <= 1'b1;
+						isp_vram_addr <= poly_addr;	// Always use the absolute start address of the poly. Will fetch ISP/TSP/TCW again, but then skip verts.
+						isp_state <= 8'd2;	// Go to the next state if the current strip_mask bit is set.
+					end
+					else begin							// Current strip_mask bit was NOT set...
+						strip_cnt <= strip_cnt + 6'd1;	// Increment to the next bit.
+						//isp_state <= 8'd1;			// (Stay in the current state, to check the next bit.)
+					end
+				end
+				else begin					// All strip_mask bits checked.
+					poly_drawn <= 1'b1;		// Tell the RA we're done.
+					isp_state <= 8'd0;		// Go back to idle state.
+				end
+			end
+			else if (is_tri_array || is_quad_array) begin	// Triangle Array or Quad Array.
+				quad_done <= 1'b0;							// Ready for drawing the first half of a Quad.			
+				array_cnt <= num_prims;
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd2;
+			end
+			else begin
+				poly_drawn <= 1'b1;	// No idea which prim type, so skip!
+				isp_state <= 8'd0;
+			end
+		end
+		
+		2: isp_inst <= isp_vram_din;
+		3: tsp_inst <= isp_vram_din;
+		4: begin
 			tcw_word <= isp_vram_din;
 			if (isp_vram_din[30]) read_codebook <= 1'b1;	// Read VQ Code Book if TCW bit 30 is set.
-			isp_state <= 8'd6;
+			
+			if (is_tri_strip) isp_vram_addr <= poly_addr + (3<<2) + ((vert_words*strip_cnt) << 2);	// Skip a vert, based on strip_cnt.
+			isp_state <= 8'd7;
 		end
 		
 		// if (shadow)...
 		// Probably wrong? I think the shadow bit denotes when a poly can be affected by a Modifier Volume?) ElectronAsh.
-		//4:  tsp2_inst <= isp_vram_din;
-		//5:  tex2_cont <= isp_vram_din;
+		//5:  tsp2_inst <= isp_vram_din;
+		//6:  tex2_cont <= isp_vram_din;
 		
-		6:  vert_a_x <= isp_vram_din;
-		7:  vert_a_y <= isp_vram_din;
-		8:  begin vert_a_z <= isp_vram_din;
+		7:  vert_a_x <= isp_vram_din;
+		8:  vert_a_y <= isp_vram_din;
+		9:  begin vert_a_z <= isp_vram_din;
 			if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array...
 				if (!texture) begin
 					if (tsp_inst==32'h00000000) isp_state <= 8'd16;	// Skip Colour and UV??
-					else isp_state <= 8'd11;	// Skip U+V if not Textured.
+					else isp_state <= 8'd12;	// Skip U+V if not Textured.
 				end
 			end
-			else if (!texture) isp_state <= 8'd11;	// Triangle Strip (probably).
+			else if (!texture) isp_state <= 8'd12;	// Triangle Strip (probably).
 		end
-		9:  begin
+		10:  begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
 				vert_a_u0 <= {isp_vram_din[31:16],16'h0000};
 				vert_a_v0 <= {isp_vram_din[15:00],16'h0000};
-				isp_state <= 8'd11;	// Skip reading v0 from VRAM.
+				isp_state <= 8'd12;	// Skip reading v0 from VRAM.
 			end
 			else vert_a_u0 <= isp_vram_din;
 		end
-		10: vert_a_v0 <= isp_vram_din;
-		11: begin
+		11: vert_a_v0 <= isp_vram_din;
+		12: begin
 			vert_a_base_col_0 <= isp_vram_din;
-			if (two_volume) isp_state <= 8'd12;
-			else if (offset) isp_state <= 8'd15;
-			else isp_state <= 8'd16;
+			if (two_volume) isp_state <= 8'd13;
+			else if (offset) isp_state <= 8'd16;
+			else isp_state <= 8'd17;
 		end
 		
 		// if Two-volume...
-		12: vert_a_u1 <= isp_vram_din;
-		13: vert_a_v1 <= isp_vram_din;
-		14: begin vert_a_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd16; end
+		13: vert_a_u1 <= isp_vram_din;
+		14: vert_a_v1 <= isp_vram_din;
+		15: begin vert_a_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd17; end
 		
 		// if Offset colour.
-		15: vert_a_off_col <= isp_vram_din;
+		16: vert_a_off_col <= isp_vram_din;
 		
-		16: vert_b_x <= isp_vram_din;
-		17: vert_b_y <= isp_vram_din;
-		18: begin vert_b_z <= isp_vram_din;
+		17: vert_b_x <= isp_vram_din;
+		18: vert_b_y <= isp_vram_din;
+		19: begin vert_b_z <= isp_vram_din;
 			if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array...
 				if (!texture) begin
-					if (tsp_inst==32'h00000000) isp_state <= 8'd26;	// Skip Colour and UV??
-					else isp_state <= 8'd21;	// Skip U+V if not Textured.
+					if (tsp_inst==32'h00000000) isp_state <= 8'd27;	// Skip Colour and UV??
+					else isp_state <= 8'd22;	// Skip U+V if not Textured.
 				end
 			end
-			else if (!texture) isp_state <= 8'd21;	// Triangle Strip (probably).
+			else if (!texture) isp_state <= 8'd22;	// Triangle Strip (probably).
 		end
-		19: begin
+		20: begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
 				vert_b_u0 <= {isp_vram_din[31:16],16'h0000};
 				vert_b_v0 <= {isp_vram_din[15:00],16'h0000};
-				isp_state <= 8'd21;	// Skip reading v0 from VRAM.
+				isp_state <= 8'd22;	// Skip reading v0 from VRAM.
 			end
 			else vert_b_u0 <= isp_vram_din;
 		end
-		20: vert_b_v0 <= isp_vram_din;
-		21: begin
+		21: vert_b_v0 <= isp_vram_din;
+		22: begin
 			vert_b_base_col_0 <= isp_vram_din;
-			if (two_volume) isp_state <= 8'd22;
-			else if (offset) isp_state <= 8'd25;
-			else isp_state <= 8'd26;
+			if (two_volume) isp_state <= 8'd23;
+			else if (offset) isp_state <= 8'd26;
+			else isp_state <= 8'd27;
 		end
 		
 		// if Two-volume...
-		22: vert_b_u1 <= isp_vram_din;
-		23: vert_b_v1 <= isp_vram_din;
-		24: begin vert_b_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd26; end
+		23: vert_b_u1 <= isp_vram_din;
+		24: vert_b_v1 <= isp_vram_din;
+		25: begin vert_b_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd27; end
 		
 		// if Offset colour...
-		25: vert_b_off_col <= isp_vram_din;			// if Offset colour.
+		26: vert_b_off_col <= isp_vram_din;			// if Offset colour.
 		
-		26: vert_c_x <= isp_vram_din;
-		27: vert_c_y <= isp_vram_din;
-		28: begin vert_c_z <= isp_vram_din;
+		27: vert_c_x <= isp_vram_din;
+		28: vert_c_y <= isp_vram_din;
+		29: begin vert_c_z <= isp_vram_din;
 			if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array...
 				if (!texture) begin
 					if (tsp_inst==32'h00000000) begin
-						if (is_quad_array) isp_state <= 8'd36;	// Skip Colour and UV if a Quad.
-						else isp_state <= 8'd46;				// Else (not a Quad), skip to render.
+						if (is_quad_array) isp_state <= 8'd37;	// Skip Colour and UV if a Quad.
+						else isp_state <= 8'd47;				// Else (not a Quad), skip to render.
 					end
-					else isp_state <= 8'd31;	// Skip U+V if not Textured.
+					else isp_state <= 8'd32;	// Skip U+V if not Textured.
 				end
 			end
-			else if (!texture) isp_state <= 8'd31;	// Triangle Strip (probably).
+			else if (!texture) isp_state <= 8'd32;	// Triangle Strip (probably).
 		end
-		29: begin
+		30: begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
 				vert_c_u0 <= {isp_vram_din[31:16],16'h0000};
 				vert_c_v0 <= {isp_vram_din[15:00],16'h0000};
-				isp_state <= 8'd31;	// Skip reading v0 from VRAM.
+				isp_state <= 8'd32;	// Skip reading v0 from VRAM.
 			end
 			else vert_c_u0 <= isp_vram_din;
 		end
-		30: vert_c_v0 <= isp_vram_din;
-		31: begin
+		31: vert_c_v0 <= isp_vram_din;
+		32: begin
 			vert_c_base_col_0 <= isp_vram_din;
-			if (two_volume) isp_state <= 8'd32;
-			else if (offset) isp_state <= 8'd35;
-			else if (is_quad_array) isp_state <= 8'd36;	// If a Quad.
-				else isp_state <= 8'd46;
+			if (two_volume) isp_state <= 8'd33;
+			else if (offset) isp_state <= 8'd36;
+			else if (is_quad_array) isp_state <= 8'd37;	// If a Quad.
+				else isp_state <= 8'd47;
 		end
 		
 		// if Two-volume...
-		32: vert_c_u1 <= isp_vram_din;
-		33: vert_c_v1 <= isp_vram_din;
-		34: begin vert_c_base_col_1 <= isp_vram_din;
-			if (offset) isp_state <= 8'd35;
-			else isp_state <= 8'd46;
+		33: vert_c_u1 <= isp_vram_din;
+		34: vert_c_v1 <= isp_vram_din;
+		35: begin vert_c_base_col_1 <= isp_vram_din;
+			if (offset) isp_state <= 8'd36;
+			else isp_state <= 8'd47;
 		end
 		
 		// if Offset colour...
-		35: begin vert_c_off_col <= isp_vram_din;				// if Offset colour.
-			if (is_quad_array) isp_state <= 8'd36;	// If a Quad
+		36: begin vert_c_off_col <= isp_vram_din;				// if Offset colour.
+			if (is_quad_array) isp_state <= 8'd37;	// If a Quad
 			else begin
 				/*
 				vert_d_x <= 32'd0;
@@ -385,48 +398,39 @@ else begin
 				vert_d_u0 <= 32'd0;
 				vert_d_v0 <= 32'd0;
 				*/
-				isp_state <= 8'd46;
+				isp_state <= 8'd47;
 			end
 		end
 		
-		36: vert_d_x <= isp_vram_din;
-		37: vert_d_y <= isp_vram_din;
-		38: begin vert_d_z <= isp_vram_din;  if (!texture) isp_state <= 8'd41; end
-		39: begin
+		37: vert_d_x <= isp_vram_din;
+		38: vert_d_y <= isp_vram_din;
+		39: begin vert_d_z <= isp_vram_din;  if (!texture) isp_state <= 8'd42; end
+		40: begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
 				vert_d_u0 <= {isp_vram_din[31:16],16'h0000};
 				vert_d_v0 <= {isp_vram_din[15:00],16'h0000};
-				isp_state <= 8'd41;	// Skip reading v0 from VRAM.
+				isp_state <= 8'd42;	// Skip reading v0 from VRAM.
 			end
 			else vert_d_u0 <= isp_vram_din;
 		end
-		40: vert_d_v0 <= isp_vram_din;
-		41: begin
+		41: vert_d_v0 <= isp_vram_din;
+		42: begin
 			vert_d_base_col_0 <= isp_vram_din;
-			if (two_volume) isp_state <= 8'd42;
-			else if (offset) isp_state <= 8'd45;
-			else isp_state <= 8'd46;
+			if (two_volume) isp_state <= 8'd43;
+			else if (offset) isp_state <= 8'd46;
+			else isp_state <= 8'd47;
 		end
 		
 		// if Two-volume...
-		42: vert_d_u1 <= isp_vram_din;
-		43: vert_d_v1 <= isp_vram_din;
-		44: begin vert_d_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd46; end
+		43: vert_d_u1 <= isp_vram_din;
+		44: vert_d_v1 <= isp_vram_din;
+		45: begin vert_d_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd47; end
 		
 		// if Offset colour...
-		45: vert_d_off_col <= isp_vram_din;				// if Offset colour.
+		46: vert_d_off_col <= isp_vram_din;				// if Offset colour.
 		
-		46: begin
-			/*
-			if (strip_cnt[0]) begin
-				vert_temp_x  <= vert_a_x;
-				vert_temp_y  <= vert_a_y;
-				vert_temp_z  <= vert_a_z;
-				vert_temp_u0 <= vert_a_u0;
-				vert_temp_v0 <= vert_a_v0;
-				vert_temp_base_col_0 <= vert_a_base_col_0;
-				vert_temp_off_col <= vert_a_off_col;
-				
+		47: begin
+			if (strip_cnt[0]) begin		// Swap verts A and B, for all ODD strip segments.
 				vert_a_x  <= vert_b_x;
 				vert_a_y  <= vert_b_y;
 				vert_a_z  <= vert_b_z;
@@ -435,66 +439,44 @@ else begin
 				vert_a_base_col_0 <= vert_b_base_col_0;
 				vert_a_off_col <= vert_b_off_col;
 			
-				vert_b_x  <= vert_temp_x;
-				vert_b_y  <= vert_temp_y;
-				vert_b_z  <= vert_temp_z;
-				vert_b_u0 <= vert_temp_u0;
-				vert_b_v0 <= vert_temp_v0;
-				vert_b_base_col_0 <= vert_temp_base_col_0;
-				vert_b_off_col <= vert_temp_off_col;
+				vert_b_x  <= vert_a_x;
+				vert_b_y  <= vert_a_y;
+				vert_b_z  <= vert_a_z;
+				vert_b_u0 <= vert_a_u0;
+				vert_b_v0 <= vert_a_v0;
+				vert_b_base_col_0 <= vert_a_base_col_0;
+				vert_b_off_col <= vert_a_off_col;
 			end
-			*/
-			
-			if (strip_cnt>0) strip_cnt <= strip_cnt - 3'd1;
 			isp_entry_valid <= 1'b1;
-			isp_state <= 8'd48;
+			isp_state <= 8'd49;			// Draw the triangle!
 		end
 		
-		47: begin
+		48: begin
 			if (is_tri_strip) begin			// Triangle Strip.
-				if (strip_cnt==3'd0) begin		// If TriangleStrip is done...
-					poly_drawn <= 1'b1;
-					isp_state <= 8'd0;
-				end
-				else begin	// Do TriangleStrip...
-					//strip_cnt <= strip_cnt - 3'd1;
-					isp_vram_addr <= isp_vram_addr - (((vert_words*2)+1) << 2);	// Jump back TWO verts, to grab B,C,New into A,B,C.
-					isp_state <= 8'd6;											// (plus one extra word, due to the isp_vram_addr++ thing).
-				end
+				strip_cnt <= strip_cnt + 6'd1;	// Increment to the next strip_mask bit.
+				isp_state <= 8'd1;
 			end
 			else if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array.
 				if (array_cnt==4'd0) begin		// If Array is done...
 					if (is_quad_array) begin	// Quad Array (maybe) done.
 						if (!quad_done) begin	// Second half of Quad not done yet...
-							//vert_a_x <= vert_c_x;
-							//vert_a_y <= vert_c_y;
-							//vert_a_z <= vert_c_z;
-							//vert_a_u0 <= vert_c_u0;
-							//vert_a_v0 <= vert_c_v0;
-							
+							// Swap some verts and UV stuff, for the second half of a Quad. (kludge!)
 							vert_b_x <= vert_d_x;
 							vert_b_y <= vert_d_y;
 							//vert_b_z <= vert_d_z;
 							vert_b_u0 <= vert_a_u0;
 							vert_b_v0 <= vert_c_v0;
-
-							//vert_c_x <= vert_d_x;
-							//vert_c_y <= vert_d_y;
-							//vert_c_z <= vert_d_z;
-							//vert_c_u0 <= vert_a_u0;
-							//vert_c_v0 <= vert_d_v0;
-							
-							isp_state <= 8'd46;			// Draw the second half of the Quad.
+							isp_state <= 8'd47;			// Draw the second half of the Quad.
 														// isp_entry_valid will tell the C code to latch the
 														// params again, and convert to fixed-point.
-							quad_done <= 1'b1;
+							quad_done <= 1'b1;			// <- The next time we get to this state, we know the full Quad is drawn.
 						end
 						else begin
 							poly_drawn <= 1'b1;	// Quad is done.
 							isp_state <= 8'd0;
 						end
 					end
-					else begin	// Triangle is done.
+					else begin	// Triangle Array is done.
 						poly_drawn <= 1'b1;
 						isp_state <= 8'd0;
 					end
@@ -502,7 +484,7 @@ else begin
 				else begin	// Triangle Array or Quad Array not done yet...
 					array_cnt <= array_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - 4;
-					isp_state <= 8'd1;	// Jump back, to grab the next PRIM (including ISP/TSP/TCW).
+					isp_state <= 8'd2;	// Jump back, to grab the next PRIM (including ISP/TSP/TCW).
 				end
 			end
 			else begin	// Should never get to here??
@@ -511,7 +493,7 @@ else begin
 			end
 		end
 
-		48: begin
+		49: begin
 			isp_vram_addr_last <= isp_vram_addr;
 	
 			// Half-edge constants (setup).
@@ -531,37 +513,41 @@ else begin
 			mult7 <= (FDY41 * FX4) >>FRAC_BITS;
 			mult8 <= (FDX41 * FY4) >>FRAC_BITS;
 			
+			//x_ps <= minx;		// Per-poly rendering.
 			//y_ps <= miny;		// Per-poly rendering.
+			
+			x_ps <= tilex*32;	// Per-tile rendering.
 			y_ps <= tiley*32;	// Per-tile rendering.
 			
-			//x_ps <= minx;				// Per-poly rendering.
-			x_ps <= tilex*32;			// Per-tile rendering.
-
 			isp_state <= isp_state + 8'd1;
 		end
 
-		49: begin
+		50: begin
 			//if (y_ps < miny+spany) begin	// Per-poly rendering.
 			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
 				//if (x_ps < minx+spanx) begin	// Per-poly rendering.
-				if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
+				//if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
 					if (inTriangle && !ovr_xy /*&& !neg_xy*/ && !neg_z) begin
-						isp_vram_addr <= x_ps + (y_ps * 640);
+						isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
 						isp_vram_wr <= 1'b1;
 						isp_vram_dout <= (texture) ? texel_argb:	// ABGR, for sim display.
 							   {8'hff, vert_c_base_col_0[23:0]};	// Flat-shaded.
 					end
-					x_ps <= x_ps + 12'd1;
-				end
-				else begin
+					if (x_ps == (tilex*32)+32 ) begin
+						x_ps <= tilex*32;
+						y_ps <= y_ps + 12'd1;
+					end
+					else x_ps <= x_ps + 12'd1;
+				//end
+				/*else begin
 					y_ps <= y_ps + 12'd1;
 					//x_ps <= minx;		// Per-poly rendering.
 					x_ps <= tilex*32;	// Per-tile rendering.
-				end
+				end*/
 			end
 			else begin
 				isp_vram_addr <= isp_vram_addr_last;
-				isp_state <= 8'd47;
+				isp_state <= 8'd48;
 			end
 		end
 
