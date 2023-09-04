@@ -722,7 +722,7 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
-#define FRAC_BITS 8
+#define FRAC_BITS 12
 
 PlaneStepper3 Z;
 PlaneStepper3 U;
@@ -1002,6 +1002,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	int minx_ps = minx /*+ halfpixel*/;
 
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
+		
+		/*
 		//bool vertex_offset = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1;
 		uint8_t cullmode   = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode; // 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
 
@@ -1011,11 +1013,13 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 			if (abs_area < *(float*)&top->rootp->simtop__DOT__pvr__DOT__FPU_CULL_VAL) return;
 
 			if(cullmode >= 2) {
-				uint32_t mode = /*vertex_offset ^*/ (cullmode&1);
-				//if ((mode==0 && f_area < 0) || (mode==1 && f_area > 0)) return;
-				//if (vertex_offset && ((mode==0 && f_area < 0) || (mode==1 && f_area > 0)) ) return;
+				//uint32_t mode = vertex_offset ^ (cullmode&1);
+				uint32_t mode = (cullmode&1);
+				if ((mode==0 && f_area < 0) || 
+					(mode==1 && f_area > 0)) return;
 			}
 		}
+		*/
 
 		// Only for per-poly rendering...
 		top->rootp->spanx = spanx;
@@ -1492,7 +1496,10 @@ int verilate() {
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x26e4c) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x23c44) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x41F960) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x04CF58) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x0477164) run_enable = 0;
+		
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array) run_enable = 0;
+
 
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
 
@@ -1732,7 +1739,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_taxi");
 	//load_vram_dump("_taxi2");
 	//load_vram_dump("_taxi3");
-	//load_vram_dump("_taxi4");
+	load_vram_dump("_taxi4");
 	//load_vram_dump("_crazy_title");
 	//load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
@@ -1745,7 +1752,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_hotd2_selfie");
 	//load_vram_dump("_hotd2_car_fire");
 	//load_vram_dump("_hotd2_boat");
-	load_vram_dump("_hotd2_gargoyle");
+	//load_vram_dump("_hotd2_gargoyle");
 	//load_vram_dump("_rayman_title");
 	//load_vram_dump("_rayman_lights");
 	//load_vram_dump("_rayman_level");
@@ -2216,6 +2223,8 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("            uv_16b: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__uv_16_bit);
 		ImGui::SameLine();
 		ImGui::Text(" offset: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__offset);
+		ImGui::SameLine();
+		ImGui::Text(" gour: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__gouraud);
 		ImGui::Text("          stride_f: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride_flag);
 		ImGui::SameLine();
 		ImGui::Text(" stride: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__stride);

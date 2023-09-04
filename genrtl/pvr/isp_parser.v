@@ -225,6 +225,11 @@ else begin
 				isp_vram_addr <= poly_addr;
 				strip_cnt <= 3'd0;
 				array_cnt <= 4'd0;
+				vert_d_x <= 32'd0;
+				vert_d_y <= 32'd0;
+				vert_d_z <= 32'd0;
+				vert_d_u0 <= 32'd0;
+				vert_d_v0 <= 32'd0;
 				isp_state <= 8'd1;
 			end
 		end
@@ -280,13 +285,9 @@ else begin
 		
 		7:  vert_a_x <= isp_vram_din;
 		8:  vert_a_y <= isp_vram_din;
-		9:  begin vert_a_z <= isp_vram_din;
-			if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array...
-				if (!texture) begin
-					if (tsp_inst==32'h00000000) isp_state <= 8'd16;	// Skip Colour and UV??
-					else isp_state <= 8'd12;	// Skip U+V if not Textured.
-				end
-			end
+		9:  begin
+			vert_a_z <= isp_vram_din;
+			if (skip==0) isp_state <= 8'd17;
 			else if (!texture) isp_state <= 8'd12;	// Triangle Strip (probably).
 		end
 		10:  begin
@@ -315,13 +316,9 @@ else begin
 		
 		17: vert_b_x <= isp_vram_din;
 		18: vert_b_y <= isp_vram_din;
-		19: begin vert_b_z <= isp_vram_din;
-			if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array...
-				if (!texture) begin
-					if (tsp_inst==32'h00000000) isp_state <= 8'd27;	// Skip Colour and UV??
-					else isp_state <= 8'd22;	// Skip U+V if not Textured.
-				end
-			end
+		19: begin
+			vert_b_z <= isp_vram_din;
+			if (skip==0) isp_state <= 8'd27;
 			else if (!texture) isp_state <= 8'd22;	// Triangle Strip (probably).
 		end
 		20: begin
@@ -350,15 +347,11 @@ else begin
 		
 		27: vert_c_x <= isp_vram_din;
 		28: vert_c_y <= isp_vram_din;
-		29: begin vert_c_z <= isp_vram_din;
-			if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array...
-				if (!texture) begin
-					if (tsp_inst==32'h00000000) begin
-						if (is_quad_array) isp_state <= 8'd37;	// Skip Colour and UV if a Quad.
-						else isp_state <= 8'd47;				// Else (not a Quad), skip to render.
-					end
-					else isp_state <= 8'd32;	// Skip U+V if not Textured.
-				end
+		29: begin
+			vert_c_z <= isp_vram_din;
+			if (skip==0) begin
+				if (is_quad_array) isp_state <= 8'd37;
+				else isp_state <= 8'd47;
 			end
 			else if (!texture) isp_state <= 8'd32;	// Triangle Strip (probably).
 		end
@@ -388,16 +381,9 @@ else begin
 		end
 		
 		// if Offset colour...
-		36: begin vert_c_off_col <= isp_vram_din;				// if Offset colour.
-			if (is_quad_array) isp_state <= 8'd37;	// If a Quad
+		36: begin vert_c_off_col <= isp_vram_din;	// if Offset colour.
+			if (is_quad_array) isp_state <= 8'd37;		// If a Quad
 			else begin
-				/*
-				vert_d_x <= 32'd0;
-				vert_d_y <= 32'd0;
-				vert_d_z <= 32'd0;
-				vert_d_u0 <= 32'd0;
-				vert_d_v0 <= 32'd0;
-				*/
 				isp_state <= 8'd47;
 			end
 		end
@@ -430,7 +416,7 @@ else begin
 		46: vert_d_off_col <= isp_vram_din;				// if Offset colour.
 		
 		47: begin
-			if (strip_cnt[0]) begin		// Swap verts A and B, for all ODD strip segments.
+			if (is_tri_strip && strip_cnt[0]) begin		// Swap verts A and B, for all ODD strip segments.
 				vert_a_x  <= vert_b_x;
 				vert_a_y  <= vert_b_y;
 				vert_a_z  <= vert_b_z;
@@ -513,9 +499,6 @@ else begin
 			mult7 <= (FDY41 * FX4) >>FRAC_BITS;
 			mult8 <= (FDX41 * FY4) >>FRAC_BITS;
 			
-			//x_ps <= minx;		// Per-poly rendering.
-			//y_ps <= miny;		// Per-poly rendering.
-			
 			x_ps <= tilex*32;	// Per-tile rendering.
 			y_ps <= tiley*32;	// Per-tile rendering.
 			
@@ -523,11 +506,8 @@ else begin
 		end
 
 		50: begin
-			//if (y_ps < miny+spany) begin	// Per-poly rendering.
 			if (y_ps < (tiley*32)+32) begin	// Per-tile rendering.
-				//if (x_ps < minx+spanx) begin	// Per-poly rendering.
-				//if (x_ps < (tilex*32)+32) begin	// Per-tile rendering.
-					if (inTriangle && !ovr_xy /*&& !neg_xy*/ && !neg_z) begin
+					if (inTriangle /*&& !neg_xy && !neg_z*/) begin
 						isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
 						isp_vram_wr <= 1'b1;
 						isp_vram_dout <= (texture) ? texel_argb:	// ABGR, for sim display.
@@ -538,12 +518,6 @@ else begin
 						y_ps <= y_ps + 12'd1;
 					end
 					else x_ps <= x_ps + 12'd1;
-				//end
-				/*else begin
-					y_ps <= y_ps + 12'd1;
-					//x_ps <= minx;		// Per-poly rendering.
-					x_ps <= tilex*32;	// Per-tile rendering.
-				end*/
 			end
 			else begin
 				isp_vram_addr <= isp_vram_addr_last;
@@ -557,9 +531,8 @@ end
 
 wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
 
-wire ovr_xy = x_ps>639 || y_ps>479;
 wire neg_xy = FX1[31] || FX2[31] || FX3[31] || FY1[31] || FY2[31] || FY3[31] || FY4[31] || FY4[31];
-wire neg_z = vert_a_z[31] || vert_b_z[31] || vert_c_z[31];
+wire neg_z = vert_a_z[31] || vert_b_z[31] || vert_c_z[31] /*|| vert_d_z[31]*/;
 
 
 wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
@@ -575,7 +548,7 @@ wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
 reg [11:0] x_ps;
 reg [11:0] y_ps;
 
-parameter FRAC_BITS = 8;
+parameter FRAC_BITS = 12;
 
 // Half-edge constants
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
