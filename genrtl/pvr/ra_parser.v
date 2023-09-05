@@ -176,7 +176,7 @@ else begin
 				0: if (!ra_opaque[31] && o_opb>0)     begin ra_vram_addr <= ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb )*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
 				1: if (!ra_opaque_mod[31] && o_opb>0) begin ra_vram_addr <= ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
 				2: if (!ra_trans[31] && t_opb>0)      begin ra_vram_addr <= ra_trans[23:0];      ol_jump_bytes <= (4<<t_opb )*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				3: if (!ra_trans_mod[31] && tm_opb>0) begin ra_vram_addr <= ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				3: if (!ra_trans_mod[31] && tm_opb>0) begin ra_vram_addr <= ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_vram_rd <= 1'b1; ra_state <= 15; end // TESTING
 				4: if (!ra_puncht[31] && pt_opb>0)    begin ra_vram_addr <= ra_puncht[23:0];     ol_jump_bytes <= (4<<pt_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
 				5: ra_state <= 8'd15;	// All prim TYPES in this Object are done!
 				default: ;

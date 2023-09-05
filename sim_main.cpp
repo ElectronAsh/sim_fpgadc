@@ -722,7 +722,7 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
-#define FRAC_BITS 8
+#define FRAC_BITS 10
 
 PlaneStepper3 Z;
 PlaneStepper3 U;
@@ -780,6 +780,17 @@ uint32_t vq_tex_index = 0;
 uint32_t vram_word_addr;
 
 uint32_t vq_index_addr = 0;
+
+bool sgn = 0;
+
+float mult1 = 0;
+float mult2 = 0;
+float mult3 = 0;
+float mult4 = 0;
+float mult5 = 0;
+float mult6 = 0;
+float mult7 = 0;
+float mult8 = 0;
 
 void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 							  float y1, float y2, float y3, float y4,
@@ -919,38 +930,43 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	uint32_t core_y_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
 
 	// Half-edge constants (float version).
-	float c1 = 0;
-	float c2 = 0;
-	float c3 = 0;
-	float c4 = 0;
-
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
-	int sgn = 1;
-	if (f_area > 0) sgn = -1;
+	sgn = (f_area<=0);
 
 	bool is_quad_array = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array;
 
-	const float fdx12 = sgn * (x1 - x2);
-	const float fdx23 = sgn * (x2 - x3);
-	const float fdx31 = (is_quad_array) ? sgn * (x3 - x4) : sgn * (x3 - x1);
-	const float fdx41 = (is_quad_array) ? sgn * (x4 - x1) : 0;
+	const float fdx12 = (sgn) ? (x1 - x2) : (x2 - x1);
+	const float fdx23 = (sgn) ? (x2 - x3) : (x3 - x2);
+	const float fdx31 = (is_quad_array) ? sgn ? (x3 - x4) : (x4 - x3) : sgn ? (x3 - x1) : (x1 - x3);
+	const float fdx41 = (is_quad_array) ? sgn ? (x4 - x1) : (x1 - x4) : 0;
 
-	const float fdy12 = sgn * (y1 - y2);
-	const float fdy23 = sgn * (y2 - y3);
-	const float fdy31 = (is_quad_array) ? sgn * (y3 - y4) : sgn * (y3 - y1);
-	const float fdy41 = (is_quad_array) ? sgn * (y4 - y1) : 0;
+	const float fdy12 = sgn ? (y1 - y2) : (y2 - y1);
+	const float fdy23 = sgn ? (y2 - y3) : (y3 - y2);
+	const float fdy31 = (is_quad_array) ? sgn ? (y3 - y4) : (y4 - y3) : sgn ? (y3 - y1) : (y1 - y3);
+	const float fdy41 = (is_quad_array) ? sgn ? (y4 - y1) : (y1 - y4) : 0;
 
-	c1 = (fdy12 * x1) - (fdx12 * y1);
-	c2 = (fdy23 * x2) - (fdx23 * y2);
-	c3 = (fdy31 * x3) - (fdx31 * y3);
-	c4 = (is_quad_array) ? (fdy41 * x4) - (fdx41 * y4) : 1;
+	mult1 = (fdy12 * x1);
+	mult2 = (fdx12 * y1);
+	float c1 = mult1 - mult2;
+
+	mult3 = (fdy23 * x2);
+	mult4 = (fdx23 * y2);
+	float c2 = mult3 - mult4;
+
+	mult5 = (fdy31 * x3);
+	mult6 = (fdx31 * y3);
+	float c3 = mult5 - mult6;
+
+	mult7 = (fdy41 * x4);
+	mult8 = (fdx41 * y4);
+	float c4 = (is_quad_array) ? mult7 - mult8 : 1;
 
 	float Xhs12 = c1 + (fdx12*core_y_ps) - (fdy12*core_x_ps);
 	float Xhs23 = c2 + (fdx23*core_y_ps) - (fdy23*core_x_ps);
 	float Xhs31 = c3 + (fdx31*core_y_ps) - (fdy31*core_x_ps);
 	float Xhs41 = c4 + (fdx41*core_y_ps) - (fdy41*core_x_ps);
 
-	top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = (Xhs12>=0) && (Xhs23>=0) && (Xhs31>=0) && (Xhs41>=0);
+	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = (Xhs12>=0) && (Xhs23>=0) && (Xhs31>=0) && (Xhs41>=0);
 
 
 	int32_t FDX12 = float_to_fixed(fdx12,FRAC_BITS);
@@ -1001,11 +1017,13 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	int y_ps = miny /*+ halfpixel*/;
 	int minx_ps = minx /*+ halfpixel*/;
 
+
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
-		
-		/*
 		//bool vertex_offset = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1;
-		uint8_t cullmode   = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode; // 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
+
+		/*
+		// 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
+		uint8_t cullmode   = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__culling_mode;
 
 		// cull
 		if(cullmode != 0) {
@@ -1315,6 +1333,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		float old_z = z_ptr[ my_fb_addr&0x7fffff ];
 		uint8_t depth_mode = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__depth_comp;
 
+		//if (render_mode == RM_PUNCHTHROUGH) depth_mode = 6;		// TODO: FIXME
+		//else if (render_mode == RM_TRANSLUCENT) depth_mode = 3;	// TODO: FIXME
+		//else if (render_mode == RM_MODIFIER) depth_mode = 6;
 		/*
 		uint8_t type_cnt = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__type_cnt;
 		if (type_cnt==4) depth_mode = 6;	// PunchThrough.
@@ -1322,9 +1343,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		else if (type_cnt==1 || type_cnt==3) depth_mode = 6;	// Modifier.
 		*/
 
-		//if (render_mode == RM_PUNCHTHROUGH) depth_mode = 6;		// TODO: FIXME
-		//else if (render_mode == RM_TRANSLUCENT) depth_mode = 3;	// TODO: FIXME
-		//else if (render_mode == RM_MODIFIER) depth_mode = 6;
 		bool allow_write = 0;
 		switch (depth_mode) {
 			case 0: allow_write = 0;			   break; // Never.
@@ -1496,7 +1514,7 @@ int verilate() {
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x26e4c) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x23c44) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x41F960) run_enable = 0;
-		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x62dec) run_enable = 0;
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x43548) run_enable = 0;
 		
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array) run_enable = 0;
 
@@ -1757,10 +1775,10 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	//load_vram_dump("_daytona_behind");
+	load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
-	load_vram_dump("_toy_front");
+	//load_vram_dump("_toy_front");
 	//load_vram_dump("_18wheel_select");
 
 	//char name[20];
@@ -1879,7 +1897,7 @@ int main(int argc, char** argv, char** env) {
 			}
 		}
 
-		ImGui::Text("main_time %d", main_time);
+		ImGui::Text("main_time %d  (%fms @ 100MHz)", main_time, (float)main_time/100000);
 		ImGui::Text("frame_count: %d  line_count: %d", frame_count, line_count);
 
 		ImGui::Checkbox("RUN", &run_enable);
@@ -2189,6 +2207,9 @@ int main(int argc, char** argv, char** env) {
 		//ImGui::Text("         core miny: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny);
 		//ImGui::Text("        core spanx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx);
 		//ImGui::Text("        core spany: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany);
+		//ImGui::Text("         sim mult1: %f", mult1);
+		//ImGui::Text("        core mult1: %i", (int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1/(1<<FRAC_BITS) );
+		//ImGui::Text("    core mult1 hex: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 );
 		ImGui::Text("         core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
 		ImGui::Text("         core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
 		ImGui::Text("   core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);

@@ -482,22 +482,50 @@ else begin
 		49: begin
 			isp_vram_addr_last <= isp_vram_addr;
 	
+			/*
+			const float fdx12 = (sgn) ? (x1 - x2) : (x2 - x1);
+			const float fdx23 = (sgn) ? (x2 - x3) : (x3 - x2);
+			const float fdx31 = (is_quad_array) ? sgn ? (x3 - x4) : (x4 - x3) : sgn ? (x3 - x1) : (x1 - x3);
+			const float fdx41 = (is_quad_array) ? sgn ? (x4 - x1) : (x1 - x4) : 0;
+
+			const float fdy12 = sgn ? (y1 - y2) : (y2 - y1);
+			const float fdy23 = sgn ? (y2 - y3) : (y3 - y2);
+			const float fdy31 = (is_quad_array) ? sgn ? (y3 - y4) : (y4 - y3) : sgn ? (y3 - y1) : (y1 - y3);
+			const float fdy41 = (is_quad_array) ? sgn ? (y4 - y1) : (y1 - y4) : 0;
+
+			mult1 = (fdy12 * x1);
+			mult2 = (fdx12 * y1);
+			float c1 = mult1 - mult2;
+
+			mult3 = (fdy23 * x2);
+			mult4 = (fdx23 * y2);
+			float c2 = mult3 - mult4;
+
+			mult5 = (fdy31 * x3);
+			mult6 = (fdx31 * y3);
+			float c3 = mult5 - mult6;
+
+			mult7 = (fdy41 * x4);
+			mult8 = (fdx41 * y4);
+			float c4 = (is_quad_array) ? mult7 - mult8 : 1;
+			*/
+	
 			// Half-edge constants (setup).
 			//int C1 = FDY12 * FX1 - FDX12 * FY1;
-			mult1 <= (FDY12 * FX1) >>FRAC_BITS;
-			mult2 <= (FDX12 * FY1) >>FRAC_BITS;
+			mult1 <= (FDY12*FX1)>>FRAC_BITS;
+			mult2 <= (FDX12*FY1)>>FRAC_BITS;
 
 			//int C2 = FDY23 * FX2 - FDX23 * FY2;
-			mult3 <= (FDY23 * FX2) >>FRAC_BITS;
-			mult4 <= (FDX23 * FY2) >>FRAC_BITS;
+			mult3 <= (FDY23*FX2)>>FRAC_BITS;
+			mult4 <= (FDX23*FY2)>>FRAC_BITS;
 
 			//int C3 = FDY31 * FX3 - FDX31 * FY3;
-			mult5 <= (FDY31 * FX3) >>FRAC_BITS;
-			mult6 <= (FDX31 * FY3) >>FRAC_BITS;
+			mult5 <= (FDY31*FX3)>>FRAC_BITS;
+			mult6 <= (FDX31*FY3)>>FRAC_BITS;
 			
 			//int C4 = FDY41 * FX4 - FDX41 * FY4;
-			mult7 <= (FDY41 * FX4) >>FRAC_BITS;
-			mult8 <= (FDX41 * FY4) >>FRAC_BITS;
+			mult7 <= (is_quad_array) ? (FDY41*FX4)>>FRAC_BITS : 1<<FRAC_BITS;
+			mult8 <= (is_quad_array) ? (FDX41*FY4)>>FRAC_BITS : 1<<FRAC_BITS;
 			
 			x_ps <= tilex*32;	// Per-tile rendering.
 			y_ps <= tiley*32;	// Per-tile rendering.
@@ -507,12 +535,12 @@ else begin
 
 		50: begin
 			if (y_ps < (tiley*32)+32) begin
-					if (inTriangle /*&& !neg_xy && !neg_z*/) begin
+					if (inTriangle /*&& !neg_xy && !neg_z && ovr_xy*/) begin
 						isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
 						isp_vram_wr <= 1'b1;
 						isp_vram_dout <= final_argb;	// ABGR, for sim display.
 					end
-					if (x_ps == (tilex*32)+33) begin
+					if (x_ps == (tilex*32)+32) begin
 						x_ps <= tilex*32;
 						y_ps <= y_ps + 12'd1;
 					end
@@ -531,7 +559,14 @@ end
 wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
 
 wire neg_xy = FX1[31] || FX2[31] || FX3[31] || FY1[31] || FY2[31] || FY3[31] || FY4[31] || FY4[31];
-wire neg_z = vert_a_z[31] || vert_b_z[31] || vert_c_z[31] /*|| vert_d_z[31]*/;
+wire neg_z  = vert_a_z[31] || vert_b_z[31] || vert_c_z[31] /*|| vert_d_z[31]*/;
+/*
+wire ovr_xy = (FX1>>FRAC_BITS)<32'd4000 || (FX2>>FRAC_BITS)<32'd4000 || (FX3>>FRAC_BITS)<32'd4000 || (FX4>>FRAC_BITS)<32'd4000 ||
+			  (FY1>>FRAC_BITS)<32'd4000 || (FY2>>FRAC_BITS)<32'd4000 || (FY3>>FRAC_BITS)<32'd4000 || (FY4>>FRAC_BITS)<32'd4000;
+*/
+
+wire signed [47:0] f_area = (FX1-FX3) * (FY2-FY3) - (FY1-FY3) * (FX2-FX3);
+wire sgn = (f_area<=0);
 
 
 wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
@@ -547,53 +582,61 @@ wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
 reg [11:0] x_ps;
 reg [11:0] y_ps;
 
-parameter FRAC_BITS = 8;
+parameter FRAC_BITS = 10;
 
 // Half-edge constants
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
-reg signed [47:0] mult1;
-reg signed [47:0] mult2;
-wire signed [31:0] C1 = (mult1 - mult2) >>FRAC_BITS;
+reg signed [63:0] mult1;
+reg signed [63:0] mult2;
+wire signed [31:0] C1 = (mult1 - mult2);
 
 //int C2 = FDY23 * FX2 - FDX23 * FY2;
-reg signed [47:0] mult3;
-reg signed [47:0] mult4;
-wire signed [31:0] C2 = (mult3 - mult4) >>FRAC_BITS;
+reg signed [63:0] mult3;
+reg signed [63:0] mult4;
+wire signed [31:0] C2 = (mult3 - mult4);
 
 //int C3 = FDY31 * FX3 - FDX31 * FY3;
-reg signed [47:0] mult5;
-reg signed [47:0] mult6;
-wire signed [31:0] C3 = (mult5 - mult6) >>FRAC_BITS;
+reg signed [63:0] mult5;
+reg signed [63:0] mult6;
+wire signed [31:0] C3 = (mult5 - mult6);
 
 //int C4 = FDY41 * FX4 - FDX41 * FY4;
-reg signed [47:0] mult7;
-reg signed [47:0] mult8;
-wire signed [31:0] C4 = (is_quad_array) ? (mult7 - mult8)>>FRAC_BITS : 1;
+reg signed [63:0] mult7;
+reg signed [63:0] mult8;
+wire signed [31:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;
 
 
 //int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
 
-// These mults for C1,C2,C3 will probably work OK without the FRAC_BITS stuff?
-wire signed [63:0] mult9  = (FDX12 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [63:0] mult10 = (FDY12 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+// Original code. Don't need the shifts, because reasons. lol
+// ie. no point shifting y_ps up to the decimal point, only to shift the result back down again after.
+//
+//wire signed [127:0] mult9  = (FDX12 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
+//wire signed [127:0] mult10 = (FDY12 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
+//wire signed [127:0] Xhs12  = C1 + (mult9 - mult10);
+
+
+wire signed [63:0] mult9  = FDX12 * y_ps;
+wire signed [63:0] mult10 = FDY12 * x_ps;
 wire signed [31:0] Xhs12  = C1 + (mult9 - mult10);
 
-wire signed [63:0] mult11 = (FDX23 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [63:0] mult12 = (FDY23 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [63:0] mult11 = FDX23 * y_ps;
+wire signed [63:0] mult12 = FDY23 * x_ps;
 wire signed [31:0] Xhs23  = C2 + (mult11 - mult12);
 
-wire signed [63:0] mult13 = (FDX31 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [63:0] mult14 = (FDY31 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [63:0] mult13 = FDX31 * y_ps;
+wire signed [63:0] mult14 = FDY31 * x_ps;
 wire signed [31:0] Xhs31  = C3 + (mult13 - mult14);
 
-wire signed [63:0] mult15 = (FDX41 * (y_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
-wire signed [63:0] mult16 = (FDY41 * (x_ps/*<<FRAC_BITS*/) ) >>FRAC_BITS;
+wire signed [63:0] mult15 = FDX41 * y_ps;
+wire signed [63:0] mult16 = FDY41 * x_ps;
 wire signed [31:0] Xhs41  = C4 + (mult15 - mult16);
 
-//wire inTriangle = !Xhs12[31] && !Xhs23[31] && !Xhs31[31] && !Xhs41[31];
-wire inTriangle;
+wire inTriangle = !Xhs12[31] && !Xhs23[31] && !Xhs31[31] && !Xhs41[31];
+//wire inTriangle;
+
 
 texture_address  texture_address_inst (
 	.clock( clock ),
@@ -939,32 +982,32 @@ always @(*) begin
 	endcase
 	
 	case (shade_inst)
-		0: begin						// Decal.
+		0: begin				// Decal.
 			blend_argb[31:24] = texel_argb[31:24];	// Blend Alpha <- Texel Alpha.  Texel_RGB + Offset_RGB.
 			blend_argb[23:16] = texel_argb[23:16];	// Red.
 			blend_argb[15:08] = texel_argb[15:08];	// Green.
 			blend_argb[07:00] = texel_argb[07:00];	// Blue.
 		end
 		
-		1: begin						// Modulate.
+		1: begin				// Modulate.
 			blend_argb[31:24] = texel_argb[31:24];	// Blend Alpha <- Texel Alpha.  (Texel_RGB * Base_RGB) + Offset_RGB.
-			blend_argb[23:16] = ((texel_argb[23:16] * base_argb[23:16]) /256);	// Red.
-			blend_argb[15:08] = ((texel_argb[15:08] * base_argb[15:08]) /256);	// Green.
-			blend_argb[07:00] = ((texel_argb[07:00] * base_argb[07:00]) /256);	// Blue.
+			blend_argb[23:16] = (texel_argb[23:16] * base_argb[23:16]) /256;	// Red.
+			blend_argb[15:08] = (texel_argb[15:08] * base_argb[15:08]) /256;	// Green.
+			blend_argb[07:00] = (texel_argb[07:00] * base_argb[07:00]) /256;	// Blue.
 		end
 		
-		2: begin						// Decal Alpha.
+		2: begin				// Decal Alpha.
 			blend_argb[31:24] = base_argb[31:24];	// Blend Alpha <- Base Alpha.  (Texel_RGB * Texel_Alpha) + (Base_RGB * (255-Texel_Alpha)) + Offset_RGB.
 			blend_argb[23:16] = ((texel_argb[23:16] * texel_argb[31:24]) /256) + ((base_argb[23:16] * (255-texel_argb[31:24])) /256);	// Red.
 			blend_argb[15:08] = ((texel_argb[15:08] * texel_argb[31:24]) /256) + ((base_argb[15:08] * (255-texel_argb[31:24])) /256);	// Green.
 			blend_argb[07:00] = ((texel_argb[07:00] * texel_argb[31:24]) /256) + ((base_argb[07:00] * (255-texel_argb[31:24])) /256);	// Blue.
 		end
 		
-		3: begin						// Modulate Alpha.
+		3: begin				// Modulate Alpha.
 			blend_argb[31:24] = (texel_argb[31:24] * base_argb[31:24]) /256;	// (Texel_ARGB * Base_ARGB) + Offset_RGB.
-			blend_argb[23:16] = ((texel_argb[23:16] * base_argb[23:16]) /256);	// Red.
-			blend_argb[15:08] = ((texel_argb[15:08] * base_argb[15:08]) /256);	// Green.
-			blend_argb[07:00] = ((texel_argb[07:00] * base_argb[07:00]) /256);	// Blue.
+			blend_argb[23:16] = (texel_argb[23:16] * base_argb[23:16]) /256;	// Red.
+			blend_argb[15:08] = (texel_argb[15:08] * base_argb[15:08]) /256;	// Green.
+			blend_argb[07:00] = (texel_argb[07:00] * base_argb[07:00]) /256;	// Blue.
 		end
 	endcase
 
