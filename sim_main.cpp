@@ -630,7 +630,9 @@ inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
 */
 struct PlaneStepper3
 {
-	float Aa, Ba;
+	float Aa_mult_1, Aa_mult_2, Aa;
+	float Ba_mult_1, Ba_mult_2, Ba;
+
 	float C;
 
 	float ddx, ddy;
@@ -638,8 +640,14 @@ struct PlaneStepper3
 
 	void Setup(float x1, float x2, float x3, float y1, float y2, float y3, float z1, float z2, float z3)
 	{
-		Aa = (z3 - z1) * (y2 - y1) - (z2 - z1) * (y3 - y1);
-		Ba = (x3 - x1) * (z2 - z1) - (x2 - x1) * (z3 - z1);
+		Aa_mult_1 = (z3 - z1) * (y2 - y1);
+		Aa_mult_2 = (z2 - z1) * (y3 - y1);
+		Aa = Aa_mult_1 - Aa_mult_2;
+
+		Ba_mult_1 = (x3 - x1) * (z2 - z1);
+		Ba_mult_2 = (x2 - x1) * (z3 - z1);
+		Ba = Ba_mult_1 - Ba_mult_2;
+		
 		C  = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);	// Cross Product?
 
 		ddx = -Aa / C;
@@ -804,67 +812,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
 
-	// Filter out NaN values...
-	/*
-	if (x1 != x1) return;
-	if (x2 != x2) return;
-	if (x3 != x3) return;
-	if (y1 != y1) return;
-	if (y2 != y2) return;
-	if (y3 != y3) return;
-	if (z1 != z1) return;
-	if (z2 != z2) return;
-	if (z3 != z3) return;
-	*/
-
-	/*
-	if (x1< -200) return;
-	if (x2< -200) return;
-	if (x3< -200) return;
-	if (x1>  800) return;
-	if (x2>  800) return;
-	if (x3>  800) return;
-
-	if (y1< -200) return;
-	if (y2< -200) return;
-	if (y3< -200) return;
-	if (y1>  600) return;
-	if (y2>  600) return;
-	if (y3>  600) return;
-	*/
-
-	//if (x1<0) x1 = 0;
-	//if (x2<0) x2 = 0;
-	//if (x3<0) x3 = 0;
-	//if (x1>639) x1 = 639;
-	//if (x2>639) x2 = 639;
-	//if (x3>639) x3 = 639;
-
-	//if (y1<1) y1 = 1;
-	//if (y2<1) y2 = 1;
-	//if (y3<1) y3 = 1;
-	//if (y1>479) y1 = 479;
-	//if (y2>479) y2 = 479;
-	//if (y3>479) y3 = 479;
-
-	/*
-	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
-	bool sgn = (f_area > 0);
-	*/
-
-	// Bounding rectangle
-	// Only for per-poly rendering...
-	/*
-	uint32_t area_left = 0;
-	uint32_t area_top = 0;
-	uint32_t area_right = 640;
-	uint32_t area_bottom = 480;
-	int minx = mmin(x1, x2, x3, area_left);
-	int miny = mmin(y1, y2, y3, area_top);
-	int spanx = mmax(x1+1, x2+1, x3+1, area_right-1)  - minx+1;
-	int spany = mmax(y1+1, y2+1, y3+1, area_bottom-1) - miny+1;
-	*/
-
 	// Convert to Fixed-point coords.
 	const int FX1 = float_to_fixed(x1, FRAC_BITS);
 	const int FX2 = float_to_fixed(x2, FRAC_BITS);
@@ -884,37 +831,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	float y2_sub_y1 = y2 - y1;
 	float x2_sub_x1 = x2 - x1;
 	float y3_sub_y1 = y3 - y1;
-
-	/*
-	top->v3_a = FX3;
-	top->v1_a = FX1;
-
-	top->v2_y = FY2;
-	top->v1_y = FY1;
-
-	top->v2_a = FX2;
-	top->v1_a = FX1;
-
-	top->v3_y = FY3;
-	top->v1_y = FY1;
-	*/
-
-	float Aa = ((x3 - x1) * (y2 - y1)) - ((x2 - x1) * (y3 - y1));
-
-	//printf("x1: %f  x2: %f  x3: %f  y1: %f  y2: %f  y3: %f \n", x1, x2, x3, y1, y2, y3);
-
-	//int v3a_sub_v1a = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3a_sub_v1a;
-	//int v2y_sub_v1y = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2y_sub_v1y;
-	//int v2a_sub_v1a = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2a_sub_v1a;
-	//int v3y_sub_v1y = top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3y_sub_v1y;
-	//printf("float x3_sub_x1: %f  core v3a_sub_v1a: %f\n", x3_sub_x1, ((float)v3a_sub_v1a)/(1<<FRAC_BITS) );
-	//printf("float y2_sub_y1: %f  core v2y_sub_v1y: %f\n", y2_sub_y1, ((float)v2y_sub_v1y)/(1<<FRAC_BITS) );
-	//printf("float x2_sub_x1: %f  core v2a_sub_v1a: %f\n", x2_sub_x1, ((float)v2a_sub_v1a)/(1<<FRAC_BITS) );
-	//printf("float y3_sub_y1: %f  core v3y_sub_v1y: %f\n", y3_sub_y1, ((float)v3y_sub_v1y)/(1<<FRAC_BITS) );
-	//printf("float Aa = %4.6f        core Aa (float) %4.6f \n", Aa, ((float)Aa_fixed)/(1<<FRAC_BITS) );
-	//printf("fixed Aa_mult_1 raw = 0x%08X \n", top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__Aa_mult_1);
-	//printf("v3a_sub_v1a = 0x%08X \n", top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v3a_sub_v1a);
-	//printf("v2y_sub_v1y = 0x%08X \n\n", top->rootp->simtop__DOT__pvr__DOT__edge_calc_1_inst__DOT__v2y_sub_v1y);
 
 	// Fixed-point Deltas
 	/*
@@ -2206,19 +2122,29 @@ int main(int argc, char** argv, char** env) {
 		//ImGui::Text("        core mult1: %i", (int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1/(1<<FRAC_BITS));
 		//ImGui::Text("    core mult1 raw: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
 
+		ImGui::Text("     sim Aa_mult_1: %f", Z.Aa_mult_1 );
 		ImGui::Text("    core Aa_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Aa_mult_1)/(1<<FRAC_BITS) );
+		ImGui::Separator();
+		ImGui::Text("            sim Aa: %f", Z.Aa );
+		ImGui::Text("           core Aa: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Aa)/(1<<FRAC_BITS) );
+		ImGui::Separator();
+		ImGui::Text("     sim Ba_mult_1: %f", Z.Ba_mult_1 );
+		ImGui::Text("    core Ba_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Ba_mult_1)/(1<<FRAC_BITS) );
+		ImGui::Separator();
+		ImGui::Text("            sim Ba: %f", Z.Ba );
+		ImGui::Text("           core Ba: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Ba)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("           sim Z.C: %f", Z.C);
 		ImGui::Text("          core Z.C: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__C)/(1<<FRAC_BITS) );
 		ImGui::Separator();
-		ImGui::Text("           sim Z.c: %f", Z.c);
-		ImGui::Text("          core Z.c: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__c)/(1<<FRAC_BITS) );
-		ImGui::Separator();
 		ImGui::Text("         sim Z.ddx: %f", Z.ddx);
-		ImGui::Text("        core Z.ddx: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__ddx)/(1<<FRAC_BITS) );
+		ImGui::Text("       core Z.FDDX: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__FDDX)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("         sim Z.ddy: %f", Z.ddy);
-		ImGui::Text("        core Z.ddy: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__ddy)/(1<<FRAC_BITS) );
+		ImGui::Text("       core Z.FDDY: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__FDDY)/(1<<FRAC_BITS) );
+		ImGui::Separator();
+		ImGui::Text("           sim Z.c: %f",Z.c);
+		ImGui::Text("          core Z.c: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__c)/(1<<FRAC_BITS));
 		ImGui::Separator();
 		ImGui::Text("         core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
 		ImGui::Text("         core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);

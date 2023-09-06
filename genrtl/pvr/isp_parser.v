@@ -63,6 +63,8 @@ module isp_parser (
 	output [31:0] pal_dout
 );
 
+parameter FRAC_BITS = 8;
+
 reg [23:0] isp_vram_addr;
 
 assign isp_vram_addr_out = (tex_wait || isp_state==8'd50) ? (vram_word_addr<<2) :	// Output texture WORD address as a BYTE address.
@@ -579,8 +581,6 @@ wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
 reg [11:0] x_ps;
 reg [11:0] y_ps;
 
-parameter FRAC_BITS = 8;
-
 // Half-edge constants
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
 reg signed [63:0] mult1;
@@ -695,8 +695,8 @@ interp  interp_inst_0 (
 	.FZ2( FZ2 ),	// input signed [31:0] z1
 	.FZ3( FZ3 ),	// input signed [31:0] z1
 	
-	.x( x_ps ),		// input signed [31:0] x
-	.y( y_ps ),		// input signed [31:0] y
+	.x_ps( x_ps ),		// input signed [31:0] x_ps
+	.y_ps( y_ps ),		// input signed [31:0] y_ps
 	
 	.interp( IP_Z )	// output signed [31:0]  interp
 );
