@@ -65,29 +65,7 @@ module simtop (
 	output wire [23:0] vram_addr,
 	input wire [63:0] vram_din,
 	output wire [63:0] vram_dout,
-	
-	input signed [31:0] v1_x,
-	input signed [31:0] v1_y,
 
-	input signed [31:0] v2_x,
-	input signed [31:0] v2_y,
-
-	input signed [31:0] v3_x,
-	input signed [31:0] v3_y,
-
-	input signed [31:0] v1_a,
-	input signed [31:0] v2_a,
-	input signed [31:0] v3_a,
-
-	output signed [31:0] Aa,
-	output signed [31:0] Ba,
-	output signed [31:0] C,
-	output signed [31:0] c,
-
-	input  signed [31:0] x,
-	input  signed [31:0] y,
-	output signed [31:0] interp,
-	
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
 	input signed [31:0] FDY12,
 	input signed [31:0] FX1,
@@ -112,14 +90,9 @@ module simtop (
 	input signed [31:0] FDX41,
 	input signed [31:0] FY4,
 	
-	input signed [31:0] minx,
-	input signed [31:0] miny,
-	
-	input signed [31:0] spanx,
-	input signed [31:0] spany
-	
-	//input signed [31:0] x_ps,
-	//input signed [31:0] y_ps
+	input signed [31:0] FZ1,
+	input signed [31:0] FZ2,
+	input signed [31:0] FZ3
 );
 
 // Reset synchronizer
@@ -254,31 +227,7 @@ pvr pvr (
 	.vram_rd( vram_rd ),		// output  vram_rd
 	.vram_wr( vram_wr ),		// output  vram_wr
 	.vram_dout( vram_dout ),	// output [63:0]  vram_dout
-	
-	.v1_x( v1_x ),
-	.v1_y( v1_y ),
-	
-	.v2_x( v2_x ),
-	.v2_y( v2_y ),
-	
-	.v3_x( v3_x ),
-	.v3_y( v3_y ),
-	
-	.v1_a( v1_a ),
-	.v2_a( v2_a ),
-	.v3_a( v3_a ),
-	
-	.Aa( Aa ),
-	.Ba( Ba ),
-	
-	.C( C ),
-	
-	.c( c ),
-	
-	.x( x ),
-	.y( y ),
-	.interp( interp ),
-	
+		
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
 	.FDY12( FDY12 ),		// input signed [31:0]   
 	.FX1( FX1 ),			// input signed [31:0]  
@@ -302,15 +251,10 @@ pvr pvr (
 	.FX4( FX4 ),			// input signed [31:0]  
 	.FDX41( FDX41 ),		// input signed [31:0]  
 	.FY4( FY4 ),			// input signed [31:0]  
-	
-	.minx( minx ),
-	.miny( miny ),
-	
-	.spanx( spanx ),
-	.spany( spany )
-	
-	//.x_ps( x_ps ),			// input signed [31:0]  x_ps
-	//.y_ps( y_ps )			// input signed [31:0]  y_ps
+
+	.FZ1( FZ1 ),			// input signed [31:0]  FZ1
+	.FZ2( FZ2 ),			// input signed [31:0]  FZ2
+	.FZ3( FZ3 )				// input signed [31:0]  FZ3
 );
 
 

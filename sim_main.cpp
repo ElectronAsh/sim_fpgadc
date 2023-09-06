@@ -612,7 +612,7 @@ bool ra_running = 0;
 inline int32_t float_to_fixed(float d, uint32_t p)
 {
 	int32_t temp = d * (1<<p);
-	if (d<0) temp |= 0x80000000;	// If the float is negative, set the Sign bit of the fixed-point.
+	//if (d<0) temp |= (1<<31);	// If the float is negative, set the Sign bit of the fixed-point.
 	return temp;
 }
 
@@ -630,19 +630,20 @@ inline int32_t MUL_PREC(int32_t a, int32_t b, int PREC) {
 */
 struct PlaneStepper3
 {
+	float Aa, Ba;
+	float C;
+
 	float ddx, ddy;
 	float c;
 
 	void Setup(float x1, float x2, float x3, float y1, float y2, float y3, float z1, float z2, float z3)
 	{
-		float Aa = ((z3 - z1) * (y2 - y1) - (z2 - z1) * (y3 - y1));
-		float Ba = ((x3 - x1) * (z2 - z1) - (x2 - x1) * (z3 - z1));
-
-		float C  = ((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1));
+		Aa = (z3 - z1) * (y2 - y1) - (z2 - z1) * (y3 - y1);
+		Ba = (x3 - x1) * (z2 - z1) - (x2 - x1) * (z3 - z1);
+		C  = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);	// Cross Product?
 
 		ddx = -Aa / C;
 		ddy = -Ba / C;
-
 		c = (z1 - ddx * x1 - ddy * y1);
 	}
 
@@ -722,7 +723,7 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
-#define FRAC_BITS 10
+constexpr auto FRAC_BITS = 8;
 
 PlaneStepper3 Z;
 PlaneStepper3 U;
@@ -853,6 +854,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 
 	// Bounding rectangle
 	// Only for per-poly rendering...
+	/*
 	uint32_t area_left = 0;
 	uint32_t area_top = 0;
 	uint32_t area_right = 640;
@@ -861,6 +863,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	int miny = mmin(y1, y2, y3, area_top);
 	int spanx = mmax(x1+1, x2+1, x3+1, area_right-1)  - minx+1;
 	int spany = mmax(y1+1, y2+1, y3+1, area_bottom-1) - miny+1;
+	*/
 
 	// Convert to Fixed-point coords.
 	const int FX1 = float_to_fixed(x1, FRAC_BITS);
@@ -874,12 +877,15 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	const int FY4 = float_to_fixed(y4, FRAC_BITS);
 	
 	const int FZ1 = float_to_fixed(z1, FRAC_BITS);
+	const int FZ2 = float_to_fixed(z2, FRAC_BITS);
+	const int FZ3 = float_to_fixed(z3, FRAC_BITS);
 
 	float x3_sub_x1 = x3 - x1;
 	float y2_sub_y1 = y2 - y1;
 	float x2_sub_x1 = x2 - x1;
 	float y3_sub_y1 = y3 - y1;
 
+	/*
 	top->v3_a = FX3;
 	top->v1_a = FX1;
 
@@ -891,10 +897,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 
 	top->v3_y = FY3;
 	top->v1_y = FY1;
+	*/
 
 	float Aa = ((x3 - x1) * (y2 - y1)) - ((x2 - x1) * (y3 - y1));
-
-	int Aa_fixed = top->Aa;
 
 	//printf("x1: %f  x2: %f  x3: %f  y1: %f  y2: %f  y3: %f \n", x1, x2, x3, y1, y2, y3);
 
@@ -1014,9 +1019,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	uint32_t tex_v_size_full = 8<<(top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_size&7);
 
 	//int halfpixel = 1<<(FRAC_BITS-1);
-	int y_ps = miny /*+ halfpixel*/;
-	int minx_ps = minx /*+ halfpixel*/;
-
+	//int y_ps = miny /*+ halfpixel*/;
+	//int minx_ps = minx /*+ halfpixel*/;
 
 	if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid) {
 		//bool vertex_offset = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1;
@@ -1038,13 +1042,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 			}
 		}
 		*/
-
-		// Only for per-poly rendering...
-		top->rootp->spanx = spanx;
-		top->rootp->spany = spany;
-		top->rootp->minx = minx;
-		top->rootp->miny = miny;
-
 
 		top->rootp->FX1 = FX1;
 		top->rootp->FX2 = FX2;
@@ -1068,6 +1065,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		top->rootp->FDX41 = FDX41;
 		top->rootp->FDY41 = FDY41;
 
+		top->rootp->FZ1 = FZ1;
+
 		Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 
 		int w = tex_u_size_full-1;
@@ -1076,9 +1075,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		V.Setup(x1,x2,x3, y1,y2,y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
 	}
 
-	float invW = Z.Ip((float)core_x_ps,(float)core_y_ps);			// Interpolate the Z value, based on X and Y.
-	float u = U.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the U value, based on X and Y. Mult with 1/invW.
-	float v = V.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the V value, based on X and Y. Mult with 1/invW.
+	float invW = Z.Ip((float)core_x_ps,(float)core_y_ps);				// Interpolate the Z value, based on X and Y.
+	float u    = U.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the U value, based on X and Y. Mult with 1/invW.
+	float v    = V.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the V value, based on X and Y. Mult with 1/invW.
 
 	bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 	bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
@@ -2203,13 +2202,24 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Begin(" ISP Parser");
 		ImGui::Text("         isp_state: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_state);
 		ImGui::Separator();
-		//ImGui::Text("         core minx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__minx);
-		//ImGui::Text("         core miny: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__miny);
-		//ImGui::Text("        core spanx: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spanx);
-		//ImGui::Text("        core spany: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__spany);
 		//ImGui::Text("         sim mult1: %f", mult1);
-		//ImGui::Text("        core mult1: %i", (int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1/(1<<FRAC_BITS) );
-		//ImGui::Text("    core mult1 hex: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1 );
+		//ImGui::Text("        core mult1: %i", (int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1/(1<<FRAC_BITS));
+		//ImGui::Text("    core mult1 raw: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
+
+		ImGui::Text("    core Aa_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Aa_mult_1)/(1<<FRAC_BITS) );
+		ImGui::Separator();
+		ImGui::Text("           sim Z.C: %f", Z.C);
+		ImGui::Text("          core Z.C: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__C)/(1<<FRAC_BITS) );
+		ImGui::Separator();
+		ImGui::Text("           sim Z.c: %f", Z.c);
+		ImGui::Text("          core Z.c: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__c)/(1<<FRAC_BITS) );
+		ImGui::Separator();
+		ImGui::Text("         sim Z.ddx: %f", Z.ddx);
+		ImGui::Text("        core Z.ddx: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__ddx)/(1<<FRAC_BITS) );
+		ImGui::Separator();
+		ImGui::Text("         sim Z.ddy: %f", Z.ddy);
+		ImGui::Text("        core Z.ddy: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__ddy)/(1<<FRAC_BITS) );
+		ImGui::Separator();
 		ImGui::Text("         core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
 		ImGui::Text("         core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
 		ImGui::Text("   core inTriangle: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle);

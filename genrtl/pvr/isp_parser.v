@@ -42,21 +42,16 @@ module isp_parser (
 	input signed [31:0] FX3,
 	input signed [31:0] FDX31,
 	input signed [31:0] FY3,
-	
+
 	//int C4 = FDY41 * FX4 - FDX41 * FY4;
 	input signed [31:0] FDY41,
 	input signed [31:0] FX4,
 	input signed [31:0] FDX41,
 	input signed [31:0] FY4,
 	
-	//input signed [31:0] x_ps,
-	//input signed [31:0] y_ps,
-	
-	input signed [31:0] minx,
-	input signed [31:0] miny,
-	
-	input signed [31:0] spanx,
-	input signed [31:0] spany,
+	input signed [31:0] FZ1,
+	input signed [31:0] FZ2,
+	input signed [31:0] FZ3,
 	
 	input [31:0] TEXT_CONTROL,	// From TEXT_CONTROL reg.
 	input  [1:0] PAL_RAM_CTRL,	// From PAL_RAM_CTRL reg, bits [1:0].
@@ -560,10 +555,12 @@ wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
 
 wire neg_xy = FX1[31] || FX2[31] || FX3[31] || FY1[31] || FY2[31] || FY3[31] || FY4[31] || FY4[31];
 wire neg_z  = vert_a_z[31] || vert_b_z[31] || vert_c_z[31] /*|| vert_d_z[31]*/;
-/*
-wire ovr_xy = (FX1>>FRAC_BITS)<32'd4000 || (FX2>>FRAC_BITS)<32'd4000 || (FX3>>FRAC_BITS)<32'd4000 || (FX4>>FRAC_BITS)<32'd4000 ||
-			  (FY1>>FRAC_BITS)<32'd4000 || (FY2>>FRAC_BITS)<32'd4000 || (FY3>>FRAC_BITS)<32'd4000 || (FY4>>FRAC_BITS)<32'd4000;
-*/
+
+wire ovr_xy = (FX1>>FRAC_BITS)<32'sd4000 || (FX2>>FRAC_BITS)<32'sd4000 || (FX3>>FRAC_BITS)<32'sd4000 || (FX4>>FRAC_BITS)<32'sd4000 ||
+			  (FY1>>FRAC_BITS)<32'sd4000 || (FY2>>FRAC_BITS)<32'sd4000 || (FY3>>FRAC_BITS)<32'sd4000 || (FY4>>FRAC_BITS)<32'sd4000 ||
+			  (FX1>>FRAC_BITS)<-32'sd4000 || (FX2>>FRAC_BITS)<-32'sd4000 || (FX3>>FRAC_BITS)<-32'sd4000 || (FX4>>FRAC_BITS)<-32'sd4000 ||
+			  (FY1>>FRAC_BITS)<-32'sd4000 || (FY2>>FRAC_BITS)<-32'sd4000 || (FY3>>FRAC_BITS)<-32'sd4000 || (FY4>>FRAC_BITS)<-32'sd4000;
+
 
 wire signed [47:0] f_area = (FX1-FX3) * (FY2-FY3) - (FY1-FY3) * (FX2-FX3);
 wire sgn = (f_area<=0);
@@ -582,7 +579,7 @@ wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
 reg [11:0] x_ps;
 reg [11:0] y_ps;
 
-parameter FRAC_BITS = 10;
+parameter FRAC_BITS = 8;
 
 // Half-edge constants
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
@@ -682,7 +679,34 @@ wire [20:0] vram_word_addr;
 wire [31:0] texel_argb;
 wire [31:0] final_argb;
 
+
+// Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
+//
+interp  interp_inst_0 (
+	.FX1( FX1 ),	// input signed [31:0] x1
+	.FX2( FX2 ),	// input signed [31:0] x1
+	.FX3( FX3 ),	// input signed [31:0] x1
+	
+	.FY1( FY1 ),	// input signed [31:0] y1
+	.FY2( FY2 ),	// input signed [31:0] y1
+	.FY3( FY3 ),	// input signed [31:0] y1
+	
+	.FZ1( FZ1 ),	// input signed [31:0] z1
+	.FZ2( FZ2 ),	// input signed [31:0] z1
+	.FZ3( FZ3 ),	// input signed [31:0] z1
+	
+	.x( x_ps ),		// input signed [31:0] x
+	.y( y_ps ),		// input signed [31:0] y
+	
+	.interp( IP_Z )	// output signed [31:0]  interp
+);
+
+
+
+wire signed [31:0] IP_Z;
+
 endmodule
+
 
 
 module texture_address (
@@ -1064,88 +1088,8 @@ end
 endmodule
 
 
-// Aa = ((v3_a - v1_a) * (v2_y - v1_y) - (v2_a - v1_a) * (v3_y - v1_y));
-// Ba = ((v3_x - v1_x) * (v2_a - v1_a) - (v2_x - v1_x) * (v3_a - v1_a));
-// C = ((v2_x - v1_x) * (v3_y - v1_y) - (v3_x - v1_x) * (v2_y - v1_y));
-/*
-edge_calc  edge_calc_c1 (
-	.v1_x( FDY12 ),
-	.v1_y( FX1 ),
-	
-	.v2_x( FDX12 ),
-	.v2_y( FY1 ),
-	
-	.v3_x( v3_x ),
-	.v3_y( v3_y ),
-	
-	.v1_a( v1_a ),
-	.v2_a( v2_a ),
-	.v3_a( v3_a ),
-	
-	.Aa( Aa ),
-	.Ba( Ba ),
-	
-	.C( C1 ),
-	
-	.c( c ),
-	
-	.x( x ),
-	.y( y ),
-	.interp( interp )
-);
 
-edge_calc  edge_calc_c2 (
-	.v1_x( v1_x ),
-	.v1_y( v1_y ),
-	
-	.v2_x( v2_x ),
-	.v2_y( v2_y ),
-	
-	.v3_x( v3_x ),
-	.v3_y( v3_y ),
-	
-	.v1_a( v1_a ),
-	.v2_a( v2_a ),
-	.v3_a( v3_a ),
-	
-	.Aa( Aa ),
-	.Ba( Ba ),
-	
-	.C( C ),
-	
-	.c( c ),
-	
-	.x( x ),
-	.y( y ),
-	.interp( interp )
-);
 
-edge_calc  edge_calc_c3 (
-	.v1_x( v1_x ),
-	.v1_y( v1_y ),
-	
-	.v2_x( v2_x ),
-	.v2_y( v2_y ),
-	
-	.v3_x( v3_x ),
-	.v3_y( v3_y ),
-	
-	.v1_a( v1_a ),
-	.v2_a( v2_a ),
-	.v3_a( v3_a ),
-	
-	.Aa( Aa ),
-	.Ba( Ba ),
-	
-	.C( C ),
-	
-	.c( c ),
-	
-	.x( x ),
-	.y( y ),
-	.interp( interp )
-);
-*/
 
 /*
 module depth_compare (

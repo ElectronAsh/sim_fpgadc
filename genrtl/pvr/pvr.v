@@ -26,28 +26,6 @@ module pvr (
 	output vram_wr,
 	output [63:0] vram_dout,
 	
-	input signed [31:0] v1_x,
-	input signed [31:0] v1_y,
-
-	input signed [31:0] v2_x,
-	input signed [31:0] v2_y,
-
-	input signed [31:0] v3_x,
-	input signed [31:0] v3_y,
-
-	input signed [31:0] v1_a,
-	input signed [31:0] v2_a,
-	input signed [31:0] v3_a,
-
-	output signed [31:0] Aa,
-	output signed [31:0] Ba,
-	output signed [31:0] C,
-	output signed [31:0] c,
-
-	input  signed [31:0] x,
-	input  signed [31:0] y,
-	output signed [31:0] interp,
-	
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
 	input signed [31:0] FDY12,
 	input signed [31:0] FX1,
@@ -72,11 +50,9 @@ module pvr (
 	input signed [31:0] FDX41,
 	input signed [31:0] FY4,
 	
-	input signed [31:0] minx,
-	input signed [31:0] miny,
-	
-	input signed [31:0] spanx,
-	input signed [31:0] spany
+	input signed [31:0] FZ1,
+	input signed [31:0] FZ2,
+	input signed [31:0] FZ3
 );
 
 
@@ -630,13 +606,11 @@ isp_parser isp_parser_inst (
 	.FDY41( FDY41 ),		// input signed [31:0]  
 	.FX4( FX4 ),			// input signed [31:0]  
 	.FDX41( FDX41 ),		// input signed [31:0]  
-	.FY4( FY4 ),			// input signed [31:0]  
+	.FY4( FY4 ),			// input signed [31:0]
 	
-	.minx( minx ),
-	.miny( miny ),
-	
-	.spanx( spanx ),
-	.spany( spany ),
+	.FZ1( FZ1 ),			// input signed [31:0]  FZ1
+	.FZ2( FZ2 ),			// input signed [31:0]  FZ2
+	.FZ3( FZ3 ),			// input signed [31:0]  FZ3
 	
 	.TEXT_CONTROL( TEXT_CONTROL ),		// From TEXT_CONTROL reg. (0xE4 in PVR regs).
 	.PAL_RAM_CTRL( PAL_RAM_CTRL[1:0] ),	// From PAL_RAM_CTRL reg, bits [1:0].

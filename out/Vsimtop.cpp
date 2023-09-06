@@ -37,22 +37,6 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , trace_pc1{vlSymsp->TOP.trace_pc1}
     , trace_wdata1{vlSymsp->TOP.trace_wdata1}
     , vram_addr{vlSymsp->TOP.vram_addr}
-    , v1_x{vlSymsp->TOP.v1_x}
-    , v1_y{vlSymsp->TOP.v1_y}
-    , v2_x{vlSymsp->TOP.v2_x}
-    , v2_y{vlSymsp->TOP.v2_y}
-    , v3_x{vlSymsp->TOP.v3_x}
-    , v3_y{vlSymsp->TOP.v3_y}
-    , v1_a{vlSymsp->TOP.v1_a}
-    , v2_a{vlSymsp->TOP.v2_a}
-    , v3_a{vlSymsp->TOP.v3_a}
-    , Aa{vlSymsp->TOP.Aa}
-    , Ba{vlSymsp->TOP.Ba}
-    , C{vlSymsp->TOP.C}
-    , c{vlSymsp->TOP.c}
-    , x{vlSymsp->TOP.x}
-    , y{vlSymsp->TOP.y}
-    , interp{vlSymsp->TOP.interp}
     , FDY12{vlSymsp->TOP.FDY12}
     , FX1{vlSymsp->TOP.FX1}
     , FDX12{vlSymsp->TOP.FDX12}
@@ -69,10 +53,9 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , FX4{vlSymsp->TOP.FX4}
     , FDX41{vlSymsp->TOP.FDX41}
     , FY4{vlSymsp->TOP.FY4}
-    , minx{vlSymsp->TOP.minx}
-    , miny{vlSymsp->TOP.miny}
-    , spanx{vlSymsp->TOP.spanx}
-    , spany{vlSymsp->TOP.spany}
+    , FZ1{vlSymsp->TOP.FZ1}
+    , FZ2{vlSymsp->TOP.FZ2}
+    , FZ3{vlSymsp->TOP.FZ3}
     , dm_req_wdata{vlSymsp->TOP.dm_req_wdata}
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
     , vram_din{vlSymsp->TOP.vram_din}
