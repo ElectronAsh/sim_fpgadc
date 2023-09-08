@@ -40,9 +40,21 @@ void Vsimtop___024root___eval_triggers__act(Vsimtop___024root* vlSelf) {
                                       & (~ (IData)(vlSelf->__Vtrigprevexpr___TOP__clk__0))) 
                                      | ((~ (IData)(vlSelf->simtop__DOT____Vcellinp__pvr__reset_n)) 
                                         & (IData)(vlSelf->__Vtrigprevexpr___TOP__simtop__DOT____Vcellinp__pvr__reset_n__0))));
+    vlSelf->__VactTriggered.set(2U, (((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps) 
+                                      != (IData)(vlSelf->__Vtrigprevexpr___TOP__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps__0)) 
+                                     | ((IData)(vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps) 
+                                        != (IData)(vlSelf->__Vtrigprevexpr___TOP__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps__0))));
     vlSelf->__Vtrigprevexpr___TOP__clk__0 = vlSelf->clk;
     vlSelf->__Vtrigprevexpr___TOP__simtop__DOT____Vcellinp__pvr__reset_n__0 
         = vlSelf->simtop__DOT____Vcellinp__pvr__reset_n;
+    vlSelf->__Vtrigprevexpr___TOP__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps__0 
+        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
+    vlSelf->__Vtrigprevexpr___TOP__simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps__0 
+        = vlSelf->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
+    if (VL_UNLIKELY((1U & (~ (IData)(vlSelf->__VactDidInit))))) {
+        vlSelf->__VactDidInit = 1U;
+        vlSelf->__VactTriggered.set(2U, 1U);
+    }
 #ifdef VL_DEBUG
     if (VL_UNLIKELY(vlSymsp->_vm_contextp__->debug())) {
         Vsimtop___024root___dump_triggers__act(vlSelf);

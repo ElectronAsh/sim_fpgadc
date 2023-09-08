@@ -732,8 +732,7 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
-constexpr auto FRAC_BITS   = 12;
-constexpr auto Z_FRAC_BITS = 12;
+constexpr auto FRAC_BITS = 14;
 
 PlaneStepper3 Z;
 PlaneStepper3 U;
@@ -827,9 +826,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	const int FY3 = float_to_fixed(y3, FRAC_BITS);
 	const int FY4 = float_to_fixed(y4, FRAC_BITS);
 	
-	const int FZ1 = float_to_fixed(z1, Z_FRAC_BITS);
-	const int FZ2 = float_to_fixed(z2, Z_FRAC_BITS);
-	const int FZ3 = float_to_fixed(z3, Z_FRAC_BITS);
+	const int FZ1 = float_to_fixed(z1, FRAC_BITS);
+	const int FZ2 = float_to_fixed(z2, FRAC_BITS);
+	const int FZ3 = float_to_fixed(z3, FRAC_BITS);
 
 	float x3_sub_x1 = x3 - x1;
 	float y2_sub_y1 = y2 - y1;
@@ -993,13 +992,13 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 
 		int w = tex_u_size_full-1;
 		int h = tex_v_size_full-1;
-		U.Setup(x1,x2,x3, y1,y2,y3, u1 * w * z1, u2 * w * z2, u3 * w * z3);
-		V.Setup(x1,x2,x3, y1,y2,y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
+		U.Setup(x1,x2,x3, y1,y2,y3, u1*w*z1, u2*w*z2, u3*w*z3);
+		V.Setup(x1,x2,x3, y1,y2,y3, v1*h*z1, v2*h*z2, v3*h*z3);
 	}
 
-	invW = Z.Ip((float)core_x_ps, (float)core_y_ps);				// Interpolate the Z value, based on X and Y.
-	float u    = U.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the U value, based on X and Y. Mult with 1/invW.
-	float v    = V.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the V value, based on X and Y. Mult with 1/invW.
+	invW    = Z.Ip((float)core_x_ps, (float)core_y_ps);				// Interpolate the Z value, based on X and Y.
+	float u = U.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the U value, based on X and Y. Mult with 1/invW.
+	float v = V.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the V value, based on X and Y. Mult with 1/invW.
 
 	bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 	bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;

@@ -63,7 +63,7 @@ module isp_parser (
 	output [31:0] pal_dout
 );
 
-parameter FRAC_BITS = 12;
+parameter FRAC_BITS = 8'd14;
 
 reg [23:0] isp_vram_addr;
 
@@ -698,6 +698,8 @@ wire [31:0] final_argb;
 interp  interp_inst_0 (
 	.clock( clock ),			// input  clock
 	.setup( isp_entry_valid ),	// input  setup
+	
+	.FRAC_BITS( FRAC_BITS ),	// input [7:0] FRAC_BITS
 
 	.FX1( FX1 ),		// input signed [31:0] x1
 	.FX2( FX2 ),		// input signed [31:0] x1
@@ -711,8 +713,8 @@ interp  interp_inst_0 (
 	.FZ2( FZ2 ),		// input signed [31:0] z1
 	.FZ3( FZ3 ),		// input signed [31:0] z1
 	
-	.x_ps( x_ps ),		// input signed [31:0] x_ps
-	.y_ps( y_ps ),		// input signed [31:0] y_ps
+	.x_ps( x_ps ),		// input signed [11:0] x_ps
+	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
 	.interp( IP_Z )	// output signed [31:0]  interp
 );

@@ -9,6 +9,7 @@
 #include "Vsimtop___024root.h"
 
 // Parameter definitions for Vsimtop___024root
+constexpr CData/*7:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__isp_parser_inst__DOT__FRAC_BITS;
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__ID_addr;
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__REVISION_addr;
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__SOFTRESET_addr;
@@ -83,9 +84,6 @@ constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__TA_OL_POINTERS
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__TA_OL_POINTERS_END_addr;
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__PALETTE_RAM_START_addr;
 constexpr SData/*15:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__PALETTE_RAM_END_addr;
-constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__isp_parser_inst__DOT__FRAC_BITS;
-constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__FRAC_BITS;
-constexpr IData/*31:0*/ Vsimtop___024root::simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Z_FRAC_BITS;
 
 
 void Vsimtop___024root___ctor_var_reset(Vsimtop___024root* vlSelf);
