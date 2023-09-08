@@ -63,7 +63,7 @@ module isp_parser (
 	output [31:0] pal_dout
 );
 
-parameter FRAC_BITS = 8;
+parameter FRAC_BITS = 12;
 
 reg [23:0] isp_vram_addr;
 
@@ -212,8 +212,8 @@ else begin
 
 	if (isp_state > 1) begin
 		//if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47 || isp_state != 8'd48 || isp_state != 8'd49 || isp_state != 8'd50) isp_state <= isp_state + 8'd1;
-		if (!tex_wait && isp_state < 8'd47) isp_state <= isp_state + 8'd1;
-		if (!tex_wait && isp_state > 8'd1 && isp_state < 8'd48) isp_vram_addr <= isp_vram_addr + 4;
+		if (!tex_wait && isp_state < 8'd47 && isp_state!=8'd4 && isp_state!=8'd5) isp_state <= isp_state + 8'd1;
+		if (!tex_wait && isp_state > 8'd1  && isp_state!=8'd4 && isp_state!=8'd5 && isp_state < 8'd48) isp_vram_addr <= isp_vram_addr + 4;
 	end
 
 	case (isp_state)
@@ -269,10 +269,23 @@ else begin
 		3: tsp_inst <= isp_vram_din;
 		4: begin
 			tcw_word <= isp_vram_din;
-			if (isp_vram_din[30]) read_codebook <= 1'b1;	// Read VQ Code Book if TCW bit 30 is set.
-			
-			if (is_tri_strip) isp_vram_addr <= poly_addr + (3<<2) + ((vert_words*strip_cnt) << 2);	// Skip a vert, based on strip_cnt.
-			isp_state <= 8'd7;
+			if (isp_vram_din[30]) begin
+				read_codebook <= 1'b1;	// Read VQ Code Book if TCW bit 30 is set.
+				isp_state <= 8'd5;
+			end
+			else begin
+				if (is_tri_strip) isp_vram_addr <= poly_addr + (3<<2) + ((vert_words*strip_cnt) << 2);	// Skip a vert, based on strip_cnt.
+				else isp_vram_addr <= isp_vram_addr + 4;
+				isp_state <= 8'd7;
+			end
+		end
+		
+		5: begin
+			if (!read_codebook && !tex_wait) begin
+				if (is_tri_strip) isp_vram_addr <= poly_addr + (3<<2) + ((vert_words*strip_cnt) << 2);	// Skip a vert, based on strip_cnt.
+				else isp_vram_addr <= isp_vram_addr + 4;
+				isp_state <= 8'd7;
+			end
 		end
 		
 		// if (shadow)...
@@ -683,17 +696,20 @@ wire [31:0] final_argb;
 // Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 //
 interp  interp_inst_0 (
-	.FX1( FX1 ),	// input signed [31:0] x1
-	.FX2( FX2 ),	// input signed [31:0] x1
-	.FX3( FX3 ),	// input signed [31:0] x1
+	.clock( clock ),			// input  clock
+	.setup( isp_entry_valid ),	// input  setup
+
+	.FX1( FX1 ),		// input signed [31:0] x1
+	.FX2( FX2 ),		// input signed [31:0] x1
+	.FX3( FX3 ),		// input signed [31:0] x1
 	
-	.FY1( FY1 ),	// input signed [31:0] y1
-	.FY2( FY2 ),	// input signed [31:0] y1
-	.FY3( FY3 ),	// input signed [31:0] y1
+	.FY1( FY1 ),		// input signed [31:0] y1
+	.FY2( FY2 ),		// input signed [31:0] y1
+	.FY3( FY3 ),		// input signed [31:0] y1
 	
-	.FZ1( FZ1 ),	// input signed [31:0] z1
-	.FZ2( FZ2 ),	// input signed [31:0] z1
-	.FZ3( FZ3 ),	// input signed [31:0] z1
+	.FZ1( FZ1 ),		// input signed [31:0] z1
+	.FZ2( FZ2 ),		// input signed [31:0] z1
+	.FZ3( FZ3 ),		// input signed [31:0] z1
 	
 	.x_ps( x_ps ),		// input signed [31:0] x_ps
 	.y_ps( y_ps ),		// input signed [31:0] y_ps

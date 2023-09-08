@@ -73,12 +73,14 @@ parameter VO_BORDER_COL_addr      = 16'h0040; // RW  Border area color
 parameter FB_R_CTRL_addr          = 16'h0044; // RW  Frame buffer read control
 parameter FB_W_CTRL_addr          = 16'h0048; // RW  Frame buffer write control
 parameter FB_W_LINESTRIDE_addr    = 16'h004C; // RW  Frame buffer line stride
+
 parameter FB_R_SOF1_addr          = 16'h0050; // RW  Read start address for field - 1/strip - 1
 parameter FB_R_SOF2_addr          = 16'h0054; // RW  Read start address for field - 2/strip - 2
-
 parameter FB_R_SIZE_addr          = 16'h005C; // RW  Frame buffer XY size	
+
 parameter FB_W_SOF1_addr          = 16'h0060; // RW  Write start address for field - 1/strip - 1
 parameter FB_W_SOF2_addr          = 16'h0064; // RW  Write start address for field - 2/strip - 2
+
 parameter FB_X_CLIP_addr          = 16'h0068; // RW  Pixel clip X coordinate
 parameter FB_Y_CLIP_addr          = 16'h006C; // RW  Pixel clip Y coordinate
 

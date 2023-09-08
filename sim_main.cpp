@@ -612,7 +612,6 @@ bool ra_running = 0;
 inline int32_t float_to_fixed(float d, uint32_t p)
 {
 	int32_t temp = d * (1<<p);
-	//if (d<0) temp |= (1<<31);	// If the float is negative, set the Sign bit of the fixed-point.
 	return temp;
 }
 
@@ -650,8 +649,10 @@ struct PlaneStepper3
 		
 		C  = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);	// Cross Product?
 
-		ddx = -Aa / C;
-		ddy = -Ba / C;
+		//ddx = -Aa / C;
+		//ddy = -Ba / C;
+		ddx = (0-Aa) / C;
+		ddy = (0-Ba) / C;
 		c = (z1 - ddx * x1 - ddy * y1);
 	}
 
@@ -731,7 +732,8 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
-constexpr auto FRAC_BITS = 8;
+constexpr auto FRAC_BITS   = 12;
+constexpr auto Z_FRAC_BITS = 12;
 
 PlaneStepper3 Z;
 PlaneStepper3 U;
@@ -792,6 +794,8 @@ uint32_t vq_index_addr = 0;
 
 bool sgn = 0;
 
+float invW = 0;
+
 float mult1 = 0;
 float mult2 = 0;
 float mult3 = 0;
@@ -823,9 +827,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	const int FY3 = float_to_fixed(y3, FRAC_BITS);
 	const int FY4 = float_to_fixed(y4, FRAC_BITS);
 	
-	const int FZ1 = float_to_fixed(z1, FRAC_BITS);
-	const int FZ2 = float_to_fixed(z2, FRAC_BITS);
-	const int FZ3 = float_to_fixed(z3, FRAC_BITS);
+	const int FZ1 = float_to_fixed(z1, Z_FRAC_BITS);
+	const int FZ2 = float_to_fixed(z2, Z_FRAC_BITS);
+	const int FZ3 = float_to_fixed(z3, Z_FRAC_BITS);
 
 	float x3_sub_x1 = x3 - x1;
 	float y2_sub_y1 = y2 - y1;
@@ -982,6 +986,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		top->rootp->FDY41 = FDY41;
 
 		top->rootp->FZ1 = FZ1;
+		top->rootp->FZ2 = FZ2;
+		top->rootp->FZ3 = FZ3;
 
 		Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 
@@ -991,7 +997,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		V.Setup(x1,x2,x3, y1,y2,y3, v1 * h * z1, v2 * h * z2, v3 * h * z3);
 	}
 
-	float invW = Z.Ip((float)core_x_ps,(float)core_y_ps);				// Interpolate the Z value, based on X and Y.
+	invW = Z.Ip((float)core_x_ps, (float)core_y_ps);				// Interpolate the Z value, based on X and Y.
 	float u    = U.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the U value, based on X and Y. Mult with 1/invW.
 	float v    = V.Ip((float)core_x_ps, (float)core_y_ps) * (1/invW);	// Interpolate the V value, based on X and Y. Mult with 1/invW.
 
@@ -2127,6 +2133,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Separator();
 		ImGui::Text("            sim Aa: %f", Z.Aa );
 		ImGui::Text("           core Aa: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Aa)/(1<<FRAC_BITS) );
+		//ImGui::Text("       core Aa raw: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Aa );
 		ImGui::Separator();
 		ImGui::Text("     sim Ba_mult_1: %f", Z.Ba_mult_1 );
 		ImGui::Text("    core Ba_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Ba_mult_1)/(1<<FRAC_BITS) );
@@ -2137,14 +2144,22 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("           sim Z.C: %f", Z.C);
 		ImGui::Text("          core Z.C: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__C)/(1<<FRAC_BITS) );
 		ImGui::Separator();
+		ImGui::Text("    Aa_shifted raw: 0x%016llX",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Aa_shifted);
+		ImGui::Text("    Ba_shifted raw: 0x%016llX",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Ba_shifted);
+		ImGui::Separator();
 		ImGui::Text("         sim Z.ddx: %f", Z.ddx);
 		ImGui::Text("       core Z.FDDX: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__FDDX)/(1<<FRAC_BITS) );
+		ImGui::Text("   core Z.FDDX raw: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__FDDX);
 		ImGui::Separator();
 		ImGui::Text("         sim Z.ddy: %f", Z.ddy);
 		ImGui::Text("       core Z.FDDY: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__FDDY)/(1<<FRAC_BITS) );
+		ImGui::Text("   core Z.FDDY raw: 0x%016llX",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__FDDY);
 		ImGui::Separator();
 		ImGui::Text("           sim Z.c: %f",Z.c);
-		ImGui::Text("          core Z.c: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__c)/(1<<FRAC_BITS));
+		
+		ImGui::Separator();
+		ImGui::Text("          sim invW: %f", invW);
+		ImGui::Text("         core invW: %f",(float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__interp)/(1<<FRAC_BITS));
 		ImGui::Separator();
 		ImGui::Text("         core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
 		ImGui::Text("         core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
