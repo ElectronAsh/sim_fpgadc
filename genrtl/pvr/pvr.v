@@ -26,6 +26,18 @@ module pvr (
 	output vram_wr,
 	output [63:0] vram_dout,
 	
+	input signed [31:0] fp_dy12,
+	input signed [31:0] fp_dx12,
+
+	input signed [31:0] fp_dy23,
+	input signed [31:0] fp_dx23,
+
+	input signed [31:0] fp_dy31,
+	input signed [31:0] fp_dx31,
+
+	input signed [31:0] fp_dy41,
+	input signed [31:0] fp_dx41,
+	
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
 	input signed [31:0] FDY12,
 	input signed [31:0] FX1,
@@ -585,6 +597,18 @@ isp_parser isp_parser_inst (
 	
 	.tilex( ra_cont_tilex ),
 	.tiley( ra_cont_tiley ),
+	
+	.fp_dy12( fp_dy12 ),
+	.fp_dx12( fp_dx12 ),
+
+	.fp_dy23( fp_dy23 ),
+	.fp_dx23( fp_dx23 ),
+
+	.fp_dy31( fp_dy31 ),
+	.fp_dx31( fp_dx31 ),
+
+	.fp_dy41( fp_dy41 ),
+	.fp_dx41( fp_dx41 ),
 	
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
 	.FDY12( FDY12 ),		// input signed [31:0]   

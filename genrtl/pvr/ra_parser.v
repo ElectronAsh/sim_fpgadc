@@ -171,7 +171,7 @@ else begin
 				// 0=No List, 1=8 Words, 2=16 Words, 3=32 Words.
 				// TODO: Shift won't work for o_opb==0 etc. (we now check for o_opb>0 etc.)
 				//
-				// Note: No need to add PARAM_BASE to ra_opaque etc. ra_opaque is already the Absolute VRAM address! ElectronAsh.
+				// Note: No need to add PARAM_BASE to ra_opaque[23:0] etc. ra_opaque is already the Absolute VRAM address! ElectronAsh.
 				//
 				0: if (!ra_opaque[31] && o_opb>0)     begin ra_vram_addr <= ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb )*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
 				1: if (!ra_opaque_mod[31] && o_opb>0) begin ra_vram_addr <= ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end

@@ -65,6 +65,18 @@ module simtop (
 	output wire [23:0] vram_addr,
 	input wire [63:0] vram_din,
 	output wire [63:0] vram_dout,
+		
+	input signed [31:0] fp_dy12,
+	input signed [31:0] fp_dx12,
+
+	input signed [31:0] fp_dy23,
+	input signed [31:0] fp_dx23,
+
+	input signed [31:0] fp_dy31,
+	input signed [31:0] fp_dx31,
+
+	input signed [31:0] fp_dy41,
+	input signed [31:0] fp_dx41,
 
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
 	input signed [31:0] FDY12,
@@ -227,6 +239,18 @@ pvr pvr (
 	.vram_rd( vram_rd ),		// output  vram_rd
 	.vram_wr( vram_wr ),		// output  vram_wr
 	.vram_dout( vram_dout ),	// output [63:0]  vram_dout
+	
+	.fp_dy12( fp_dy12 ),
+	.fp_dx12( fp_dx12 ),
+
+	.fp_dy23( fp_dy23 ),
+	.fp_dx23( fp_dx23 ),
+
+	.fp_dy31( fp_dy31 ),
+	.fp_dx31( fp_dx31 ),
+
+	.fp_dy41( fp_dy41 ),
+	.fp_dx41( fp_dx41 ),
 		
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
 	.FDY12( FDY12 ),		// input signed [31:0]   

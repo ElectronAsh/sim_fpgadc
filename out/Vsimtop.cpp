@@ -37,6 +37,14 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , trace_pc1{vlSymsp->TOP.trace_pc1}
     , trace_wdata1{vlSymsp->TOP.trace_wdata1}
     , vram_addr{vlSymsp->TOP.vram_addr}
+    , fp_dy12{vlSymsp->TOP.fp_dy12}
+    , fp_dx12{vlSymsp->TOP.fp_dx12}
+    , fp_dy23{vlSymsp->TOP.fp_dy23}
+    , fp_dx23{vlSymsp->TOP.fp_dx23}
+    , fp_dy31{vlSymsp->TOP.fp_dy31}
+    , fp_dx31{vlSymsp->TOP.fp_dx31}
+    , fp_dy41{vlSymsp->TOP.fp_dy41}
+    , fp_dx41{vlSymsp->TOP.fp_dx41}
     , FDY12{vlSymsp->TOP.FDY12}
     , FX1{vlSymsp->TOP.FX1}
     , FDX12{vlSymsp->TOP.FDX12}
@@ -60,6 +68,7 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
     , vram_din{vlSymsp->TOP.vram_din}
     , vram_dout{vlSymsp->TOP.vram_dout}
+    , __PVT____024unit{vlSymsp->TOP.__PVT____024unit}
     , rootp{&(vlSymsp->TOP)}
 {
     // Register model with the context

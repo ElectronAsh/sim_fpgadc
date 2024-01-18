@@ -12,6 +12,8 @@
 
 class Vsimtop__Syms;
 class Vsimtop___024root;
+class Vsimtop___024unit;
+
 
 // This class is the main interface to the Verilated model
 class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel {
@@ -51,6 +53,14 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel 
     VL_OUT(&trace_pc1,31,0);
     VL_OUT(&trace_wdata1,31,0);
     VL_OUT(&vram_addr,23,0);
+    VL_IN(&fp_dy12,31,0);
+    VL_IN(&fp_dx12,31,0);
+    VL_IN(&fp_dy23,31,0);
+    VL_IN(&fp_dx23,31,0);
+    VL_IN(&fp_dy31,31,0);
+    VL_IN(&fp_dx31,31,0);
+    VL_IN(&fp_dy41,31,0);
+    VL_IN(&fp_dx41,31,0);
     VL_IN(&FDY12,31,0);
     VL_IN(&FX1,31,0);
     VL_IN(&FDX12,31,0);
@@ -78,6 +88,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vsimtop VL_NOT_FINAL : public VerilatedModel 
     // CELLS
     // Public to allow access to /* verilator public */ items.
     // Otherwise the application code can consider these internals.
+    Vsimtop___024unit* const __PVT____024unit;
 
     // Root instance pointer to allow access to model internals,
     // including inlined /* verilator public_flat_* */ items.

@@ -1,6 +1,10 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
+
+parameter FRAC_BITS = 8'd10;
+
+
 module isp_parser (
 	input clock,
 	input reset_n,
@@ -25,10 +29,23 @@ module isp_parser (
 	input reg [5:0] tilex,
 	input reg [5:0] tiley,
 	
+	input signed [31:0] fp_dy12,
+	input signed [31:0] fp_dx12,
+
+	input signed [31:0] fp_dy23,
+	input signed [31:0] fp_dx23,
+
+	input signed [31:0] fp_dy31,
+	input signed [31:0] fp_dx31,
+
+	input signed [31:0] fp_dy41,
+	input signed [31:0] fp_dx41,
+	
 	//int C1 = FDY12 * FX1 - FDX12 * FY1;
+	input signed [31:0] FDX12,
 	input signed [31:0] FDY12,
 	input signed [31:0] FX1,
-	input signed [31:0] FDX12,
+	
 	input signed [31:0] FY1,
 	
 	//int C2 = FDY23 * FX2 - FDX23 * FY2;
@@ -62,8 +79,6 @@ module isp_parser (
 	input pal_wr,
 	output [31:0] pal_dout
 );
-
-parameter FRAC_BITS = 8'd14;
 
 reg [23:0] isp_vram_addr;
 
@@ -522,39 +537,40 @@ else begin
 	
 			// Half-edge constants (setup).
 			//int C1 = FDY12 * FX1 - FDX12 * FY1;
-			mult1 <= (FDY12*FX1)>>FRAC_BITS;
-			mult2 <= (FDX12*FY1)>>FRAC_BITS;
+			mult1 <= (FDY12*FX1_FIXED)>>FRAC_BITS;
+			mult2 <= (FDX12*FY1_FIXED)>>FRAC_BITS;
 
 			//int C2 = FDY23 * FX2 - FDX23 * FY2;
-			mult3 <= (FDY23*FX2)>>FRAC_BITS;
-			mult4 <= (FDX23*FY2)>>FRAC_BITS;
+			mult3 <= (FDY23*FX2_FIXED)>>FRAC_BITS;
+			mult4 <= (FDX23*FY2_FIXED)>>FRAC_BITS;
 
 			//int C3 = FDY31 * FX3 - FDX31 * FY3;
-			mult5 <= (FDY31*FX3)>>FRAC_BITS;
-			mult6 <= (FDX31*FY3)>>FRAC_BITS;
+			mult5 <= (FDY31*FX3_FIXED)>>FRAC_BITS;
+			mult6 <= (FDX31*FY3_FIXED)>>FRAC_BITS;
 			
 			//int C4 = FDY41 * FX4 - FDX41 * FY4;
 			mult7 <= (is_quad_array) ? (FDY41*FX4)>>FRAC_BITS : 1<<FRAC_BITS;
 			mult8 <= (is_quad_array) ? (FDX41*FY4)>>FRAC_BITS : 1<<FRAC_BITS;
 			
-			x_ps <= tilex*32;	// Per-tile rendering.
-			y_ps <= tiley*32;	// Per-tile rendering.
+			x_ps <= tilex<<5;	// Per-tile rendering.
+			y_ps <= tiley<<5;	// Per-tile rendering.
 			
 			isp_state <= isp_state + 8'd1;
 		end
 
 		50: begin
-			if (y_ps < (tiley*32)+32) begin
-					if (inTriangle /*&& !neg_xy && !neg_z && ovr_xy*/) begin
-						isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
-						isp_vram_wr <= 1'b1;
-						isp_vram_dout <= final_argb;	// ABGR, for sim display.
-					end
-					if (x_ps == (tilex*32)+32) begin
-						x_ps <= tilex*32;
-						y_ps <= y_ps + 12'd1;
-					end
-					else x_ps <= x_ps + 12'd1;
+			if (y_ps < (tiley<<5)+32) begin
+				if (x_ps == (tilex<<5)+32) begin
+					x_ps <= tilex<<5;
+					y_ps <= y_ps + 12'd1;
+				end
+				else x_ps <= x_ps + 12'd1;
+				
+				if (inTriangle /*&& !neg_xy && !neg_z && ovr_xy*/) begin
+					isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
+					isp_vram_wr <= 1'b1;
+					isp_vram_dout <= final_argb;	// ABGR, for sim display.
+				end
 			end
 			else begin
 				isp_vram_addr <= isp_vram_addr_last;
@@ -568,26 +584,108 @@ end
 
 wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
 
+/*
 wire neg_xy = FX1[31] || FX2[31] || FX3[31] || FY1[31] || FY2[31] || FY3[31] || FY4[31] || FY4[31];
-wire neg_z  = vert_a_z[31] || vert_b_z[31] || vert_c_z[31] /*|| vert_d_z[31]*/;
+wire neg_z  = vert_a_z[31] || vert_b_z[31] || vert_c_z[31]; //|| vert_d_z[31];
 
 wire ovr_xy = (FX1>>FRAC_BITS)<32'sd4000 || (FX2>>FRAC_BITS)<32'sd4000 || (FX3>>FRAC_BITS)<32'sd4000 || (FX4>>FRAC_BITS)<32'sd4000 ||
 			  (FY1>>FRAC_BITS)<32'sd4000 || (FY2>>FRAC_BITS)<32'sd4000 || (FY3>>FRAC_BITS)<32'sd4000 || (FY4>>FRAC_BITS)<32'sd4000 ||
 			  (FX1>>FRAC_BITS)<-32'sd4000 || (FX2>>FRAC_BITS)<-32'sd4000 || (FX3>>FRAC_BITS)<-32'sd4000 || (FX4>>FRAC_BITS)<-32'sd4000 ||
 			  (FY1>>FRAC_BITS)<-32'sd4000 || (FY2>>FRAC_BITS)<-32'sd4000 || (FY3>>FRAC_BITS)<-32'sd4000 || (FY4>>FRAC_BITS)<-32'sd4000;
+*/
 
-
-wire signed [47:0] f_area = (FX1-FX3) * (FY2-FY3) - (FY1-FY3) * (FX2-FX3);
+wire signed [47:0] f_area = (FX1_FIXED-FX3_FIXED) * (FY2_FIXED-FY3_FIXED) - (FY1_FIXED-FY3_FIXED) * (FX2_FIXED-FX3_FIXED);
 wire sgn = (f_area<=0);
 
 
-wire [31:0] test_float = 32'h4212C0E0;	// 36.6883544921875
+wire signed [31:0] FX1_FIXED;
+float_to_fixed  float_x1 (
+	.float_in( vert_a_x ),	// input [31:0]  float_in
+	.fixed( FX1_FIXED )		// output [31:0]  fixed
+);
+wire signed [31:0] FY1_FIXED;
+float_to_fixed  float_y1 (
+	.float_in( vert_a_y ),	// input [31:0]  float_in
+	.fixed( FY1_FIXED )		// output [31:0]  fixed
+);
 
-wire [7:0]  exp = test_float[30:23];
-wire [22:0] man = test_float[22:00];
+wire signed [31:0] FX2_FIXED;
+float_to_fixed  float_x2 (
+	.float_in( vert_b_x ),	// input [31:0]  float_in
+	.fixed( FX2_FIXED )		// output [31:0]  fixed
+);
+wire signed [31:0] FY2_FIXED;
+float_to_fixed  float_y2 (
+	.float_in( vert_b_y ),	// input [31:0]  float_in
+	.fixed( FY2_FIXED )		// output [31:0]  fixed
+);
 
-wire signed [31:0] fixed = (exp>127) ? {1'b1, man}<<(exp-127) :
-									   {1'b1, man}>>(127-exp);
+wire signed [31:0] FX3_FIXED;
+float_to_fixed  float_x3 (
+	.float_in( vert_c_x ),	// input [31:0]  float_in
+	.fixed( FX3_FIXED )		// output [31:0]  fixed
+);
+wire signed [31:0] FY3_FIXED;
+float_to_fixed  float_y3 (
+	.float_in( vert_c_y ),	// input [31:0]  float_in
+	.fixed( FY3_FIXED )		// output [31:0]  fixed
+);
+
+wire signed [31:0] FX4_FIXED;
+float_to_fixed  float_x4 (
+	.float_in( vert_d_x ),	// input [31:0]  float_in
+	.fixed( FX4_FIXED )		// output [31:0]  fixed
+);
+wire signed [31:0] FY4_FIXED;
+float_to_fixed  float_y4 (
+	.float_in( vert_d_y ),	// input [31:0]  float_in
+	.fixed( FY4_FIXED )		// output [31:0]  fixed
+);
+
+wire signed [31:0] FDX12_FIXED;
+float_to_fixed  float_dx12 (
+	.float_in( fp_dx12 ),	// input [31:0]  float_in
+	.fixed( FDX12_FIXED )	// output [31:0]  fixed
+);
+wire signed [31:0] FDY12_FIXED;
+float_to_fixed  float_dy12 (
+	.float_in( fp_dy12 ),	// input [31:0]  float_in
+	.fixed( FDY12_FIXED )	// output [31:0]  fixed
+);
+
+wire signed [31:0] FDX23_FIXED;
+float_to_fixed  float_dx23 (
+	.float_in( fp_dx23 ),	// input [31:0]  float_in
+	.fixed( FDX23_FIXED )	// output [31:0]  fixed
+);
+wire signed [31:0] FDY23_FIXED;
+float_to_fixed  float_dy23 (
+	.float_in( fp_dy23 ),	// input [31:0]  float_in
+	.fixed( FDY23_FIXED )	// output [31:0]  fixed
+);
+
+wire signed [31:0] FDX31_FIXED;
+float_to_fixed  float_dx31 (
+	.float_in( fp_dx31 ),	// input [31:0]  float_in
+	.fixed( FDX31_FIXED )	// output [31:0]  fixed
+);
+wire signed [31:0] FDY31_FIXED;
+float_to_fixed  float_dy31 (
+	.float_in( fp_dy31 ),	// input [31:0]  float_in
+	.fixed( FDY31_FIXED )	// output [31:0]  fixed
+);
+
+wire signed [31:0] FDX41_FIXED;
+float_to_fixed  float_dx41 (
+	.float_in( fp_dx41 ),	// input [31:0]  float_in
+	.fixed( FDX41_FIXED )	// output [31:0]  fixed
+);
+wire signed [31:0] FDY41_FIXED;
+float_to_fixed  float_dy41 (
+	.float_in( fp_dy41 ),	// input [31:0]  float_in
+	.fixed( FDY41_FIXED )	// output [31:0]  fixed
+);
+
 
 //reg signed [31:0] x_ps;
 //reg signed [31:0] y_ps;
@@ -701,17 +799,17 @@ interp  interp_inst_0 (
 	
 	.FRAC_BITS( FRAC_BITS ),	// input [7:0] FRAC_BITS
 
-	.FX1( FX1 ),		// input signed [31:0] x1
-	.FX2( FX2 ),		// input signed [31:0] x1
-	.FX3( FX3 ),		// input signed [31:0] x1
+	.FX1( FX1_FIXED ),		// input signed [31:0] x1
+	.FX2( FX2_FIXED ),		// input signed [31:0] x2
+	.FX3( FX3_FIXED ),		// input signed [31:0] x3
 	
-	.FY1( FY1 ),		// input signed [31:0] y1
-	.FY2( FY2 ),		// input signed [31:0] y1
-	.FY3( FY3 ),		// input signed [31:0] y1
+	.FY1( FY1_FIXED ),		// input signed [31:0] y1
+	.FY2( FY2_FIXED ),		// input signed [31:0] y2
+	.FY3( FY3_FIXED ),		// input signed [31:0] y3
 	
 	.FZ1( FZ1 ),		// input signed [31:0] z1
-	.FZ2( FZ2 ),		// input signed [31:0] z1
-	.FZ3( FZ3 ),		// input signed [31:0] z1
+	.FZ2( FZ2 ),		// input signed [31:0] z2
+	.FZ3( FZ3 ),		// input signed [31:0] z3
 	
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
@@ -719,12 +817,47 @@ interp  interp_inst_0 (
 	.interp( IP_Z )	// output signed [31:0]  interp
 );
 
-
-
 wire signed [31:0] IP_Z;
+
+//wire signed [31:0] test_float = 32'h4212C0E0;    // 36.6883544921875
+//wire signed [31:0] test_float = 32'hC212C0E0;    // -36.6883544921875
+//wire [31:0] test_float = 32'h458dc582;	// 4536.6884765625
+//wire [31:0] test_float = 32'h486ece2c;	// 244536.6875
+//wire [31:0] test_float = 32'hc86ece2c;	// -244536.6875
+//wire [31:0] test_float = 32'h3f5d9c58;	// 0.8656668663
+//wire [31:0] test_float = 32'h00000000;	// 00000000
+//wire [31:0] test_float = 32'h80000000;	// -0
+//wire signed [31:0] test_float = fp_x1;
+wire signed [31:0] test_float = vert_a_x;
+wire [7:0]  exp = test_float[30:23];
+wire [22:0] man = test_float[22:00];
+
+wire [63:0] float_shift = (exp>127) ? {1'b1, man}<<( (exp-127) /*+ 8*/ ) :	// Exponent is positive.
+									  {1'b1, man}>>( (127-exp) /*- 8*/ );	// Exponent is negative.
+
+wire [30:0] fixed_new = float_shift>>((23-FRAC_BITS)/*+8*/);
+
+wire signed [31:0] test_fixed = {test_float[31], fixed_new[30:0]};
 
 endmodule
 
+
+module float_to_fixed (
+	input wire signed [31:0] float_in,
+	output wire signed [31:0] fixed
+);
+wire float_sign = float_in[31];
+wire [7:0]  exp = float_in[30:23];	// Sign bit not included here.
+wire [22:0] man = float_in[22:00];
+//wire [63:0] man = float_in[22:00] << 8;
+
+wire [63:0] float_shifted = (exp>127) ? {1'b1, man}<<(exp-127) :	// Exponent is positive.
+										{1'b1, man}>>(127-exp);	// Exponent is negative.
+										 
+wire [30:0] new_fixed = float_shifted>>((23-FRAC_BITS) /*+8*/);	// Sign bit not included here.
+
+assign fixed = {float_in[31], new_fixed[30:0]};	// Append the sign bit from the original float input.
+endmodule
 
 
 module texture_address (

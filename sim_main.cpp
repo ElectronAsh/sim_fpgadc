@@ -649,10 +649,8 @@ struct PlaneStepper3
 		
 		C  = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);	// Cross Product?
 
-		//ddx = -Aa / C;
-		//ddy = -Ba / C;
-		ddx = (0-Aa) / C;
-		ddy = (0-Ba) / C;
+		ddx = -Aa / C;
+		ddy = -Ba / C;
 		c = (z1 - ddx * x1 - ddy * y1);
 	}
 
@@ -732,12 +730,13 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
-constexpr auto FRAC_BITS = 14;
+constexpr auto FRAC_BITS = 10;
 
 PlaneStepper3 Z;
 PlaneStepper3 U;
 PlaneStepper3 V;
 
+/*
 uint32_t detwiddle[2][8][1024];
 #define twop(x,y,bcx,bcy) (detwiddle[0][bcy][x]+detwiddle[1][bcx][y])
 
@@ -754,7 +753,9 @@ void BuildTwiddleTables()
 		}
 	}
 }
+*/
 
+/*
 uint32_t read_vram_32(uint32_t addr) {		// BYTE address!
 	uint8_t byte0 = vram_ptr[ (addr+0)&0x7fffff ];
 	uint8_t byte1 = vram_ptr[ (addr+1)&0x7fffff ];
@@ -784,6 +785,7 @@ QData read_vram_64(uint32_t addr) {		// BYTE address!
 
 	return data;
 };
+*/
 
 uint8_t index_byte = 0;
 uint32_t vq_tex_index = 0;
@@ -815,7 +817,21 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	//if (x1>639 || x2>639 || x3>639 || y1>479 || y2>479 || y3>479) return;
 	//if (x1<0 || x2<0 || x3<0 || y1<0 || y2<0 || y3<0) return;				// Hide spikey bits / neg values.
 
-	// Convert to Fixed-point coords.
+	/*
+	top->rootp->fp_x1 = (int32_t)x1;
+	top->rootp->fp_y1 = (int32_t)y1;
+
+	top->rootp->fp_x2 = (int32_t)x2;
+	top->rootp->fp_y2 = (int32_t)y2;
+
+	top->rootp->fp_x3 = (int32_t)x3;
+	top->rootp->fp_y3 = (int32_t)y3;
+
+	top->rootp->fp_x4 = (int32_t)x4;
+	top->rootp->fp_y4 = (int32_t)y4;
+	*/
+
+	// Convert floats to Fixed-point coords.
 	const int FX1 = float_to_fixed(x1, FRAC_BITS);
 	const int FX2 = float_to_fixed(x2, FRAC_BITS);
 	const int FX3 = float_to_fixed(x3, FRAC_BITS);
@@ -892,7 +908,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTriangle = (Xhs12>=0) && (Xhs23>=0) && (Xhs31>=0) && (Xhs41>=0);
 
-
 	int32_t FDX12 = float_to_fixed(fdx12,FRAC_BITS);
 	int32_t FDX23 = float_to_fixed(fdx23,FRAC_BITS);
 	int32_t FDX31 = float_to_fixed(fdx31,FRAC_BITS);
@@ -902,6 +917,16 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	int32_t FDY23 = float_to_fixed(fdy23,FRAC_BITS);
 	int32_t FDY31 = float_to_fixed(fdy31,FRAC_BITS);
 	int32_t FDY41 = float_to_fixed(fdy41,FRAC_BITS);
+
+	top->rootp->fp_dx12 = fdx12;
+	top->rootp->fp_dx23 = fdx23;
+	top->rootp->fp_dx31 = fdx31;
+	top->rootp->fp_dx41 = fdx41;
+
+	top->rootp->fp_dy12 = fdy12;
+	top->rootp->fp_dy23 = fdy23;
+	top->rootp->fp_dy31 = fdy31;
+	top->rootp->fp_dy41 = fdy41;
 
 	// Bounding rectangle
 	//int minx = min(FX1,FX2,FX3)>>16;
@@ -1681,7 +1706,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
 	//load_vram_dump("_hydro_title");
-	//load_vram_dump("_looney_foghorn");
+	load_vram_dump("_looney_foghorn");
 	//load_vram_dump("_looney_startline");
 	//load_vram_dump("_sw_ep1_menu");
 	//load_vram_dump("_hotd2_title");
@@ -1695,7 +1720,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	load_vram_dump("_daytona_behind");
+	//load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
@@ -1765,7 +1790,7 @@ int main(int argc, char** argv, char** env) {
 
 	static bool show_app_console = true;
 	
-	BuildTwiddleTables();
+	//BuildTwiddleTables();
 
 	// imgui Main loop stuff...
 	MSG msg;
@@ -2158,7 +2183,7 @@ int main(int argc, char** argv, char** env) {
 		
 		ImGui::Separator();
 		ImGui::Text("          sim invW: %f", invW);
-		ImGui::Text("         core invW: %f",(float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__interp)/(1<<FRAC_BITS));
+		ImGui::Text("         core invW: %f",(float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__interp)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("         core x_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps);
 		ImGui::Text("         core y_ps: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps);
@@ -2166,11 +2191,21 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("      isp_vram_din: 0x%016llX",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_din);
 		ImGui::Text("          tex_wait: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_wait);
 		ImGui::Text("     cb_word_index: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__cb_word_index);
-		//ImGui::Text("        test float: %f", *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float);
-		//ImGui::Text("    test float exp: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp);
-		//ImGui::Text("    test float man: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man);
-		//ImGui::Text("        core fixed: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed);
-		//ImGui::Text("  fixed (as float): %f", (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__fixed / (1<<FRAC_BITS) );
+		
+		/*
+		ImGui::Text("        test float: %f", *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float);
+		ImGui::Text("          test HEX: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float);
+		ImGui::Text("    core float exp: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__exp);
+		ImGui::Text("core float man HEX: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__man);
+		ImGui::Text("   float_shift HEX: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__float_shift);
+		ImGui::Text("    core fixed HEX: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_fixed);
+		ImGui::Text("  fixed (as float): %f", (float)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_fixed / (1<<FRAC_BITS) );
+		*/
+
+		ImGui::Text("     c float x1: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
+		ImGui::Text(" core    x1 man: 0x%016llX",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__float_x1__DOT__man);
+		ImGui::Text(" core FX1_FIXED: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__float_x1__DOT__fixed);
+
 		ImGui::Separator();
 		ImGui::Text("           pix_fmt:");
 		ImGui::SameLine();

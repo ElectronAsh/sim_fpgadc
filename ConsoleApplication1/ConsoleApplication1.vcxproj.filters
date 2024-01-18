@@ -77,6 +77,12 @@
     <ClCompile Include="..\out\Vsimtop___024root__Slow.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
+    <ClCompile Include="..\out\Vsimtop___024unit__DepSet_h7e859b80__0__Slow.cpp">
+      <Filter>Source Files\Vsimtop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\out\Vsimtop___024unit__Slow.cpp">
+      <Filter>Source Files\Vsimtop</Filter>
+    </ClCompile>
     <ClCompile Include="..\out\Vsimtop__Syms.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
@@ -155,6 +161,9 @@
       <Filter>Source Files\Vsimtop</Filter>
     </ClInclude>
     <ClInclude Include="..\out\Vsimtop___024root.h">
+      <Filter>Source Files\Vsimtop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\out\Vsimtop___024unit.h">
       <Filter>Source Files\Vsimtop</Filter>
     </ClInclude>
     <ClInclude Include="..\out\Vsimtop__Syms.h">

@@ -122,10 +122,11 @@ always @(*) begin
 	// c = (FZ1 - ddx * FX1 - ddy * FY1);
 	FDDX_mult_FX1 = (FDDX * FX1) >>(FRAC_BITS+12);
 	FDDY_mult_FY1 = (FDDY * FY1) >>(FRAC_BITS+12);
-	c = (FZ1 - FDDX_mult_FX1 - FDDY_mult_FY1);
+	c = FZ1 - FDDX_mult_FX1 - FDDY_mult_FY1;
 end
 
-always @(x_ps or y_ps) begin
+//always @(x_ps or y_ps) begin
+always @(*) begin
 	// Interp ("IP" in C PlaneStepper3)...
 	// (x * ddx) + (y * ddy) + c;
 	x_mult_FDDX = (x_ps * FDDX) >>12;
