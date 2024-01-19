@@ -2,7 +2,7 @@
 `default_nettype none
 
 
-parameter FRAC_BITS = 8'd16;
+parameter FRAC_BITS = 8'd12;
 
 
 module isp_parser (
@@ -483,30 +483,36 @@ else begin
 			mult7 <= (is_quad_array) ? (FDY41_FIXED*FX4_FIXED)>>FRAC_BITS : 1<<FRAC_BITS;
 			mult8 <= (is_quad_array) ? (FDX41_FIXED*FY4_FIXED)>>FRAC_BITS : 1<<FRAC_BITS;
 			
-			x_ps <= tilex<<5;	// Per-tile rendering.
-			y_ps <= tiley<<5;	// Per-tile rendering.
+			// Per-tile rendering.
+			x_ps <= tilex<<5;
+			y_ps <= tiley<<5;
 			
 			isp_state <= isp_state + 8'd1;
 		end
 
 		50: begin
+			isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
+			isp_vram_dout <= final_argb;	// ABGR, for sim display.
 			if (y_ps < (tiley<<5)+32) begin
 				if (x_ps == (tilex<<5)+32) begin
-					x_ps <= tilex<<5;
+					x_ps <= (tilex<<5);
 					y_ps <= y_ps + 12'd1;
+					isp_state <= 8'd51;		// Had to add an extra clock tick, to allow the VRAM address and texture stuff to update.
+											// (fixed the thin vertical lines on the renders. ElectronAsh).
 				end
-				else x_ps <= x_ps + 12'd1;
-				
-				if (inTriangle /*&& !neg_xy && !neg_z && ovr_xy*/) begin
-					isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
-					isp_vram_wr <= 1'b1;
-					isp_vram_dout <= final_argb;	// ABGR, for sim display.
+				else begin
+					if (inTriangle) isp_vram_wr <= 1'b1;
+					x_ps <= x_ps + 12'd1;
 				end
 			end
 			else begin
 				isp_vram_addr <= isp_vram_addr_last;
 				isp_state <= 8'd48;
 			end
+		end
+		
+		51: begin
+			isp_state <= 8'd50;
 		end
 
 		default: ;
@@ -515,15 +521,6 @@ end
 
 wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
 
-/*
-wire neg_xy = FX1[31] || FX2[31] || FX3[31] || FY1[31] || FY2[31] || FY3[31] || FY4[31] || FY4[31];
-wire neg_z  = vert_a_z[31] || vert_b_z[31] || vert_c_z[31]; //|| vert_d_z[31];
-
-wire ovr_xy = (FX1>>FRAC_BITS)<32'sd4000 || (FX2>>FRAC_BITS)<32'sd4000 || (FX3>>FRAC_BITS)<32'sd4000 || (FX4>>FRAC_BITS)<32'sd4000 ||
-			  (FY1>>FRAC_BITS)<32'sd4000 || (FY2>>FRAC_BITS)<32'sd4000 || (FY3>>FRAC_BITS)<32'sd4000 || (FY4>>FRAC_BITS)<32'sd4000 ||
-			  (FX1>>FRAC_BITS)<-32'sd4000 || (FX2>>FRAC_BITS)<-32'sd4000 || (FX3>>FRAC_BITS)<-32'sd4000 || (FX4>>FRAC_BITS)<-32'sd4000 ||
-			  (FY1>>FRAC_BITS)<-32'sd4000 || (FY2>>FRAC_BITS)<-32'sd4000 || (FY3>>FRAC_BITS)<-32'sd4000 || (FY4>>FRAC_BITS)<-32'sd4000;
-*/
 
 wire signed [63:0] f_area = ((FX1_FIXED-FX3_FIXED) * (FY2_FIXED-FY3_FIXED)) - ((FY1_FIXED-FY3_FIXED) * (FX2_FIXED-FX3_FIXED));
 wire sgn = (f_area<=0);

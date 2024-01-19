@@ -9,6 +9,7 @@
 #include "Vsimtop.h"
 #include "Vsimtop___024root.h"
 
+constexpr auto FRAC_BITS = 12;
 
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -21,8 +22,6 @@
 #include "imgui_memory_editor.h"
 
 #include "EasyBMP.h"
-
-constexpr auto FRAC_BITS = 16;
 
 uint32_t t_size;
 uint32_t t_addr;
