@@ -2,7 +2,7 @@
 `default_nettype none
 
 
-parameter FRAC_BITS = 8'd10;
+parameter FRAC_BITS = 8'd16;
 
 
 module isp_parser (
@@ -525,7 +525,7 @@ wire ovr_xy = (FX1>>FRAC_BITS)<32'sd4000 || (FX2>>FRAC_BITS)<32'sd4000 || (FX3>>
 			  (FY1>>FRAC_BITS)<-32'sd4000 || (FY2>>FRAC_BITS)<-32'sd4000 || (FY3>>FRAC_BITS)<-32'sd4000 || (FY4>>FRAC_BITS)<-32'sd4000;
 */
 
-wire signed [127:0] f_area = ((FX1_FIXED-FX3_FIXED) * (FY2_FIXED-FY3_FIXED)) - ((FY1_FIXED-FY3_FIXED) * (FX2_FIXED-FX3_FIXED));
+wire signed [63:0] f_area = ((FX1_FIXED-FX3_FIXED) * (FY2_FIXED-FY3_FIXED)) - ((FY1_FIXED-FY3_FIXED) * (FX2_FIXED-FX3_FIXED));
 wire sgn = (f_area<=0);
 
 // Vertex deltas...
@@ -541,7 +541,7 @@ wire signed [47:0] FDY41_FIXED = (is_quad_array) ? sgn ? (FY4_FIXED - FY1_FIXED)
 
 
 // Vertex float-to-fixed conversion...
-wire signed [31:0] FX1_FIXED;
+wire signed [47:0] FX1_FIXED;
 float_to_fixed  float_x1 (
 	.float_in( vert_a_x ),	// input [31:0]  float_in
 	.fixed( FX1_FIXED )		// output [31:0]  fixed
@@ -610,22 +610,22 @@ reg [11:0] y_ps;
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
 reg signed [63:0] mult1;
 reg signed [63:0] mult2;
-wire signed [31:0] C1 = (mult1 - mult2);
+wire signed [63:0] C1 = (mult1 - mult2);
 
 //int C2 = FDY23 * FX2 - FDX23 * FY2;
 reg signed [63:0] mult3;
 reg signed [63:0] mult4;
-wire signed [31:0] C2 = (mult3 - mult4);
+wire signed [63:0] C2 = (mult3 - mult4);
 
 //int C3 = FDY31 * FX3 - FDX31 * FY3;
 reg signed [63:0] mult5;
 reg signed [63:0] mult6;
-wire signed [31:0] C3 = (mult5 - mult6);
+wire signed [63:0] C3 = (mult5 - mult6);
 
 //int C4 = FDY41 * FX4 - FDX41 * FY4;
 reg signed [63:0] mult7;
 reg signed [63:0] mult8;
-wire signed [31:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;
+wire signed [63:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;
 
 
 //int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
@@ -639,22 +639,21 @@ wire signed [31:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;
 //wire signed [127:0] mult10 = (FDY12 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
 //wire signed [127:0] Xhs12  = C1 + (mult9 - mult10);
 
-
 wire signed [63:0] mult9  = FDX12_FIXED * y_ps;
 wire signed [63:0] mult10 = FDY12_FIXED * x_ps;
-wire signed [47:0] Xhs12  = C1 + (mult9 - mult10);
+wire signed [63:0] Xhs12  = C1 + (mult9 - mult10);
 
 wire signed [63:0] mult11 = FDX23_FIXED * y_ps;
 wire signed [63:0] mult12 = FDY23_FIXED * x_ps;
-wire signed [47:0] Xhs23  = C2 + (mult11 - mult12);
+wire signed [63:0] Xhs23  = C2 + (mult11 - mult12);
 
 wire signed [63:0] mult13 = FDX31_FIXED * y_ps;
 wire signed [63:0] mult14 = FDY31_FIXED * x_ps;
-wire signed [47:0] Xhs31  = C3 + (mult13 - mult14);
+wire signed [63:0] Xhs31  = C3 + (mult13 - mult14);
 
 wire signed [63:0] mult15 = FDX41_FIXED * y_ps;
 wire signed [63:0] mult16 = FDY41_FIXED * x_ps;
-wire signed [47:0] Xhs41  = C4 + (mult15 - mult16);
+wire signed [63:0] Xhs41  = C4 + (mult15 - mult16);
 
 wire inTriangle = !Xhs12[47] && !Xhs23[47] && !Xhs31[47] && !Xhs41[47];
 
@@ -764,17 +763,16 @@ module float_to_fixed (
 wire float_sign = float_in[31];
 wire [7:0]  exp = float_in[30:23];	// Sign bit not included here.
 //wire [22:0] man = float_in[22:00];
-wire [63:0] man = {1'b1, float_in[22:00], 16'h0000};	// Prepend the implied 1.
-														// Shift the Mantissa left, to leave more fraction bits after the shift below.
+wire [63:0] man = {1'b1, float_in[22:00], 8'h00};	// Prepend the implied 1.
+													// Shift the Mantissa left, to leave more fractional bits for the shift below. (maybe not needed?)
 
 wire [63:0] float_shifted = (exp>127) ? man<<(exp-127) :	// Exponent is positive.
 										man>>(127-exp);		// Exponent is negative.
 										 
-wire [46:0] new_fixed = float_shifted>>((23-FRAC_BITS) + 16);	// Sign bit not included here.
+wire [46:0] new_fixed = float_shifted>>((23-FRAC_BITS) + 8);	// Sign bit not included here.
 
-//assign fixed = {float_in[31], new_fixed[30:0]};	// Append the sign bit from the original float input.
-assign fixed = float_in[31] ? {1'b1, -new_fixed[46:0]} : {1'b0, new_fixed[46:0]};	// Invert the lower bits, when the Sign bit is set.
-																					// (tip from SKMP, because float values are essentially sign-magnitude.)
+assign fixed = float_in[31] ? {1'b1,-new_fixed[46:0]} : {1'b0,new_fixed[46:0]};	// Invert the lower bits when the Sign bit is set.
+																				// (tip from SKMP, because float values are essentially sign-magnitude.)
 
 endmodule
 

@@ -83,6 +83,9 @@
     <ClCompile Include="..\out\Vsimtop___024unit__Slow.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
+    <ClCompile Include="..\out\Vsimtop__ConstPool_0.cpp">
+      <Filter>Source Files\Vsimtop</Filter>
+    </ClCompile>
     <ClCompile Include="..\out\Vsimtop__Syms.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>

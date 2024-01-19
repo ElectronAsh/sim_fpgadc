@@ -22,7 +22,7 @@
 
 #include "EasyBMP.h"
 
-constexpr auto FRAC_BITS = 10;
+constexpr auto FRAC_BITS = 16;
 
 uint32_t t_size;
 uint32_t t_addr;
@@ -1717,11 +1717,11 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_taxi3");
 	//load_vram_dump("_taxi4");
 	//load_vram_dump("_crazy_title");
-	load_vram_dump("_sonic");
+	//load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
 	//load_vram_dump("_hydro_title");
 	//load_vram_dump("_looney_foghorn");
-	//load_vram_dump("_looney_startline");
+	load_vram_dump("_looney_startline");
 	//load_vram_dump("_sw_ep1_menu");
 	//load_vram_dump("_hotd2_title");
 	//load_vram_dump("_hotd2_zombies");
