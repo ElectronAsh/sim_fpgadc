@@ -64,49 +64,7 @@ module simtop (
 	output wire vram_wr,
 	output wire [23:0] vram_addr,
 	input wire [63:0] vram_din,
-	output wire [63:0] vram_dout,
-	
-	/*
-	input signed [31:0] fp_dy12,
-	input signed [31:0] fp_dx12,
-
-	input signed [31:0] fp_dy23,
-	input signed [31:0] fp_dx23,
-
-	input signed [31:0] fp_dy31,
-	input signed [31:0] fp_dx31,
-
-	input signed [31:0] fp_dy41,
-	input signed [31:0] fp_dx41,
-
-	//int C1 = FDY12 * FX1 - FDX12 * FY1;
-	input signed [31:0] FDY12,
-	input signed [31:0] FX1,
-	input signed [31:0] FDX12,
-	input signed [31:0] FY1,
-	
-	//int C2 = FDY23 * FX2 - FDX23 * FY2;
-	input signed [31:0] FDY23,
-	input signed [31:0] FX2,
-	input signed [31:0] FDX23,
-	input signed [31:0] FY2,
-	
-	//int C3 = FDY31 * FX3 - FDX31 * FY3;
-	input signed [31:0] FDY31,
-	input signed [31:0] FX3,
-	input signed [31:0] FDX31,
-	input signed [31:0] FY3,
-	
-	//int C4 = FDY41 * FX4 - FDX41 * FY4;
-	input signed [31:0] FDY41,
-	input signed [31:0] FX4,
-	input signed [31:0] FDX41,
-	input signed [31:0] FY4,
-	*/
-	
-	input signed [31:0] FZ1,
-	input signed [31:0] FZ2,
-	input signed [31:0] FZ3
+	output wire [63:0] vram_dout
 );
 
 // Reset synchronizer
@@ -241,48 +199,6 @@ pvr pvr (
 	.vram_rd( vram_rd ),		// output  vram_rd
 	.vram_wr( vram_wr ),		// output  vram_wr
 	.vram_dout( vram_dout )		// output [63:0]  vram_dout
-	
-	/*
-	.fp_dy12( fp_dy12 ),
-	.fp_dx12( fp_dx12 ),
-
-	.fp_dy23( fp_dy23 ),
-	.fp_dx23( fp_dx23 ),
-
-	.fp_dy31( fp_dy31 ),
-	.fp_dx31( fp_dx31 ),
-
-	.fp_dy41( fp_dy41 ),
-	.fp_dx41( fp_dx41 ),
-		
-	//int C1 = FDY12 * FX1 - FDX12 * FY1;
-	.FDY12( FDY12 ),		// input signed [31:0]   
-	.FX1( FX1 ),			// input signed [31:0]  
-	.FDX12( FDX12 ),		// input signed [31:0]  
-	.FY1( FY1 ),			// input signed [31:0]  
-	
-	//int C2 = FDY23 * FX2 - FDX23 * FY2;
-	.FDY23( FDY23 ),		// input signed [31:0]  
-	.FX2( FX2 ),			// input signed [31:0]  
-	.FDX23( FDX23 ),		// input signed [31:0]  
-	.FY2( FY2 ),			// input signed [31:0]  
-	
-	//int C3 = FDY31 * FX3 - FDX31 * FY3;
-	.FDY31( FDY31 ),		// input signed [31:0]  
-	.FX3( FX3 ),			// input signed [31:0]  
-	.FDX31( FDX31 ),		// input signed [31:0]  
-	.FY3( FY3 ),			// input signed [31:0]  
-	
-	//int C4 = FDY41 * FX4 - FDX41 * FY4;
-	.FDY41( FDY41 ),		// input signed [31:0]  
-	.FX4( FX4 ),			// input signed [31:0]  
-	.FDX41( FDX41 ),		// input signed [31:0]  
-	.FY4( FY4 ),			// input signed [31:0]
-
-	.FZ1( FZ1 ),			// input signed [31:0]  FZ1
-	.FZ2( FZ2 ),			// input signed [31:0]  FZ2
-	.FZ3( FZ3 )				// input signed [31:0]  FZ3
-	*/
 );
 
 

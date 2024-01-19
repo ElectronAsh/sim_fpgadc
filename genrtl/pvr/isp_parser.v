@@ -2,7 +2,7 @@
 `default_nettype none
 
 
-parameter FRAC_BITS = 8'd12;
+parameter FRAC_BITS = 8'd10;
 
 
 module isp_parser (
@@ -28,51 +28,6 @@ module isp_parser (
 	
 	input reg [5:0] tilex,
 	input reg [5:0] tiley,
-	
-	/*
-	input signed [31:0] fp_dy12,
-	input signed [31:0] fp_dx12,
-
-	input signed [31:0] fp_dy23,
-	input signed [31:0] fp_dx23,
-
-	input signed [31:0] fp_dy31,
-	input signed [31:0] fp_dx31,
-
-	input signed [31:0] fp_dy41,
-	input signed [31:0] fp_dx41,
-	*/
-	
-	/*
-	//int C1 = FDY12 * FX1 - FDX12 * FY1;
-	input signed [31:0] FDX12,
-	input signed [31:0] FDY12,
-	input signed [31:0] FX1,
-	
-	input signed [31:0] FY1,
-	
-	//int C2 = FDY23 * FX2 - FDX23 * FY2;
-	input signed [31:0] FDY23,
-	input signed [31:0] FX2,
-	input signed [31:0] FDX23,
-	input signed [31:0] FY2,
-	
-	//int C3 = FDY31 * FX3 - FDX31 * FY3;
-	input signed [31:0] FDY31,
-	input signed [31:0] FX3,
-	input signed [31:0] FDX31,
-	input signed [31:0] FY3,
-
-	//int C4 = FDY41 * FX4 - FDX41 * FY4;
-	input signed [31:0] FDY41,
-	input signed [31:0] FX4,
-	input signed [31:0] FDX41,
-	input signed [31:0] FY4,
-	
-	input signed [31:0] FZ1,
-	input signed [31:0] FZ2,
-	input signed [31:0] FZ3,
-	*/
 	
 	input [31:0] TEXT_CONTROL,	// From TEXT_CONTROL reg.
 	input  [1:0] PAL_RAM_CTRL,	// From PAL_RAM_CTRL reg, bits [1:0].
@@ -571,20 +526,22 @@ wire ovr_xy = (FX1>>FRAC_BITS)<32'sd4000 || (FX2>>FRAC_BITS)<32'sd4000 || (FX3>>
 */
 
 wire signed [127:0] f_area = ((FX1_FIXED-FX3_FIXED) * (FY2_FIXED-FY3_FIXED)) - ((FY1_FIXED-FY3_FIXED) * (FX2_FIXED-FX3_FIXED));
-//wire sgn = (f_area<=0);
-reg sgn;
+wire sgn = (f_area<=0);
 
-wire signed [31:0] FDX12_FIXED = (sgn) ? (FX1_FIXED - FX2_FIXED) : (FX2_FIXED - FX1_FIXED);
-wire signed [31:0] FDX23_FIXED = (sgn) ? (FX2_FIXED - FX3_FIXED) : (FX3_FIXED - FX2_FIXED);
-wire signed [31:0] FDX31_FIXED = (is_quad_array) ? sgn ? (FX3_FIXED - FX4_FIXED) : (FX4_FIXED - FX3_FIXED) : sgn ? (FX3_FIXED - FX1_FIXED) : (FX1_FIXED - FX3_FIXED);
-wire signed [31:0] FDX41_FIXED = (is_quad_array) ? sgn ? (FX4_FIXED - FX1_FIXED) : (FX1_FIXED - FX4_FIXED) : 0;
+// Vertex deltas...
+wire signed [47:0] FDX12_FIXED = (sgn) ? (FX1_FIXED - FX2_FIXED) : (FX2_FIXED - FX1_FIXED);
+wire signed [47:0] FDX23_FIXED = (sgn) ? (FX2_FIXED - FX3_FIXED) : (FX3_FIXED - FX2_FIXED);
+wire signed [47:0] FDX31_FIXED = (is_quad_array) ? sgn ? (FX3_FIXED - FX4_FIXED) : (FX4_FIXED - FX3_FIXED) : sgn ? (FX3_FIXED - FX1_FIXED) : (FX1_FIXED - FX3_FIXED);
+wire signed [47:0] FDX41_FIXED = (is_quad_array) ? sgn ? (FX4_FIXED - FX1_FIXED) : (FX1_FIXED - FX4_FIXED) : 0;
 
-wire signed [31:0] FDY12_FIXED = sgn ? (FY1_FIXED - FY2_FIXED) : (FY2_FIXED - FY1_FIXED);
-wire signed [31:0] FDY23_FIXED = sgn ? (FY2_FIXED - FY3_FIXED) : (FY3_FIXED - FY2_FIXED);
-wire signed [31:0] FDY31_FIXED = (is_quad_array) ? sgn ? (FY3_FIXED - FY4_FIXED) : (FY4_FIXED - FY3_FIXED) : sgn ? (FY3_FIXED - FY1_FIXED) : (FY1_FIXED - FY3_FIXED);
-wire signed [31:0] FDY41_FIXED = (is_quad_array) ? sgn ? (FY4_FIXED - FY1_FIXED) : (FY1_FIXED - FY4_FIXED) : 0;
-			
-wire signed [47:0] FX1_FIXED;
+wire signed [47:0] FDY12_FIXED = sgn ? (FY1_FIXED - FY2_FIXED) : (FY2_FIXED - FY1_FIXED);
+wire signed [47:0] FDY23_FIXED = sgn ? (FY2_FIXED - FY3_FIXED) : (FY3_FIXED - FY2_FIXED);
+wire signed [47:0] FDY31_FIXED = (is_quad_array) ? sgn ? (FY3_FIXED - FY4_FIXED) : (FY4_FIXED - FY3_FIXED) : sgn ? (FY3_FIXED - FY1_FIXED) : (FY1_FIXED - FY3_FIXED);
+wire signed [47:0] FDY41_FIXED = (is_quad_array) ? sgn ? (FY4_FIXED - FY1_FIXED) : (FY1_FIXED - FY4_FIXED) : 0;
+
+
+// Vertex float-to-fixed conversion...
+wire signed [31:0] FX1_FIXED;
 float_to_fixed  float_x1 (
 	.float_in( vert_a_x ),	// input [31:0]  float_in
 	.fixed( FX1_FIXED )		// output [31:0]  fixed
@@ -644,52 +601,6 @@ float_to_fixed  float_y4 (
 );
 
 
-/*
-wire signed [47:0] FDX12_FIXED;
-float_to_fixed  float_dx12 (
-	.float_in( fp_dx12 ),	// input [31:0]  float_in
-	.fixed( FDX12_FIXED )	// output [31:0]  fixed
-);
-wire signed [47:0] FDY12_FIXED;
-float_to_fixed  float_dy12 (
-	.float_in( fp_dy12 ),	// input [31:0]  float_in
-	.fixed( FDY12_FIXED )	// output [31:0]  fixed
-);
-
-wire signed [47:0] FDX23_FIXED;
-float_to_fixed  float_dx23 (
-	.float_in( fp_dx23 ),	// input [31:0]  float_in
-	.fixed( FDX23_FIXED )	// output [31:0]  fixed
-);
-wire signed [47:0] FDY23_FIXED;
-float_to_fixed  float_dy23 (
-	.float_in( fp_dy23 ),	// input [31:0]  float_in
-	.fixed( FDY23_FIXED )	// output [31:0]  fixed
-);
-
-wire signed [47:0] FDX31_FIXED;
-float_to_fixed  float_dx31 (
-	.float_in( fp_dx31 ),	// input [31:0]  float_in
-	.fixed( FDX31_FIXED )	// output [31:0]  fixed
-);
-wire signed [47:0] FDY31_FIXED;
-float_to_fixed  float_dy31 (
-	.float_in( fp_dy31 ),	// input [31:0]  float_in
-	.fixed( FDY31_FIXED )	// output [31:0]  fixed
-);
-
-wire signed [47:0] FDX41_FIXED;
-float_to_fixed  float_dx41 (
-	.float_in( fp_dx41 ),	// input [31:0]  float_in
-	.fixed( FDX41_FIXED )	// output [31:0]  fixed
-);
-wire signed [47:0] FDY41_FIXED;
-float_to_fixed  float_dy41 (
-	.float_in( fp_dy41 ),	// input [31:0]  float_in
-	.fixed( FDY41_FIXED )	// output [31:0]  fixed
-);
-*/
-
 //reg signed [31:0] x_ps;
 //reg signed [31:0] y_ps;
 reg [11:0] x_ps;
@@ -731,22 +642,21 @@ wire signed [31:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;
 
 wire signed [63:0] mult9  = FDX12_FIXED * y_ps;
 wire signed [63:0] mult10 = FDY12_FIXED * x_ps;
-wire signed [31:0] Xhs12  = C1 + (mult9 - mult10);
+wire signed [47:0] Xhs12  = C1 + (mult9 - mult10);
 
 wire signed [63:0] mult11 = FDX23_FIXED * y_ps;
 wire signed [63:0] mult12 = FDY23_FIXED * x_ps;
-wire signed [31:0] Xhs23  = C2 + (mult11 - mult12);
+wire signed [47:0] Xhs23  = C2 + (mult11 - mult12);
 
 wire signed [63:0] mult13 = FDX31_FIXED * y_ps;
 wire signed [63:0] mult14 = FDY31_FIXED * x_ps;
-wire signed [31:0] Xhs31  = C3 + (mult13 - mult14);
+wire signed [47:0] Xhs31  = C3 + (mult13 - mult14);
 
 wire signed [63:0] mult15 = FDX41_FIXED * y_ps;
 wire signed [63:0] mult16 = FDY41_FIXED * x_ps;
-wire signed [31:0] Xhs41  = C4 + (mult15 - mult16);
+wire signed [47:0] Xhs41  = C4 + (mult15 - mult16);
 
-wire inTriangle = !Xhs12[31] && !Xhs23[31] && !Xhs31[31] && !Xhs41[31];
-//wire inTriangle;
+wire inTriangle = !Xhs12[47] && !Xhs23[47] && !Xhs31[47] && !Xhs41[47];
 
 
 texture_address  texture_address_inst (
@@ -854,13 +764,13 @@ module float_to_fixed (
 wire float_sign = float_in[31];
 wire [7:0]  exp = float_in[30:23];	// Sign bit not included here.
 //wire [22:0] man = float_in[22:00];
-wire [63:0] man = {1'b1, float_in[22:00], 20'h00000};	// Prepend the implied 1.
+wire [63:0] man = {1'b1, float_in[22:00], 16'h0000};	// Prepend the implied 1.
 														// Shift the Mantissa left, to leave more fraction bits after the shift below.
 
 wire [63:0] float_shifted = (exp>127) ? man<<(exp-127) :	// Exponent is positive.
 										man>>(127-exp);		// Exponent is negative.
 										 
-wire [46:0] new_fixed = float_shifted>>((23-FRAC_BITS) + 20);	// Sign bit not included here.
+wire [46:0] new_fixed = float_shifted>>((23-FRAC_BITS) + 16);	// Sign bit not included here.
 
 //assign fixed = {float_in[31], new_fixed[30:0]};	// Append the sign bit from the original float input.
 assign fixed = float_in[31] ? {1'b1, -new_fixed[46:0]} : {1'b0, new_fixed[46:0]};	// Invert the lower bits, when the Sign bit is set.

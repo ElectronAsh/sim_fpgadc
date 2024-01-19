@@ -22,6 +22,7 @@
 
 #include "EasyBMP.h"
 
+constexpr auto FRAC_BITS = 10;
 
 uint32_t t_size;
 uint32_t t_addr;
@@ -730,8 +731,6 @@ uint32_t twiddle_slow(uint32_t x, uint32_t y, uint32_t x_sz, uint32_t y_sz)
 uint32_t tex_addr = 0;
 uint32_t texel_offs = 0;
 
-constexpr auto FRAC_BITS = 12;
-
 PlaneStepper3 Z;
 PlaneStepper3 U;
 PlaneStepper3 V;
@@ -884,14 +883,16 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	uint32_t core_y_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
 
 	// Half-edge constants (float version).
+	/*
 	float f_area = (x1-x3) * (y2-y3) - (y1-y3) * (x2-x3);
 	sgn = (f_area<=0);
+	*/
 
-	top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__sgn = sgn;
-
-	bool is_quad_array = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array;
+	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__sgn = sgn;
 
 	/*
+	bool is_quad_array = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_quad_array;
+
 	const float fdx12 = (sgn) ? (x1 - x2) : (x2 - x1);
 	const float fdx23 = (sgn) ? (x2 - x3) : (x3 - x2);
 	const float fdx31 = (is_quad_array) ? sgn ? (x3 - x4) : (x4 - x3) : sgn ? (x3 - x1) : (x1 - x3);
@@ -1716,7 +1717,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_taxi3");
 	//load_vram_dump("_taxi4");
 	//load_vram_dump("_crazy_title");
-	//load_vram_dump("_sonic");
+	load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
 	//load_vram_dump("_hydro_title");
 	//load_vram_dump("_looney_foghorn");
@@ -1737,7 +1738,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
-	load_vram_dump("_18wheel_select");
+	//load_vram_dump("_18wheel_select");
 
 	//char name[20];
 	//itoa(dump_cnt, name, 10); load_vram_dump(name);

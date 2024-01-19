@@ -37,9 +37,6 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , trace_pc1{vlSymsp->TOP.trace_pc1}
     , trace_wdata1{vlSymsp->TOP.trace_wdata1}
     , vram_addr{vlSymsp->TOP.vram_addr}
-    , FZ1{vlSymsp->TOP.FZ1}
-    , FZ2{vlSymsp->TOP.FZ2}
-    , FZ3{vlSymsp->TOP.FZ3}
     , dm_req_wdata{vlSymsp->TOP.dm_req_wdata}
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
     , vram_din{vlSymsp->TOP.vram_din}
