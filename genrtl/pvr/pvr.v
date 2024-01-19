@@ -24,8 +24,9 @@ module pvr (
 	input [63:0] vram_din,
 	output vram_rd,
 	output vram_wr,
-	output [63:0] vram_dout,
+	output [63:0] vram_dout
 	
+	/*
 	input signed [31:0] fp_dy12,
 	input signed [31:0] fp_dx12,
 
@@ -61,10 +62,11 @@ module pvr (
 	input signed [31:0] FX4,
 	input signed [31:0] FDX41,
 	input signed [31:0] FY4,
-	
+
 	input signed [31:0] FZ1,
 	input signed [31:0] FZ2,
 	input signed [31:0] FZ3
+	*/
 );
 
 
@@ -598,6 +600,7 @@ isp_parser isp_parser_inst (
 	.tilex( ra_cont_tilex ),
 	.tiley( ra_cont_tiley ),
 	
+	/*
 	.fp_dy12( fp_dy12 ),
 	.fp_dx12( fp_dx12 ),
 
@@ -633,11 +636,12 @@ isp_parser isp_parser_inst (
 	.FX4( FX4 ),			// input signed [31:0]  
 	.FDX41( FDX41 ),		// input signed [31:0]  
 	.FY4( FY4 ),			// input signed [31:0]
-	
+
 	.FZ1( FZ1 ),			// input signed [31:0]  FZ1
 	.FZ2( FZ2 ),			// input signed [31:0]  FZ2
 	.FZ3( FZ3 ),			// input signed [31:0]  FZ3
-	
+	*/
+		
 	.TEXT_CONTROL( TEXT_CONTROL ),		// From TEXT_CONTROL reg. (0xE4 in PVR regs).
 	.PAL_RAM_CTRL( PAL_RAM_CTRL[1:0] ),	// From PAL_RAM_CTRL reg, bits [1:0].
 	

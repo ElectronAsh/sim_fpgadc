@@ -65,7 +65,8 @@ module simtop (
 	output wire [23:0] vram_addr,
 	input wire [63:0] vram_din,
 	output wire [63:0] vram_dout,
-		
+	
+	/*
 	input signed [31:0] fp_dy12,
 	input signed [31:0] fp_dx12,
 
@@ -101,6 +102,7 @@ module simtop (
 	input signed [31:0] FX4,
 	input signed [31:0] FDX41,
 	input signed [31:0] FY4,
+	*/
 	
 	input signed [31:0] FZ1,
 	input signed [31:0] FZ2,
@@ -238,8 +240,9 @@ pvr pvr (
 	.vram_din( vram_din ),		// input [63:0]  vram_din
 	.vram_rd( vram_rd ),		// output  vram_rd
 	.vram_wr( vram_wr ),		// output  vram_wr
-	.vram_dout( vram_dout ),	// output [63:0]  vram_dout
+	.vram_dout( vram_dout )		// output [63:0]  vram_dout
 	
+	/*
 	.fp_dy12( fp_dy12 ),
 	.fp_dx12( fp_dx12 ),
 
@@ -274,11 +277,12 @@ pvr pvr (
 	.FDY41( FDY41 ),		// input signed [31:0]  
 	.FX4( FX4 ),			// input signed [31:0]  
 	.FDX41( FDX41 ),		// input signed [31:0]  
-	.FY4( FY4 ),			// input signed [31:0]  
+	.FY4( FY4 ),			// input signed [31:0]
 
 	.FZ1( FZ1 ),			// input signed [31:0]  FZ1
 	.FZ2( FZ2 ),			// input signed [31:0]  FZ2
 	.FZ3( FZ3 )				// input signed [31:0]  FZ3
+	*/
 );
 
 

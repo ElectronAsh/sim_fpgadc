@@ -37,30 +37,6 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , trace_pc1{vlSymsp->TOP.trace_pc1}
     , trace_wdata1{vlSymsp->TOP.trace_wdata1}
     , vram_addr{vlSymsp->TOP.vram_addr}
-    , fp_dy12{vlSymsp->TOP.fp_dy12}
-    , fp_dx12{vlSymsp->TOP.fp_dx12}
-    , fp_dy23{vlSymsp->TOP.fp_dy23}
-    , fp_dx23{vlSymsp->TOP.fp_dx23}
-    , fp_dy31{vlSymsp->TOP.fp_dy31}
-    , fp_dx31{vlSymsp->TOP.fp_dx31}
-    , fp_dy41{vlSymsp->TOP.fp_dy41}
-    , fp_dx41{vlSymsp->TOP.fp_dx41}
-    , FDY12{vlSymsp->TOP.FDY12}
-    , FX1{vlSymsp->TOP.FX1}
-    , FDX12{vlSymsp->TOP.FDX12}
-    , FY1{vlSymsp->TOP.FY1}
-    , FDY23{vlSymsp->TOP.FDY23}
-    , FX2{vlSymsp->TOP.FX2}
-    , FDX23{vlSymsp->TOP.FDX23}
-    , FY2{vlSymsp->TOP.FY2}
-    , FDY31{vlSymsp->TOP.FDY31}
-    , FX3{vlSymsp->TOP.FX3}
-    , FDX31{vlSymsp->TOP.FDX31}
-    , FY3{vlSymsp->TOP.FY3}
-    , FDY41{vlSymsp->TOP.FDY41}
-    , FX4{vlSymsp->TOP.FX4}
-    , FDX41{vlSymsp->TOP.FDX41}
-    , FY4{vlSymsp->TOP.FY4}
     , FZ1{vlSymsp->TOP.FZ1}
     , FZ2{vlSymsp->TOP.FZ2}
     , FZ3{vlSymsp->TOP.FZ3}
