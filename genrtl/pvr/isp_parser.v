@@ -41,8 +41,8 @@ module isp_parser (
 
 reg [23:0] isp_vram_addr;
 
-assign isp_vram_addr_out = (tex_wait || isp_state==8'd50) ? (vram_word_addr<<2) :	// Output texture WORD address as a BYTE address.
-															 isp_vram_addr;			// Output ISP Parser BYTE address.
+assign isp_vram_addr_out = (tex_wait || isp_state==8'd49 || isp_state==8'd50) ? (vram_word_addr<<2) :	// Output texture WORD address as a BYTE address.
+																				isp_vram_addr;			// Output ISP Parser BYTE address.
 
 // OL Word bit decodes...
 wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.
@@ -418,6 +418,11 @@ else begin
 				vert_b_off_col <= vert_a_off_col;
 			end
 			isp_entry_valid <= 1'b1;
+			
+			// Per-tile rendering.
+			x_ps <= tilex<<5;
+			y_ps <= tiley<<5;
+			
 			isp_state <= 8'd49;			// Draw the triangle!
 		end
 		
@@ -465,7 +470,7 @@ else begin
 
 		49: begin
 			isp_vram_addr_last <= isp_vram_addr;
-	
+			
 			// Half-edge constants (setup).
 			//int C1 = FDY12 * FX1 - FDX12 * FY1;
 			mult1 <= (FDY12_FIXED*FX1_FIXED)>>FRAC_BITS;
@@ -483,16 +488,16 @@ else begin
 			mult7 <= (is_quad_array) ? (FDY41_FIXED*FX4_FIXED)>>FRAC_BITS : 1<<FRAC_BITS;
 			mult8 <= (is_quad_array) ? (FDX41_FIXED*FY4_FIXED)>>FRAC_BITS : 1<<FRAC_BITS;
 			
-			// Per-tile rendering.
-			x_ps <= tilex<<5;
-			y_ps <= tiley<<5;
-			
+			isp_vram_addr <= (tilex<<5) + ((tiley<<5) * 640);	// Framebuffer write address.
+			isp_vram_dout <= final_argb;						// ABGR, for sim display.
+			if (inTriangle) isp_vram_wr <= 1'b1;
+		
 			isp_state <= isp_state + 8'd1;
 		end
 
 		50: begin
 			isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
-			isp_vram_dout <= final_argb;	// ABGR, for sim display.
+			isp_vram_dout <= final_argb;			// ABGR, for sim display.
 			if (y_ps < (tiley<<5)+32) begin
 				if (x_ps == (tilex<<5)+32) begin
 					x_ps <= (tilex<<5);
@@ -638,19 +643,19 @@ wire signed [63:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;
 
 wire signed [63:0] mult9  = FDX12_FIXED * y_ps;
 wire signed [63:0] mult10 = FDY12_FIXED * x_ps;
-wire signed [63:0] Xhs12  = C1 + (mult9 - mult10);
+wire signed [47:0] Xhs12  = C1 + (mult9 - mult10);
 
 wire signed [63:0] mult11 = FDX23_FIXED * y_ps;
 wire signed [63:0] mult12 = FDY23_FIXED * x_ps;
-wire signed [63:0] Xhs23  = C2 + (mult11 - mult12);
+wire signed [47:0] Xhs23  = C2 + (mult11 - mult12);
 
 wire signed [63:0] mult13 = FDX31_FIXED * y_ps;
 wire signed [63:0] mult14 = FDY31_FIXED * x_ps;
-wire signed [63:0] Xhs31  = C3 + (mult13 - mult14);
+wire signed [47:0] Xhs31  = C3 + (mult13 - mult14);
 
 wire signed [63:0] mult15 = FDX41_FIXED * y_ps;
 wire signed [63:0] mult16 = FDY41_FIXED * x_ps;
-wire signed [63:0] Xhs41  = C4 + (mult15 - mult16);
+wire signed [47:0] Xhs41  = C4 + (mult15 - mult16);
 
 wire inTriangle = !Xhs12[47] && !Xhs23[47] && !Xhs31[47] && !Xhs41[47];
 
@@ -760,17 +765,16 @@ module float_to_fixed (
 wire float_sign = float_in[31];
 wire [7:0]  exp = float_in[30:23];	// Sign bit not included here.
 //wire [22:0] man = float_in[22:00];
-wire [63:0] man = {1'b1, float_in[22:00], 8'h00};	// Prepend the implied 1.
+wire [47:0] man = {1'b1, float_in[22:00], 8'h00};	// Prepend the implied 1.
 													// Shift the Mantissa left, to leave more fractional bits for the shift below. (maybe not needed?)
 
-wire [63:0] float_shifted = (exp>127) ? man<<(exp-127) :	// Exponent is positive.
+wire [47:0] float_shifted = (exp>127) ? man<<(exp-127) :	// Exponent is positive.
 										man>>(127-exp);		// Exponent is negative.
 										 
 wire [46:0] new_fixed = float_shifted>>((23-FRAC_BITS) + 8);	// Sign bit not included here.
 
 assign fixed = float_in[31] ? {1'b1,-new_fixed[46:0]} : {1'b0,new_fixed[46:0]};	// Invert the lower bits when the Sign bit is set.
 																				// (tip from SKMP, because float values are essentially sign-magnitude.)
-
 endmodule
 
 

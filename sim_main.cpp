@@ -858,11 +858,6 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	top->rootp->FY4 = FY4;
 	*/
 
-	float x3_sub_x1 = x3 - x1;
-	float y2_sub_y1 = y2 - y1;
-	float x2_sub_x1 = x2 - x1;
-	float y3_sub_y1 = y3 - y1;
-
 	// Fixed-point Deltas
 	/*
 	const int FDX12 = sgn ? (FX2-FX1) : (FX1-FX2);
@@ -1719,8 +1714,8 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
 	//load_vram_dump("_hydro_title");
-	//load_vram_dump("_looney_foghorn");
-	load_vram_dump("_looney_startline");
+	//load_vram_dump("_looney_foghorn");	// Show some corrupted tiles, unless FRAC_BITS is set to about 14?
+	//load_vram_dump("_looney_startline");
 	//load_vram_dump("_sw_ep1_menu");
 	//load_vram_dump("_hotd2_title");
 	//load_vram_dump("_hotd2_zombies");
@@ -1733,7 +1728,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	//load_vram_dump("_daytona_behind");
+	load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
@@ -2348,7 +2343,7 @@ int main(int argc, char** argv, char** env) {
 		//g_pSwapChain->Present(1, 0); // Present with vsync
 		g_pSwapChain->Present(0, 0); // Present without vsync
 
-		if (run_enable) for (int step = 0; step < 4096; step++) {	// Simulates MUCH faster if it's done in batches.
+		if (run_enable) for (int step = 0; step < 16384; step++) {	// Simulates MUCH faster if it's done in batches.
 			bool key_f6 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F6));
 			bool key_f11 = ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F11));
 			if (key_f6 || key_f11) run_enable = 0;
