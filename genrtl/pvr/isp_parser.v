@@ -558,6 +558,16 @@ float_to_fixed  float_z1 (
 	.float_in( vert_a_z ),	// input [31:0]  float_in
 	.fixed( FZ1_FIXED )		// output [31:0]  fixed
 );
+wire signed [47:0] FU1_FIXED;
+float_to_fixed  float_u1 (
+	.float_in( vert_a_u0 ),	// input [31:0]  float_in
+	.fixed( FU1_FIXED )		// output [31:0]  fixed
+);
+wire signed [47:0] FV1_FIXED;
+float_to_fixed  float_v1 (
+	.float_in( vert_a_v0 ),	// input [31:0]  float_in
+	.fixed( FV1_FIXED )		// output [31:0]  fixed
+);
 
 wire signed [47:0] FX2_FIXED;
 float_to_fixed  float_x2 (
@@ -574,6 +584,16 @@ float_to_fixed  float_z2 (
 	.float_in( vert_b_z ),	// input [31:0]  float_in
 	.fixed( FZ2_FIXED )		// output [31:0]  fixed
 );
+wire signed [47:0] FU2_FIXED;
+float_to_fixed  float_u2 (
+	.float_in( vert_b_u0 ),	// input [31:0]  float_in
+	.fixed( FU2_FIXED )		// output [31:0]  fixed
+);
+wire signed [47:0] FV2_FIXED;
+float_to_fixed  float_v2 (
+	.float_in( vert_b_v0 ),	// input [31:0]  float_in
+	.fixed( FV2_FIXED )		// output [31:0]  fixed
+);
 
 wire signed [47:0] FX3_FIXED;
 float_to_fixed  float_x3 (
@@ -589,6 +609,16 @@ wire signed [47:0] FZ3_FIXED;
 float_to_fixed  float_z3 (
 	.float_in( vert_c_z ),	// input [31:0]  float_in
 	.fixed( FZ3_FIXED )		// output [31:0]  fixed
+);
+wire signed [47:0] FU3_FIXED;
+float_to_fixed  float_u3 (
+	.float_in( vert_c_u0 ),	// input [31:0]  float_in
+	.fixed( FU3_FIXED )		// output [31:0]  fixed
+);
+wire signed [47:0] FV3_FIXED;
+float_to_fixed  float_v3 (
+	.float_in( vert_c_v0 ),	// input [31:0]  float_in
+	.fixed( FV3_FIXED )		// output [31:0]  fixed
 );
 
 wire signed [47:0] FX4_FIXED;
@@ -660,54 +690,9 @@ wire signed [47:0] Xhs41  = C4 + (mult15 - mult16);
 wire inTriangle = !Xhs12[47] && !Xhs23[47] && !Xhs31[47] && !Xhs41[47];
 
 
-texture_address  texture_address_inst (
-	.clock( clock ),
-	.reset_n( reset_n ),
-	
-	.isp_inst( isp_inst ),	// input [31:0]  isp_inst.
-	.tsp_inst( tsp_inst ),	// input [31:0]  tsp_inst.
-	.tcw_word( tcw_word ),	// input [31:0]  tcw_word.
-	
-	.TEXT_CONTROL( TEXT_CONTROL ),	// input [31:0]  TEXT_CONTROL.
-
-	.PAL_RAM_CTRL( PAL_RAM_CTRL ),	// input from PAL_RAM_CTRL, bits [1:0].		
-	.pal_addr( pal_addr ),		// input [15:0]  pal_addr
-	.pal_din( pal_din ),		// input [31:0]  pal_din
-	.pal_rd( pal_rd ),			// input  pal_rd
-	.pal_wr( pal_wr ),			// input  pal_wr
-	.pal_dout( pal_dout ),		// output [31:0]  pal_dout
-	
-	.read_codebook( read_codebook ),	// input  read_codebook
-	.tex_wait( tex_wait ),				// output  tex_wait
-		
-	//.ui( ui ),						// input [9:0]  ui. From rasterizer/interp...
-	//.vi( vi ),						// input [9:0]  ui.
-	
-	.vram_word_addr( vram_word_addr ),	// output [20:0]  vram_word_addr. 64-bit WORD address!
-	.vram_din( isp_vram_din ),			// input [63:0]  vram_din. Full 64-bit data for texture reads.
-	
-	.base_argb( vert_c_base_col_0 ),	// input [31:0]  base_argb.  Flat-shading colour input. (will also do Gouraud eventually).
-	.offs_argb( vert_c_off_col ),		// input [31:0]  offs_argb.  Offset colour input.
-	
-	.texel_argb( texel_argb ),			// output [31:0]  texel_argb. Texel ARGB 8888 output.
-	.final_argb( final_argb )			// output [31:0]  final_argb. Final blended ARGB 8888 output.
-);
-
-reg read_codebook;
-wire tex_wait;
-
-//reg [9:0] ui;
-//reg [9:0] vi;
-
-wire [20:0] vram_word_addr;
-
-wire [31:0] texel_argb;
-wire [31:0] final_argb;
-
-
 // Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 //
-interp  interp_inst_0 (
+interp  interp_inst_z (
 	.clock( clock ),			// input  clock
 	.setup( isp_entry_valid ),	// input  setup
 	
@@ -730,8 +715,127 @@ interp  interp_inst_0 (
 	
 	.interp( IP_Z )	// output signed [31:0]  interp
 );
-
 wire signed [31:0] IP_Z;
+
+
+// int w = tex_u_size_full-1;
+// U.Setup(x1,x2,x3, y1,y2,y3, u1*w*z1, u2*w*z2, u3*w*z3);
+//
+
+wire signed [31:0] tex_width = (8<<tex_u_size)+1;
+wire signed [63:0] u1_mult_width = (FU1_FIXED * tex_width) /(1<<FRAC_BITS);
+wire signed [63:0] u2_mult_width = (FU2_FIXED * tex_width) /(1<<FRAC_BITS);
+wire signed [63:0] u3_mult_width = (FU3_FIXED * tex_width) /(1<<FRAC_BITS);
+
+interp  interp_inst_u (
+	.clock( clock ),			// input  clock
+	.setup( isp_entry_valid ),	// input  setup
+	
+	.FRAC_BITS( FRAC_BITS ),	// input [7:0] FRAC_BITS
+
+	.FX1( FX1_FIXED ),		// input signed [31:0] x1
+	.FX2( FX2_FIXED ),		// input signed [31:0] x2
+	.FX3( FX3_FIXED ),		// input signed [31:0] x3
+	
+	.FY1( FY1_FIXED ),		// input signed [31:0] y1
+	.FY2( FY2_FIXED ),		// input signed [31:0] y2
+	.FY3( FY3_FIXED ),		// input signed [31:0] y3
+	
+	.FZ1( (u1_mult_width * FZ1_FIXED) ),	// input signed [31:0] z1
+	.FZ2( (u2_mult_width * FZ2_FIXED) ),	// input signed [31:0] z2
+	.FZ3( (u3_mult_width * FZ3_FIXED) ),	// input signed [31:0] z3
+	
+	.x_ps( x_ps ),		// input signed [11:0] x_ps
+	.y_ps( y_ps ),		// input signed [11:0] y_ps
+	
+	.interp( IP_U )	// output signed [31:0]  interp
+);
+wire signed [31:0] IP_U;
+
+
+// int h = tex_v_size_full-1;
+// V.Setup(x1,x2,x3, y1,y2,y3, v1*h*z1, v2*h*z2, v3*h*z3);
+//
+wire signed [31:0] tex_height = (8<<tex_v_size)+1;
+wire signed [63:0] v1_mult_height = (FV1_FIXED * tex_height) /(1<<FRAC_BITS);
+wire signed [63:0] v2_mult_height = (FV2_FIXED * tex_height) /(1<<FRAC_BITS);
+wire signed [63:0] v3_mult_height = (FV3_FIXED * tex_height) /(1<<FRAC_BITS);
+
+interp  interp_inst_v (
+	.clock( clock ),			// input  clock
+	.setup( isp_entry_valid ),	// input  setup
+	
+	.FRAC_BITS( FRAC_BITS ),	// input [7:0] FRAC_BITS
+
+	.FX1( FX1_FIXED ),		// input signed [31:0] x1
+	.FX2( FX2_FIXED ),		// input signed [31:0] x2
+	.FX3( FX3_FIXED ),		// input signed [31:0] x3
+	
+	.FY1( FY1_FIXED ),		// input signed [31:0] y1
+	.FY2( FY2_FIXED ),		// input signed [31:0] y2
+	.FY3( FY3_FIXED ),		// input signed [31:0] y3
+	
+	.FZ1( (v1_mult_height * FZ1_FIXED) ),	// input signed [31:0] z1
+	.FZ2( (v2_mult_height * FZ2_FIXED) ),	// input signed [31:0] z2
+	.FZ3( (v3_mult_height * FZ3_FIXED) ),	// input signed [31:0] z3
+	
+	.x_ps( x_ps ),		// input signed [11:0] x_ps
+	.y_ps( y_ps ),		// input signed [11:0] y_ps
+	
+	.interp( IP_V )	// output signed [31:0]  interp
+);
+wire signed [31:0] IP_V;
+
+
+wire signed [31:0] u_div_z = IP_U / IP_Z;
+wire signed [31:0] v_div_z = IP_V / IP_Z;
+
+texture_address  texture_address_inst (
+	.clock( clock ),
+	.reset_n( reset_n ),
+	
+	.isp_inst( isp_inst ),	// input [31:0]  isp_inst.
+	.tsp_inst( tsp_inst ),	// input [31:0]  tsp_inst.
+	.tcw_word( tcw_word ),	// input [31:0]  tcw_word.
+	
+	.TEXT_CONTROL( TEXT_CONTROL ),	// input [31:0]  TEXT_CONTROL.
+
+	.PAL_RAM_CTRL( PAL_RAM_CTRL ),	// input from PAL_RAM_CTRL, bits [1:0].		
+	.pal_addr( pal_addr ),		// input [15:0]  pal_addr
+	.pal_din( pal_din ),		// input [31:0]  pal_din
+	.pal_rd( pal_rd ),			// input  pal_rd
+	.pal_wr( pal_wr ),			// input  pal_wr
+	.pal_dout( pal_dout ),		// output [31:0]  pal_dout
+	
+	.read_codebook( read_codebook ),	// input  read_codebook
+	.tex_wait( tex_wait ),				// output  tex_wait
+		
+	//.ui( sim_ui ),						// input [9:0]  ui. From rasterizer/interp...
+	//.vi( sim_vi ),						// input [9:0]  ui.
+	
+	.ui( u_div_z ),
+	.vi( v_div_z ),
+	
+	.vram_word_addr( vram_word_addr ),	// output [20:0]  vram_word_addr. 64-bit WORD address!
+	.vram_din( isp_vram_din ),			// input [63:0]  vram_din. Full 64-bit data for texture reads.
+	
+	.base_argb( vert_c_base_col_0 ),	// input [31:0]  base_argb.  Flat-shading colour input. (will also do Gouraud eventually).
+	.offs_argb( vert_c_off_col ),		// input [31:0]  offs_argb.  Offset colour input.
+	
+	.texel_argb( texel_argb ),			// output [31:0]  texel_argb. Texel ARGB 8888 output.
+	.final_argb( final_argb )			// output [31:0]  final_argb. Final blended ARGB 8888 output.
+);
+
+reg read_codebook;
+wire tex_wait;
+
+reg [9:0] sim_ui;
+reg [9:0] sim_vi;
+
+wire [20:0] vram_word_addr;
+
+wire [31:0] texel_argb;
+wire [31:0] final_argb;
 
 /*
 //wire signed [31:0] test_float = 32'h4212C0E0;    // 36.6883544921875
@@ -798,8 +902,8 @@ module texture_address (
 	input read_codebook,
 	output reg tex_wait,
 		
-	//input wire [9:0] ui,				// From rasterizer/interp...
-	//input wire [9:0] vi,
+	input wire [9:0] ui,				// From rasterizer/interp...
+	input wire [9:0] vi,
 		
 	output reg [20:0] vram_word_addr,	// 64-bit WORD address!
 	input [63:0] vram_din,				// Full 64-bit data for texture reads.
@@ -811,8 +915,8 @@ module texture_address (
 	output reg [31:0] final_argb		// Final blended ARGB 8888 output.
 );
 
-reg [9:0] ui;
-reg [9:0] vi;
+//reg [9:0] ui;
+//reg [9:0] vi;
 
 // ISP Instruction Word.
 wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
