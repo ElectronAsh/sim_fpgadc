@@ -804,8 +804,11 @@ float mult6 = 0;
 float mult7 = 0;
 float mult8 = 0;
 
-uint32_t sim_ui;
-uint32_t sim_vi;
+volatile float sim_u;
+volatile float sim_v;
+
+volatile uint32_t sim_ui;
+volatile uint32_t sim_vi;
 
 void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 							  float y1, float y2, float y3, float y4,
@@ -1032,9 +1035,9 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		V.Setup(x1,x2,x3, y1,y2,y3, v1*h*z1, v2*h*z2, v3*h*z3);
 	}
 
-	invW       = Z.Ip((float)core_x_ps, (float)core_y_ps);			// Interpolate the Z value, based on X and Y.
-	uint32_t u = U.Ip((float)core_x_ps, (float)core_y_ps) / invW;	// Interpolate the U value, based on X and Y. Mult with 1/invW.
-	uint32_t v = V.Ip((float)core_x_ps, (float)core_y_ps) / invW;	// Interpolate the V value, based on X and Y. Mult with 1/invW.
+	invW  = Z.Ip((float)core_x_ps, (float)core_y_ps);			// Interpolate the Z value, based on X and Y.
+	sim_u = U.Ip((float)core_x_ps, (float)core_y_ps) / invW;	// Interpolate the U value, based on X and Y.
+	sim_v = V.Ip((float)core_x_ps, (float)core_y_ps) / invW;	// Interpolate the V value, based on X and Y.
 
 	bool pp_FlipU  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_u_flip;
 	bool pp_FlipV  = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_v_flip;
@@ -1043,8 +1046,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 
 	//printf("flipu: %d  flipv: %d  clampu: %d  clampv: %d\n", pp_FlipU, pp_FlipV, pp_ClampU, pp_ClampV);
 
-	sim_ui = ClampFlip(pp_ClampU,pp_FlipU,u,tex_u_size_full);
-	sim_vi = ClampFlip(pp_ClampV,pp_FlipV,v,tex_v_size_full);
+	sim_ui = ClampFlip(pp_ClampU, pp_FlipU, sim_u, tex_u_size_full);
+	sim_vi = ClampFlip(pp_ClampV, pp_FlipV, sim_v, tex_v_size_full);
 
 	// Shove ui and vi into the core...
 	top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__sim_ui = sim_ui;
@@ -1309,13 +1312,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		}
 
 		if (allow_write) {
-			//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = invW;
-			float core_invW = (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__interp)/(1<<FRAC_BITS);
-			if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = core_invW;
+			if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = invW;
+			//float core_invW = (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__interp)/(1<<FRAC_BITS);
+			//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = core_invW;
 
-			//uint32_t z_fixed = float_to_fixed(invW, 28);	// Convert Z from float to fixed-point.
-			//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = z_fixed;
-			
 			uint32_t texel_argb = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout;
 			alpha  = (texel_argb>>24)&0xff;
 			rgb[0] = (texel_argb>>16)&0xff;
@@ -1717,7 +1717,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
 	//load_vram_dump("_hydro_title");
-	//load_vram_dump("_looney_foghorn");	// Show some corrupted tiles, unless FRAC_BITS is set to about 14?
+	//load_vram_dump("_looney_foghorn");	// Shows some corrupted tiles, unless FRAC_BITS is set to about 14?
 	//load_vram_dump("_looney_startline");
 	//load_vram_dump("_sw_ep1_menu");
 	//load_vram_dump("_hotd2_title");
@@ -2202,19 +2202,25 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("          tex_wait: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tex_wait);
 		ImGui::Text("     cb_word_index: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__cb_word_index);
 		ImGui::Separator();
-		ImGui::Text("          sim invW: %f", invW);
-		ImGui::Text("        sim 1/invW: %f", 1/invW);
-		ImGui::Text("         core invW: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_Z)/(1<<FRAC_BITS));
+		
+		//ImGui::Text("        sim 1/invW: %f", 1/invW);
+		ImGui::Text("   isp_entry_valid: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_entry_valid);
+		ImGui::Text("             sim u: %f", sim_u);
 		ImGui::Text("         core IP_U: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_U)/(1<<FRAC_BITS));
+		//ImGui::Text("         core IP_U: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_U);
+		ImGui::Text("             sim v: %f", sim_v);
 		ImGui::Text("         core IP_V: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_V)/(1<<FRAC_BITS));
+		//ImGui::Text("         core IP_V: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_V);
+		ImGui::Text("          sim IP_Z: %f", invW);
+		ImGui::Text("         core IP_Z: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_Z)/(1<<FRAC_BITS));
 		ImGui::Separator();
 		ImGui::Text("            sim ui: %d", sim_ui);
 		ImGui::Text("           core ui: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui);
-		ImGui::Text("           core ui: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui);
+		ImGui::Text("           core ui: 0x%03X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui);
 		ImGui::Separator();
 		ImGui::Text("            sim vi: %d", sim_vi);
 		ImGui::Text("           core vi: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi);
-		ImGui::Text("           core vi: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi);
+		ImGui::Text("           core vi: 0x%03X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi);
 		ImGui::Separator();
 
 		/*

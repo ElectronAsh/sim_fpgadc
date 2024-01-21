@@ -19,10 +19,10 @@ module interp (
 	input signed [31:0] FZ2,
 	input signed [31:0] FZ3,
 	
-	input [11:0] x_ps,
-	input [11:0] y_ps,
+	input signed [11:0] x_ps,
+	input signed [11:0] y_ps,
 	
-	output reg signed [63:0] interp
+	output reg signed [31:0] interp
 );
 
 /*
@@ -83,8 +83,8 @@ reg signed [63:0] c;
 
 //always @(FX1 or FX2 or FX3 or FY1 or FY2 or FY3 or FZ1 or FZ2 or FZ3) begin
 //always @(posedge setup) begin
-//always @(posedge clock) begin
-always @(*) begin
+always @(posedge clock) if (setup) begin
+//always @(*) begin
 	//  Aa = (FZ3 - FZ1) * (FY2 - FY1) - (FZ2 - FZ1) * (FY3 - FY1);
 	FZ3_sub_FZ1 = (FZ3 - FZ1);
 	FY2_sub_FY1 = (FY2 - FY1);
@@ -113,15 +113,15 @@ always @(*) begin
 
 	// ddx = -Aa / C;
 	// ddy = -Ba / C;
-	Aa_shifted = -Aa <<(FRAC_BITS+12);
+	Aa_shifted = -Aa <<(FRAC_BITS/*+8*/);
 	FDDX = (Aa_shifted / C);
 	
-	Ba_shifted = -Ba <<(FRAC_BITS+12);
+	Ba_shifted = -Ba <<(FRAC_BITS/*+8*/);
 	FDDY = (Ba_shifted / C);
 
 	// c = (FZ1 - ddx * FX1 - ddy * FY1);
-	FDDX_mult_FX1 = (FDDX * FX1) >>(FRAC_BITS+12);
-	FDDY_mult_FY1 = (FDDY * FY1) >>(FRAC_BITS+12);
+	FDDX_mult_FX1 = (FDDX * FX1) >>(FRAC_BITS/*+8*/);
+	FDDY_mult_FY1 = (FDDY * FY1) >>(FRAC_BITS/*+8*/);
 	c = FZ1 - FDDX_mult_FX1 - FDDY_mult_FY1;
 end
 
@@ -129,8 +129,8 @@ end
 always @(*) begin
 	// Interp ("IP" in C PlaneStepper3)...
 	// (x * ddx) + (y * ddy) + c;
-	x_mult_FDDX = (x_ps * FDDX) >>12;
-	y_mult_FDDY = (y_ps * FDDY) >>12;
+	x_mult_FDDX = (x_ps * FDDX) /*>>8*/;
+	y_mult_FDDY = (y_ps * FDDY) /*>>8*/;
 	interp = x_mult_FDDX + y_mult_FDDY + c;
 end
 

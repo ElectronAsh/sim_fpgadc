@@ -497,7 +497,7 @@ else begin
 
 		50: begin
 			isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
-			isp_vram_dout <= final_argb;			// ABGR, for sim display.
+			isp_vram_dout <= /*(strip_cnt[0]) ? 32'hffff0000 :*/ final_argb;	// ABGR, for sim display.
 			if (y_ps < (tiley<<5)+32) begin
 				if (x_ps == (tilex<<5)+32) begin
 					x_ps <= (tilex<<5);
@@ -633,10 +633,10 @@ float_to_fixed  float_y4 (
 );
 
 
-//reg signed [31:0] x_ps;
-//reg signed [31:0] y_ps;
-reg [11:0] x_ps;
-reg [11:0] y_ps;
+reg signed [11:0] x_ps;
+reg signed [11:0] y_ps;
+//reg [11:0] x_ps;
+//reg [11:0] y_ps;
 
 // Half-edge constants
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
@@ -721,11 +721,9 @@ wire signed [31:0] IP_Z;
 // int w = tex_u_size_full-1;
 // U.Setup(x1,x2,x3, y1,y2,y3, u1*w*z1, u2*w*z2, u3*w*z3);
 //
-
-wire signed [31:0] tex_width = (8<<tex_u_size)+1;
-wire signed [63:0] u1_mult_width = (FU1_FIXED * tex_width) /(1<<FRAC_BITS);
-wire signed [63:0] u2_mult_width = (FU2_FIXED * tex_width) /(1<<FRAC_BITS);
-wire signed [63:0] u3_mult_width = (FU3_FIXED * tex_width) /(1<<FRAC_BITS);
+wire signed [63:0] u1_mult_width = (FU1_FIXED * (tex_u_size_full<<FRAC_BITS)) >>FRAC_BITS;
+wire signed [63:0] u2_mult_width = (FU2_FIXED * (tex_u_size_full<<FRAC_BITS)) >>FRAC_BITS;
+wire signed [63:0] u3_mult_width = (FU3_FIXED * (tex_u_size_full<<FRAC_BITS)) >>FRAC_BITS;
 
 interp  interp_inst_u (
 	.clock( clock ),			// input  clock
@@ -741,9 +739,9 @@ interp  interp_inst_u (
 	.FY2( FY2_FIXED ),		// input signed [31:0] y2
 	.FY3( FY3_FIXED ),		// input signed [31:0] y3
 	
-	.FZ1( (u1_mult_width * FZ1_FIXED) ),	// input signed [31:0] z1
-	.FZ2( (u2_mult_width * FZ2_FIXED) ),	// input signed [31:0] z2
-	.FZ3( (u3_mult_width * FZ3_FIXED) ),	// input signed [31:0] z3
+	.FZ1( (u1_mult_width * FZ1_FIXED) >>FRAC_BITS ),	// input signed [31:0] z1
+	.FZ2( (u2_mult_width * FZ2_FIXED) >>FRAC_BITS ),	// input signed [31:0] z2
+	.FZ3( (u3_mult_width * FZ3_FIXED) >>FRAC_BITS ),	// input signed [31:0] z3
 	
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
@@ -756,10 +754,9 @@ wire signed [31:0] IP_U;
 // int h = tex_v_size_full-1;
 // V.Setup(x1,x2,x3, y1,y2,y3, v1*h*z1, v2*h*z2, v3*h*z3);
 //
-wire signed [31:0] tex_height = (8<<tex_v_size)+1;
-wire signed [63:0] v1_mult_height = (FV1_FIXED * tex_height) /(1<<FRAC_BITS);
-wire signed [63:0] v2_mult_height = (FV2_FIXED * tex_height) /(1<<FRAC_BITS);
-wire signed [63:0] v3_mult_height = (FV3_FIXED * tex_height) /(1<<FRAC_BITS);
+wire signed [63:0] v1_mult_height = (FV1_FIXED * (tex_v_size_full<<FRAC_BITS)) >>FRAC_BITS;
+wire signed [63:0] v2_mult_height = (FV2_FIXED * (tex_v_size_full<<FRAC_BITS)) >>FRAC_BITS;
+wire signed [63:0] v3_mult_height = (FV3_FIXED * (tex_v_size_full<<FRAC_BITS)) >>FRAC_BITS;
 
 interp  interp_inst_v (
 	.clock( clock ),			// input  clock
@@ -775,9 +772,9 @@ interp  interp_inst_v (
 	.FY2( FY2_FIXED ),		// input signed [31:0] y2
 	.FY3( FY3_FIXED ),		// input signed [31:0] y3
 	
-	.FZ1( (v1_mult_height * FZ1_FIXED) ),	// input signed [31:0] z1
-	.FZ2( (v2_mult_height * FZ2_FIXED) ),	// input signed [31:0] z2
-	.FZ3( (v3_mult_height * FZ3_FIXED) ),	// input signed [31:0] z3
+	.FZ1( (v1_mult_height * FZ1_FIXED) >>FRAC_BITS ),	// input signed [31:0] z1
+	.FZ2( (v2_mult_height * FZ2_FIXED) >>FRAC_BITS ),	// input signed [31:0] z2
+	.FZ3( (v3_mult_height * FZ3_FIXED) >>FRAC_BITS ),	// input signed [31:0] z3
 	
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
@@ -787,8 +784,24 @@ interp  interp_inst_v (
 wire signed [31:0] IP_V;
 
 
+// Highest value is 1024 so we need 11 bits to store it! ElectronAsh.
+wire [10:0] tex_u_size_full = (8<<tex_u_size);
+wire [10:0] tex_v_size_full = (8<<tex_v_size);
+
 wire signed [31:0] u_div_z = IP_U / IP_Z;
 wire signed [31:0] v_div_z = IP_V / IP_Z;
+
+wire signed [10:0] u_clamp = (tex_u_clamp && (u_div_z>=tex_u_size_full)) ? tex_u_size_full :
+							 (tex_u_clamp && (u_div_z<0)) ? 0 :
+											  u_div_z;
+
+wire signed [10:0] v_clamp = (tex_v_clamp && (v_div_z>=tex_v_size_full)) ? tex_v_size_full :
+							 (tex_v_clamp && (v_div_z<0)) ? 0 :
+											  v_div_z;
+											 
+wire signed [10:0] u_flipped = (tex_u_flip) ? (u_clamp^(tex_u_size_full-1)) : u_clamp;
+wire signed [10:0] v_flipped = (tex_v_flip) ? (v_clamp^(tex_v_size_full-1)) : v_clamp;
+
 
 texture_address  texture_address_inst (
 	.clock( clock ),
@@ -813,8 +826,8 @@ texture_address  texture_address_inst (
 	//.ui( sim_ui ),						// input [9:0]  ui. From rasterizer/interp...
 	//.vi( sim_vi ),						// input [9:0]  ui.
 	
-	.ui( u_div_z ),
-	.vi( v_div_z ),
+	.ui( u_flipped ),
+	.vi( v_flipped ),
 	
 	.vram_word_addr( vram_word_addr ),	// output [20:0]  vram_word_addr. 64-bit WORD address!
 	.vram_din( isp_vram_din ),			// input [63:0]  vram_din. Full 64-bit data for texture reads.
@@ -972,6 +985,7 @@ wire [4:0] stride     = TEXT_CONTROL[4:0];
 // 6 = 512
 // 7 = 1024
 
+// Highest (masked) value is 1023?
 wire [9:0] ui_masked = ui & ((8<<tex_u_size)-1);
 wire [9:0] vi_masked = vi & ((8<<tex_v_size)-1);
 
