@@ -633,10 +633,10 @@ float_to_fixed  float_y4 (
 );
 
 
-reg signed [11:0] x_ps;
-reg signed [11:0] y_ps;
-//reg [11:0] x_ps;
-//reg [11:0] y_ps;
+//reg signed [11:0] x_ps;
+//reg signed [11:0] y_ps;
+reg [11:0] x_ps;
+reg [11:0] y_ps;
 
 // Half-edge constants
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
@@ -664,14 +664,7 @@ wire signed [63:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;
 //int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
 
-// Original code. Don't need the shifts, because reasons. lol
-// ie. no point shifting y_ps up to the decimal point, only to shift the result back down again after.
-//
-//wire signed [127:0] mult9  = (FDX12 * (y_ps<<FRAC_BITS) ) >>FRAC_BITS;
-//wire signed [127:0] mult10 = (FDY12 * (x_ps<<FRAC_BITS) ) >>FRAC_BITS;
-//wire signed [127:0] Xhs12  = C1 + (mult9 - mult10);
-
-wire signed [63:0] mult9  = FDX12_FIXED * y_ps;
+wire signed [63:0] mult9  = FDX12_FIXED * y_ps;		// No need to shift right after, since y_ps etc. are not fixed-point?
 wire signed [63:0] mult10 = FDY12_FIXED * x_ps;
 wire signed [47:0] Xhs12  = C1 + (mult9 - mult10);
 
@@ -713,17 +706,17 @@ interp  interp_inst_z (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp( IP_Z )	// output signed [31:0]  interp
+	.interp( IP_Z )		// output signed [31:0]  interp
 );
 wire signed [31:0] IP_Z;
 
 
-// int w = tex_u_size_full-1;
+// int w = tex_u_size_full;
 // U.Setup(x1,x2,x3, y1,y2,y3, u1*w*z1, u2*w*z2, u3*w*z3);
 //
-wire signed [63:0] u1_mult_width = (FU1_FIXED * (tex_u_size_full<<FRAC_BITS)) >>FRAC_BITS;
-wire signed [63:0] u2_mult_width = (FU2_FIXED * (tex_u_size_full<<FRAC_BITS)) >>FRAC_BITS;
-wire signed [63:0] u3_mult_width = (FU3_FIXED * (tex_u_size_full<<FRAC_BITS)) >>FRAC_BITS;
+wire signed [63:0] u1_mult_width = FU1_FIXED * tex_u_size_full;	// Don't need to shift right after, as tex_u_size_full is not fixed-point?
+wire signed [63:0] u2_mult_width = FU2_FIXED * tex_u_size_full;
+wire signed [63:0] u3_mult_width = FU3_FIXED * tex_u_size_full;
 
 interp  interp_inst_u (
 	.clock( clock ),			// input  clock
@@ -746,17 +739,17 @@ interp  interp_inst_u (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp( IP_U )	// output signed [31:0]  interp
+	.interp( IP_U )		// output signed [31:0]  interp
 );
 wire signed [31:0] IP_U;
 
 
-// int h = tex_v_size_full-1;
+// int h = tex_v_size_full;
 // V.Setup(x1,x2,x3, y1,y2,y3, v1*h*z1, v2*h*z2, v3*h*z3);
 //
-wire signed [63:0] v1_mult_height = (FV1_FIXED * (tex_v_size_full<<FRAC_BITS)) >>FRAC_BITS;
-wire signed [63:0] v2_mult_height = (FV2_FIXED * (tex_v_size_full<<FRAC_BITS)) >>FRAC_BITS;
-wire signed [63:0] v3_mult_height = (FV3_FIXED * (tex_v_size_full<<FRAC_BITS)) >>FRAC_BITS;
+wire signed [63:0] v1_mult_height = FV1_FIXED * tex_v_size_full;	// Don't need to shift right after, as tex_v_size_full is not fixed-point?
+wire signed [63:0] v2_mult_height = FV2_FIXED * tex_v_size_full;
+wire signed [63:0] v3_mult_height = FV3_FIXED * tex_v_size_full;
 
 interp  interp_inst_v (
 	.clock( clock ),			// input  clock
@@ -779,7 +772,7 @@ interp  interp_inst_v (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp( IP_V )	// output signed [31:0]  interp
+	.interp( IP_V )		// output signed [31:0]  interp
 );
 wire signed [31:0] IP_V;
 
@@ -788,20 +781,25 @@ wire signed [31:0] IP_V;
 wire [10:0] tex_u_size_full = (8<<tex_u_size);
 wire [10:0] tex_v_size_full = (8<<tex_v_size);
 
-wire signed [31:0] u_div_z = IP_U / IP_Z;
-wire signed [31:0] v_div_z = IP_V / IP_Z;
+wire signed [63:0] u_div_z_fixed = (IP_U<<FRAC_BITS) / IP_Z;
+wire signed [63:0] v_div_z_fixed = (IP_V<<FRAC_BITS) / IP_Z;
 
-wire signed [10:0] u_clamp = (tex_u_clamp && (u_div_z>=tex_u_size_full)) ? tex_u_size_full :
-							 (tex_u_clamp && (u_div_z<0)) ? 0 :
-											  u_div_z;
+wire [31:0] u_div_z = u_div_z_fixed >>FRAC_BITS;
+wire [31:0] v_div_z = v_div_z_fixed >>FRAC_BITS;
 
-wire signed [10:0] v_clamp = (tex_v_clamp && (v_div_z>=tex_v_size_full)) ? tex_v_size_full :
-							 (tex_v_clamp && (v_div_z<0)) ? 0 :
-											  v_div_z;
-											 
-wire signed [10:0] u_flipped = (tex_u_flip) ? (u_clamp^(tex_u_size_full-1)) : u_clamp;
-wire signed [10:0] v_flipped = (tex_v_flip) ? (v_clamp^(tex_v_size_full-1)) : v_clamp;
+wire [10:0] u_clamp = (tex_u_clamp && u_div_z>(tex_u_size_full-1)) ? tex_u_size_full-1 :
+				      (tex_u_clamp && (u_div_z<0)) ? 0 :
+									   u_div_z;
 
+wire [10:0] v_clamp = (tex_v_clamp && v_div_z>(tex_v_size_full-1)) ? tex_v_size_full-1 :
+					  (tex_v_clamp && (v_div_z<0)) ? 0 :
+									   v_div_z;
+										 
+wire [10:0] u_masked  = (tex_u_flip) ? u_clamp&((tex_u_size_full*2)-1) : u_clamp;
+wire [10:0] v_masked  = (tex_v_flip) ? v_clamp&((tex_v_size_full*2)-1) : v_clamp;
+										 
+wire [10:0] u_flipped = (tex_u_flip) ? ~u_masked : u_clamp;
+wire [10:0] v_flipped = (tex_v_flip) ? ~v_masked : v_clamp;
 
 texture_address  texture_address_inst (
 	.clock( clock ),
@@ -826,8 +824,11 @@ texture_address  texture_address_inst (
 	//.ui( sim_ui ),						// input [9:0]  ui. From rasterizer/interp...
 	//.vi( sim_vi ),						// input [9:0]  ui.
 	
-	.ui( u_flipped ),
-	.vi( v_flipped ),
+	//.ui( u_flipped ),
+	//.vi( v_flipped ),
+	
+	.ui( u_div_z ),
+	.vi( v_div_z ),
 	
 	.vram_word_addr( vram_word_addr ),	// output [20:0]  vram_word_addr. 64-bit WORD address!
 	.vram_din( isp_vram_din ),			// input [63:0]  vram_din. Full 64-bit data for texture reads.
