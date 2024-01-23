@@ -886,8 +886,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	//printf("fixed FDY12: %f  FDY23: %f  FDY31: %f\n", ((float)FDY12/1<<FRAC_BITS), ((float)FDY23/1<<FRAC_BITS), ((float)FDY31/1<<FRAC_BITS));
 	*/
 
-	uint32_t core_x_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
-	uint32_t core_y_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
+	uint16_t core_x_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__x_ps;
+	uint16_t core_y_ps = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__y_ps;
 
 	// Half-edge constants (float version).
 	/*
@@ -1491,6 +1491,8 @@ int verilate() {
 		v3 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_c_v0;
 		v4 = *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_d_v0;
 
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__is_tri_strip && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt&1) run_enable = 0;
+
 		//if (z2 > 1.2) run_enable = 0;	// H O T D 2 Title has some verts a tiny bit above 1.0? We only want to detect wildly wrong Z values here.
 		//if (z3 > 1.2) run_enable = 0;
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x13720 &&
@@ -1747,7 +1749,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_sonic_title");
 	//load_vram_dump("_hydro_title");
 	//load_vram_dump("_looney_foghorn");	// Shows some corrupted tiles, unless FRAC_BITS is set to about 14?
-	load_vram_dump("_looney_startline");
+	//load_vram_dump("_looney_startline");
 	//load_vram_dump("_sw_ep1_menu");
 	//load_vram_dump("_hotd2_title");
 	//load_vram_dump("_hotd2_zombies");
@@ -1760,7 +1762,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	//load_vram_dump("_daytona_behind");
+	load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
@@ -2192,12 +2194,15 @@ int main(int argc, char** argv, char** env) {
 		//ImGui::Text("        core mult1: %i", (int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1/(1<<FRAC_BITS));
 		//ImGui::Text("    core mult1 raw: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__mult1);
 
-		ImGui::Text("     sim Aa_mult_1: %f", Z.Aa_mult_1 );
-		ImGui::Text("    core Aa_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__Aa_mult_1)/(1<<FRAC_BITS) );
+
+		// Many of these should probably be cast as int64_t before casting to floats.
+		// But there is an issue with it displaying a very large float value unless cast as int32_t instead?
+		// ie. I can't remember what the correct casts and printf format is. ElectronAsh.
+		ImGui::Text("   sim U.Aa_mult_1: %f", U.Aa_mult_1 );
+		ImGui::Text("  core U.Aa_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Aa_mult_1)/(1<<FRAC_BITS) );
 		ImGui::Separator();
-		ImGui::Text("            sim Aa: %f", Z.Aa );
-		ImGui::Text("           core Aa: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__Aa)/(1<<FRAC_BITS) );
-		//ImGui::Text("       core Aa raw: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_0__DOT__Aa );
+		ImGui::Text("          sim U.Aa: %f", U.Aa );
+		ImGui::Text("         core U Aa: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Aa)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("   sim U.Ba_mult_1: %f", U.Ba_mult_1 );
 		ImGui::Text("  core U.Ba_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Ba_mult_1)/(1<<FRAC_BITS) );
@@ -2237,12 +2242,14 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("          sim IP.U: %f", sim_ip_u);
 		ImGui::Text("         core IP_U: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_U)/(1<<FRAC_BITS));
 		ImGui::Text("(clmp/flip) sim ui: %d", sim_ui);
-		ImGui::Text("           core ui: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui);
+		ImGui::Text("(clmp/flip)core ui: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__u_flipped);
+		ImGui::Text("       tex addr ui: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui);
 		ImGui::Separator();
 		ImGui::Text("          sim IP.V: %f", sim_ip_v);
 		ImGui::Text("         core IP_V: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_V)/(1<<FRAC_BITS));
 		ImGui::Text("(clmp/flip) sim vi: %d", sim_vi);
-		ImGui::Text("           core vi: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi);
+		ImGui::Text("(clmp/flip)core vi: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__v_flipped);
+		ImGui::Text("       tex addr vi: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi);
 		ImGui::Separator();
 
 		/*
@@ -2311,6 +2318,7 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("          tcw_word: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
 		ImGui::Separator();
 		ImGui::Text("          vert_a_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
+		ImGui::Text("    core FX1_FIXED: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__FX1_FIXED)/(1<<FRAC_BITS));
 		ImGui::Text("          vert_a_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y);
 		ImGui::Text("          vert_a_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z);
 		ImGui::Text("         vert_a_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0);

@@ -22,7 +22,12 @@ module interp (
 	input signed [11:0] x_ps,
 	input signed [11:0] y_ps,
 	
-	output reg signed [31:0] interp
+	output reg signed [31:0] interp,
+	
+	output reg signed [31:0] interp0,  interp1,  interp2,  interp3,  interp4,  interp5,  interp6,  interp7,
+	output reg signed [31:0] interp8,  interp9,  interp10, interp11, interp12, interp13, interp14, interp15,
+	output reg signed [31:0] interp16, interp17, interp18, interp19, interp20, interp21, interp22, interp23,
+	output reg signed [31:0] interp24, interp25, interp26, interp27, interp28, interp29, interp30, interp31
 );
 
 /*
@@ -80,8 +85,9 @@ reg signed [63:0] FDDX_mult_FX1;
 reg signed [63:0] FDDY_mult_FY1;
 reg signed [63:0] c;
 
-always @(posedge setup) begin
-//always @(posedge clock) begin
+//always @(posedge setup) begin
+always @(posedge clock) if (setup) begin
+//always @(*) begin
 	//  Aa = (FZ3 - FZ1) * (FY2 - FY1) - (FZ2 - FZ1) * (FY3 - FY1);
 	FZ3_sub_FZ1 = (FZ3 - FZ1);
 	FY2_sub_FY1 = (FY2 - FY1);
@@ -116,7 +122,9 @@ always @(posedge setup) begin
 	c = FZ1 - FDDX_mult_FX1 - FDDY_mult_FY1;
 end
 
-reg signed [63:0] FZ1_sub_FDDX_mult_FX1;
+
+reg signed [63:0] x_mult_FDDX;
+reg signed [63:0] y_mult_FDDY;
 
 always @(*) begin
 	// Interp ("IP" in C PlaneStepper3)...
@@ -124,10 +132,40 @@ always @(*) begin
 	x_mult_FDDX = (x_ps * FDDX);	// No need to shift the result right, as x_ps and y_ps are not fixed-point?
 	y_mult_FDDY = (y_ps * FDDY);
 	interp = x_mult_FDDX + y_mult_FDDY + c;
+	
+	interp0  = (({x_ps[9:5],5'b00000}+ 0)*FDDX) + y_mult_FDDY + c;
+	interp1  = (({x_ps[9:5],5'b00000}+ 1)*FDDX) + y_mult_FDDY + c;
+	interp2  = (({x_ps[9:5],5'b00000}+ 2)*FDDX) + y_mult_FDDY + c;
+	interp3  = (({x_ps[9:5],5'b00000}+ 3)*FDDX) + y_mult_FDDY + c;
+	interp4  = (({x_ps[9:5],5'b00000}+ 4)*FDDX) + y_mult_FDDY + c;
+	interp5  = (({x_ps[9:5],5'b00000}+ 5)*FDDX) + y_mult_FDDY + c;
+	interp6  = (({x_ps[9:5],5'b00000}+ 6)*FDDX) + y_mult_FDDY + c;
+	interp7  = (({x_ps[9:5],5'b00000}+ 7)*FDDX) + y_mult_FDDY + c;
+	interp8  = (({x_ps[9:5],5'b00000}+ 8)*FDDX) + y_mult_FDDY + c;
+	interp9  = (({x_ps[9:5],5'b00000}+ 9)*FDDX) + y_mult_FDDY + c;
+	interp10 = (({x_ps[9:5],5'b00000}+10)*FDDX) + y_mult_FDDY + c;
+	interp11 = (({x_ps[9:5],5'b00000}+11)*FDDX) + y_mult_FDDY + c;
+	interp12 = (({x_ps[9:5],5'b00000}+12)*FDDX) + y_mult_FDDY + c;
+	interp13 = (({x_ps[9:5],5'b00000}+13)*FDDX) + y_mult_FDDY + c;
+	interp14 = (({x_ps[9:5],5'b00000}+14)*FDDX) + y_mult_FDDY + c;
+	interp15 = (({x_ps[9:5],5'b00000}+15)*FDDX) + y_mult_FDDY + c;
+	interp16 = (({x_ps[9:5],5'b00000}+16)*FDDX) + y_mult_FDDY + c;
+	interp17 = (({x_ps[9:5],5'b00000}+17)*FDDX) + y_mult_FDDY + c;
+	interp18 = (({x_ps[9:5],5'b00000}+18)*FDDX) + y_mult_FDDY + c;
+	interp19 = (({x_ps[9:5],5'b00000}+19)*FDDX) + y_mult_FDDY + c;
+	interp20 = (({x_ps[9:5],5'b00000}+20)*FDDX) + y_mult_FDDY + c;
+	interp21 = (({x_ps[9:5],5'b00000}+21)*FDDX) + y_mult_FDDY + c;
+	interp22 = (({x_ps[9:5],5'b00000}+22)*FDDX) + y_mult_FDDY + c;
+	interp23 = (({x_ps[9:5],5'b00000}+23)*FDDX) + y_mult_FDDY + c;
+	interp24 = (({x_ps[9:5],5'b00000}+24)*FDDX) + y_mult_FDDY + c;
+	interp25 = (({x_ps[9:5],5'b00000}+25)*FDDX) + y_mult_FDDY + c;
+	interp26 = (({x_ps[9:5],5'b00000}+26)*FDDX) + y_mult_FDDY + c;
+	interp27 = (({x_ps[9:5],5'b00000}+27)*FDDX) + y_mult_FDDY + c;
+	interp28 = (({x_ps[9:5],5'b00000}+28)*FDDX) + y_mult_FDDY + c;
+	interp29 = (({x_ps[9:5],5'b00000}+29)*FDDX) + y_mult_FDDY + c;
+	interp30 = (({x_ps[9:5],5'b00000}+30)*FDDX) + y_mult_FDDY + c;
+	interp31 = (({x_ps[9:5],5'b00000}+31)*FDDX) + y_mult_FDDY + c;
 end
-
-reg signed [63:0] x_mult_FDDX;
-reg signed [63:0] y_mult_FDDY;
 
 
 endmodule

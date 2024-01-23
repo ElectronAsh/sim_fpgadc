@@ -497,7 +497,7 @@ else begin
 
 		50: begin
 			isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
-			isp_vram_dout <= /*(strip_cnt[0]) ? 32'hffff0000 :*/ final_argb;	// ABGR, for sim display.
+			isp_vram_dout <= /*(tex_u_flip || tex_v_flip) ? 32'haa00ff00 :*/ final_argb;	// ABGR, for sim display.
 			if (y_ps < (tiley<<5)+32) begin
 				if (x_ps == (tilex<<5)+32) begin
 					x_ps <= (tilex<<5);
@@ -682,7 +682,6 @@ wire signed [47:0] Xhs41  = C4 + (mult15 - mult16);
 
 wire inTriangle = !Xhs12[47] && !Xhs23[47] && !Xhs31[47] && !Xhs41[47];
 
-
 // Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 //
 interp  interp_inst_z (
@@ -706,9 +705,19 @@ interp  interp_inst_z (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp( IP_Z )		// output signed [31:0]  interp
+	.interp( IP_Z ),	// output signed [31:0]  interp
+
+	.interp0(  IP_Z0 ),  .interp1(  IP_Z1 ),  .interp2(  IP_Z2 ),  .interp3(  IP_Z3 ),  .interp4(  IP_Z4 ),  .interp5(  IP_Z5 ),  .interp6(  IP_Z6 ),  .interp7(  IP_Z7 ),
+	.interp8(  IP_Z8 ),  .interp9(  IP_Z9 ),  .interp10( IP_Z10 ), .interp11( IP_Z11 ), .interp12( IP_Z12 ), .interp13( IP_Z13 ), .interp14( IP_Z14 ), .interp15( IP_Z15 ),
+	.interp16( IP_Z16 ), .interp17( IP_Z17 ), .interp18( IP_Z18 ), .interp19( IP_Z19 ), .interp20( IP_Z20 ), .interp21( IP_Z21 ), .interp22( IP_Z22 ), .interp23( IP_Z23 ),
+	.interp24( IP_Z24 ), .interp25( IP_Z25 ), .interp26( IP_Z26 ), .interp27( IP_Z27 ), .interp28( IP_Z28 ), .interp29( IP_Z29 ), .interp30( IP_Z30 ), .interp31( IP_Z31 )
 );
 wire signed [31:0] IP_Z;
+
+wire signed [31:0] IP_Z0,  IP_Z1,  IP_Z2,  IP_Z3,  IP_Z4,  IP_Z5,  IP_Z6,  IP_Z7;
+wire signed [31:0] IP_Z8,  IP_Z9,  IP_Z10, IP_Z11, IP_Z12, IP_Z13, IP_Z14, IP_Z15;
+wire signed [31:0] IP_Z16, IP_Z17, IP_Z18, IP_Z19, IP_Z20, IP_Z21, IP_Z22, IP_Z23;
+wire signed [31:0] IP_Z24, IP_Z25, IP_Z26, IP_Z27, IP_Z28, IP_Z29, IP_Z30, IP_Z31;
 
 
 // int w = tex_u_size_full;
@@ -739,9 +748,19 @@ interp  interp_inst_u (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp( IP_U )		// output signed [31:0]  interp
+	.interp( IP_U ),		// output signed [31:0]  interp
+	
+	.interp0(  IP_U0 ),  .interp1(  IP_U1 ),  .interp2(  IP_U2 ),  .interp3(  IP_U3 ),  .interp4(  IP_U4 ),  .interp5(  IP_U5 ),  .interp6(  IP_U6 ),  .interp7(  IP_U7 ),
+	.interp8(  IP_U8 ),  .interp9(  IP_U9 ),  .interp10( IP_U10 ), .interp11( IP_U11 ), .interp12( IP_U12 ), .interp13( IP_U13 ), .interp14( IP_U14 ), .interp15( IP_U15 ),
+	.interp16( IP_U16 ), .interp17( IP_U17 ), .interp18( IP_U18 ), .interp19( IP_U19 ), .interp20( IP_U20 ), .interp21( IP_U21 ), .interp22( IP_U22 ), .interp23( IP_U23 ),
+	.interp24( IP_U24 ), .interp25( IP_U25 ), .interp26( IP_U26 ), .interp27( IP_U27 ), .interp28( IP_U28 ), .interp29( IP_U29 ), .interp30( IP_U30 ), .interp31( IP_U31 )
 );
 wire signed [31:0] IP_U;
+
+wire signed [31:0] IP_U0,  IP_U1,  IP_U2,  IP_U3,  IP_U4,  IP_U5,  IP_U6,  IP_U7;
+wire signed [31:0] IP_U8,  IP_U9,  IP_U10, IP_U11, IP_U12, IP_U13, IP_U14, IP_U15;
+wire signed [31:0] IP_U16, IP_U17, IP_U18, IP_U19, IP_U20, IP_U21, IP_U22, IP_U23;
+wire signed [31:0] IP_U24, IP_U25, IP_U26, IP_U27, IP_U28, IP_U29, IP_U30, IP_U31;
 
 
 // int h = tex_v_size_full;
@@ -772,34 +791,117 @@ interp  interp_inst_v (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp( IP_V )		// output signed [31:0]  interp
+	.interp0(  IP_V0 ),  .interp1(  IP_V1 ),  .interp2(  IP_V2 ),  .interp3(  IP_V3 ),  .interp4(  IP_V4 ),  .interp5(  IP_V5 ),  .interp6(  IP_V6 ),  .interp7(  IP_V7 ),
+	.interp8(  IP_V8 ),  .interp9(  IP_V9 ),  .interp10( IP_V10 ), .interp11( IP_V11 ), .interp12( IP_V12 ), .interp13( IP_V13 ), .interp14( IP_V14 ), .interp15( IP_V15 ),
+	.interp16( IP_V16 ), .interp17( IP_V17 ), .interp18( IP_V18 ), .interp19( IP_V19 ), .interp20( IP_V20 ), .interp21( IP_V21 ), .interp22( IP_V22 ), .interp23( IP_V23 ),
+	.interp24( IP_V24 ), .interp25( IP_V25 ), .interp26( IP_V26 ), .interp27( IP_V27 ), .interp28( IP_V28 ), .interp29( IP_V29 ), .interp30( IP_V30 ), .interp31( IP_V31 )
 );
 wire signed [31:0] IP_V;
 
+wire signed [31:0] IP_V0,  IP_V1,  IP_V2,  IP_V3,  IP_V4,  IP_V5,  IP_V6,  IP_V7;
+wire signed [31:0] IP_V8,  IP_V9,  IP_V10, IP_V11, IP_V12, IP_V13, IP_V14, IP_V15;
+wire signed [31:0] IP_V16, IP_V17, IP_V18, IP_V19, IP_V20, IP_V21, IP_V22, IP_V23;
+wire signed [31:0] IP_V24, IP_V25, IP_V26, IP_V27, IP_V28, IP_V29, IP_V30, IP_V31;
+
+
+always @(*) begin
+	case (x_ps[4:0])
+		 0:	u_div_z_fixed = (IP_U0 <<FRAC_BITS) / IP_Z0;
+		 1:	u_div_z_fixed = (IP_U1 <<FRAC_BITS) / IP_Z1;
+		 2:	u_div_z_fixed = (IP_U2 <<FRAC_BITS) / IP_Z2;
+		 3:	u_div_z_fixed = (IP_U3 <<FRAC_BITS) / IP_Z3;
+		 4:	u_div_z_fixed = (IP_U4 <<FRAC_BITS) / IP_Z4;
+		 5:	u_div_z_fixed = (IP_U5 <<FRAC_BITS) / IP_Z5;
+		 6:	u_div_z_fixed = (IP_U6 <<FRAC_BITS) / IP_Z6;
+		 7:	u_div_z_fixed = (IP_U7 <<FRAC_BITS) / IP_Z7;
+		 8:	u_div_z_fixed = (IP_U8 <<FRAC_BITS) / IP_Z8;
+		 9:	u_div_z_fixed = (IP_U9 <<FRAC_BITS) / IP_Z9;
+		10:	u_div_z_fixed = (IP_U10<<FRAC_BITS) / IP_Z10;
+		11:	u_div_z_fixed = (IP_U11<<FRAC_BITS) / IP_Z11;
+		12:	u_div_z_fixed = (IP_U12<<FRAC_BITS) / IP_Z12;
+		13:	u_div_z_fixed = (IP_U13<<FRAC_BITS) / IP_Z13;
+		14:	u_div_z_fixed = (IP_U14<<FRAC_BITS) / IP_Z14;
+		15:	u_div_z_fixed = (IP_U15<<FRAC_BITS) / IP_Z15;
+		16:	u_div_z_fixed = (IP_U16<<FRAC_BITS) / IP_Z16;
+		17:	u_div_z_fixed = (IP_U17<<FRAC_BITS) / IP_Z17;
+		18:	u_div_z_fixed = (IP_U18<<FRAC_BITS) / IP_Z18;
+		19:	u_div_z_fixed = (IP_U19<<FRAC_BITS) / IP_Z19;
+		20:	u_div_z_fixed = (IP_U20<<FRAC_BITS) / IP_Z20;
+		21:	u_div_z_fixed = (IP_U21<<FRAC_BITS) / IP_Z21;
+		22:	u_div_z_fixed = (IP_U22<<FRAC_BITS) / IP_Z22;
+		23:	u_div_z_fixed = (IP_U23<<FRAC_BITS) / IP_Z23;
+		24:	u_div_z_fixed = (IP_U24<<FRAC_BITS) / IP_Z24;
+		25:	u_div_z_fixed = (IP_U25<<FRAC_BITS) / IP_Z25;
+		26:	u_div_z_fixed = (IP_U26<<FRAC_BITS) / IP_Z26;
+		27:	u_div_z_fixed = (IP_U27<<FRAC_BITS) / IP_Z27;
+		28:	u_div_z_fixed = (IP_U28<<FRAC_BITS) / IP_Z28;
+		29:	u_div_z_fixed = (IP_U29<<FRAC_BITS) / IP_Z29;
+		30:	u_div_z_fixed = (IP_U30<<FRAC_BITS) / IP_Z30;
+		31:	u_div_z_fixed = (IP_U31<<FRAC_BITS) / IP_Z31;
+	endcase
+
+	case (x_ps[4:0])
+		 0:	v_div_z_fixed = (IP_V0 <<FRAC_BITS) / IP_Z0;
+		 1:	v_div_z_fixed = (IP_V1 <<FRAC_BITS) / IP_Z1;
+		 2:	v_div_z_fixed = (IP_V2 <<FRAC_BITS) / IP_Z2;
+		 3:	v_div_z_fixed = (IP_V3 <<FRAC_BITS) / IP_Z3;
+		 4:	v_div_z_fixed = (IP_V4 <<FRAC_BITS) / IP_Z4;
+		 5:	v_div_z_fixed = (IP_V5 <<FRAC_BITS) / IP_Z5;
+		 6:	v_div_z_fixed = (IP_V6 <<FRAC_BITS) / IP_Z6;
+		 7:	v_div_z_fixed = (IP_V7 <<FRAC_BITS) / IP_Z7;
+		 8:	v_div_z_fixed = (IP_V8 <<FRAC_BITS) / IP_Z8;
+		 9:	v_div_z_fixed = (IP_V9 <<FRAC_BITS) / IP_Z9;
+		10:	v_div_z_fixed = (IP_V10<<FRAC_BITS) / IP_Z10;
+		11:	v_div_z_fixed = (IP_V11<<FRAC_BITS) / IP_Z11;
+		12:	v_div_z_fixed = (IP_V12<<FRAC_BITS) / IP_Z12;
+		13:	v_div_z_fixed = (IP_V13<<FRAC_BITS) / IP_Z13;
+		14:	v_div_z_fixed = (IP_V14<<FRAC_BITS) / IP_Z14;
+		15:	v_div_z_fixed = (IP_V15<<FRAC_BITS) / IP_Z15;
+		16:	v_div_z_fixed = (IP_V16<<FRAC_BITS) / IP_Z16;
+		17:	v_div_z_fixed = (IP_V17<<FRAC_BITS) / IP_Z17;
+		18:	v_div_z_fixed = (IP_V18<<FRAC_BITS) / IP_Z18;
+		19:	v_div_z_fixed = (IP_V19<<FRAC_BITS) / IP_Z19;
+		20:	v_div_z_fixed = (IP_V20<<FRAC_BITS) / IP_Z20;
+		21:	v_div_z_fixed = (IP_V21<<FRAC_BITS) / IP_Z21;
+		22:	v_div_z_fixed = (IP_V22<<FRAC_BITS) / IP_Z22;
+		23:	v_div_z_fixed = (IP_V23<<FRAC_BITS) / IP_Z23;
+		24:	v_div_z_fixed = (IP_V24<<FRAC_BITS) / IP_Z24;
+		25:	v_div_z_fixed = (IP_V25<<FRAC_BITS) / IP_Z25;
+		26:	v_div_z_fixed = (IP_V26<<FRAC_BITS) / IP_Z26;
+		27:	v_div_z_fixed = (IP_V27<<FRAC_BITS) / IP_Z27;
+		28:	v_div_z_fixed = (IP_V28<<FRAC_BITS) / IP_Z28;
+		29:	v_div_z_fixed = (IP_V29<<FRAC_BITS) / IP_Z29;
+		30:	v_div_z_fixed = (IP_V30<<FRAC_BITS) / IP_Z30;
+		31:	v_div_z_fixed = (IP_V31<<FRAC_BITS) / IP_Z31;
+	endcase
+end
+
+//wire signed [63:0] u_div_z_fixed = (IP_U<<FRAC_BITS) / IP_Z;
+reg signed [63:0] u_div_z_fixed;
+
+//wire signed [63:0] v_div_z_fixed = (IP_V<<FRAC_BITS) / IP_Z;
+reg signed [63:0] v_div_z_fixed;
+
+wire signed [31:0] u_div_z = u_div_z_fixed >>FRAC_BITS;
+wire signed [31:0] v_div_z = v_div_z_fixed >>FRAC_BITS;
 
 // Highest value is 1024 so we need 11 bits to store it! ElectronAsh.
 wire [10:0] tex_u_size_full = (8<<tex_u_size);
 wire [10:0] tex_v_size_full = (8<<tex_v_size);
 
-wire signed [63:0] u_div_z_fixed = (IP_U<<FRAC_BITS) / IP_Z;
-wire signed [63:0] v_div_z_fixed = (IP_V<<FRAC_BITS) / IP_Z;
+wire [9:0] u_clamp = (tex_u_clamp && u_div_z>(tex_u_size_full-1)) ? tex_u_size_full-1 :
+					 (tex_u_clamp && (u_div_z<0)) ? 0 :
+									  u_div_z;
 
-wire [31:0] u_div_z = u_div_z_fixed >>FRAC_BITS;
-wire [31:0] v_div_z = v_div_z_fixed >>FRAC_BITS;
-
-wire [10:0] u_clamp = (tex_u_clamp && u_div_z>(tex_u_size_full-1)) ? tex_u_size_full-1 :
-				      (tex_u_clamp && (u_div_z<0)) ? 0 :
-									   u_div_z;
-
-wire [10:0] v_clamp = (tex_v_clamp && v_div_z>(tex_v_size_full-1)) ? tex_v_size_full-1 :
-					  (tex_v_clamp && (v_div_z<0)) ? 0 :
-									   v_div_z;
+wire [9:0] v_clamp = (tex_v_clamp && v_div_z>(tex_v_size_full-1)) ? tex_v_size_full-1 :
+					 (tex_v_clamp && (v_div_z<0)) ? 0 :
+									  v_div_z;
 										 
-wire [10:0] u_masked  = (tex_u_flip) ? u_clamp&((tex_u_size_full*2)-1) : u_clamp;
-wire [10:0] v_masked  = (tex_v_flip) ? v_clamp&((tex_v_size_full*2)-1) : v_clamp;
+wire [9:0] u_masked  = /*(tex_u_flip) ?*/ u_clamp&((tex_u_size_full/*2*/)-1) /*: u_clamp*/;
+wire [9:0] v_masked  = /*(tex_v_flip) ?*/ v_clamp&((tex_v_size_full/*2*/)-1) /*: v_clamp*/;
 										 
-wire [10:0] u_flipped = (tex_u_flip) ? ~u_masked : u_clamp;
-wire [10:0] v_flipped = (tex_v_flip) ? ~v_masked : v_clamp;
+wire [9:0] u_flipped = (tex_u_flip) ? u_masked^(tex_u_size_full-1) : u_masked;
+wire [9:0] v_flipped = (tex_v_flip) ? v_masked^(tex_v_size_full-1) : v_masked;
 
 texture_address  texture_address_inst (
 	.clock( clock ),
@@ -821,14 +923,11 @@ texture_address  texture_address_inst (
 	.read_codebook( read_codebook ),	// input  read_codebook
 	.tex_wait( tex_wait ),				// output  tex_wait
 		
-	//.ui( sim_ui ),						// input [9:0]  ui. From rasterizer/interp...
-	//.vi( sim_vi ),						// input [9:0]  ui.
+	//.ui( sim_ui ),					// input [9:0]  ui. From rasterizer/interp...
+	//.vi( sim_vi ),					// input [9:0]  ui.
 	
-	//.ui( u_flipped ),
-	//.vi( v_flipped ),
-	
-	.ui( u_div_z ),
-	.vi( v_div_z ),
+	.ui( u_flipped ),
+	.vi( v_flipped ),
 	
 	.vram_word_addr( vram_word_addr ),	// output [20:0]  vram_word_addr. 64-bit WORD address!
 	.vram_din( isp_vram_din ),			// input [63:0]  vram_din. Full 64-bit data for texture reads.
@@ -929,8 +1028,6 @@ module texture_address (
 	output reg [31:0] final_argb		// Final blended ARGB 8888 output.
 );
 
-//reg [9:0] ui;
-//reg [9:0] vi;
 
 // ISP Instruction Word.
 wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
