@@ -501,10 +501,11 @@ ra_parser ra_parser_inst (
 	.poly_addr( poly_addr ),			// output [23:0]  poly_addr
 	.render_poly( render_poly ),		// output  render_poly
 	
-	.poly_drawn( poly_drawn )			// input  poly_drawn
+	.poly_drawn( poly_drawn ),			// input  poly_drawn
+	.tile_prims_done( tile_prims_done )	// output tile_prims_done
 );
 
-
+wire tile_prims_done;
 wire poly_drawn;
 
 wire isp_vram_rd;
@@ -553,7 +554,10 @@ isp_parser isp_parser_inst (
 	
 	.isp_entry_valid( isp_entry_valid ),// output  isp_entry_valid
 	
-	.poly_drawn( poly_drawn ),
+	.ra_entry_valid( ra_entry_valid ),	// New Region Array entry read / new tile.
+	.tile_prims_done( tile_prims_done ),// input tile_prims_done
+	
+	.poly_drawn( poly_drawn ),			// output poly_drawn
 	
 	.tilex( ra_cont_tilex ),
 	.tiley( ra_cont_tiley ),

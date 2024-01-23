@@ -236,6 +236,7 @@ uint32_t *disp_ptr = (uint32_t *)malloc(disp_size);
 
 bool tile_highlight = 0;
 bool zoom = 0;
+bool stop_on_last = 0;
 
 
 double sc_time_stamp () {	// Called by $time in Verilog.
@@ -1048,8 +1049,8 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	sim_u_divz = sim_ip_u / invW;
 	sim_v_divz = sim_ip_v / invW;
 
-	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_U = float_to_fixed(sim_ip_u,FRAC_BITS);
-	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_V = float_to_fixed(sim_ip_v,FRAC_BITS);
+	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_U_INTERP = float_to_fixed(sim_ip_u,FRAC_BITS);
+	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_V_INTERP = float_to_fixed(sim_ip_v,FRAC_BITS);
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__u_div_z_fixed = float_to_fixed(sim_u_divz, FRAC_BITS);
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__v_div_z_fixed = float_to_fixed(sim_v_divz, FRAC_BITS);
 
@@ -1340,9 +1341,10 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 		if (allow_write) {
 			// sim (C code) Z...
 			//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = invW;
-			
+		
+
 			// Core (Verilog) Z...
-			float core_invW = (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__interp)/(1<<FRAC_BITS);
+			float core_invW = (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__interp0)/(1<<FRAC_BITS);
 			if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = core_invW;
 
 			uint32_t texel_argb = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout;
@@ -1508,6 +1510,11 @@ int verilate() {
 		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0xa9610 && top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__strip_cnt==1) run_enable = 0;
 
 		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, u1, u2, u3, u4, v1, v2, v3, v4);
+
+		if (stop_on_last && top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_last) {
+			run_enable = 0;
+			stop_on_last = 0;
+		}
 
 		top->clk = 1;
 		top->eval();            // Evaluate model!
@@ -1745,7 +1752,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_taxi3");
 	//load_vram_dump("_taxi4");
 	//load_vram_dump("_crazy_title");
-	//load_vram_dump("_sonic");
+	load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
 	//load_vram_dump("_hydro_title");
 	//load_vram_dump("_looney_foghorn");	// Shows some corrupted tiles, unless FRAC_BITS is set to about 14?
@@ -1762,7 +1769,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	load_vram_dump("_daytona_behind");
+	//load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
@@ -1884,12 +1891,13 @@ int main(int argc, char** argv, char** env) {
 			}
 		}
 
-		ImGui::Text("main_time %d  (%fms @ 100MHz)", main_time, (float)main_time/100000);
+		ImGui::Text("main_time %d  (%fms @ 100MHz). Around %f FPS", main_time, (float)main_time/100000, 1000/((float)main_time/100000) );
 		ImGui::Text("frame_count: %d  line_count: %d", frame_count, line_count);
 
 		ImGui::Checkbox("RUN", &run_enable);
 		ImGui::SameLine(); ImGui::Checkbox("Tile Highlight", &tile_highlight);
 		ImGui::SameLine(); ImGui::Checkbox("Zoom 2x", &zoom);
+		ImGui::SameLine(); ImGui::Checkbox("Stop on last tile", &stop_on_last);
 
 		if (single_step == 1) single_step = 0;
 		if (ImGui::Button("Single Step")) {
@@ -2199,22 +2207,22 @@ int main(int argc, char** argv, char** env) {
 		// But there is an issue with it displaying a very large float value unless cast as int32_t instead?
 		// ie. I can't remember what the correct casts and printf format is. ElectronAsh.
 		ImGui::Text("   sim U.Aa_mult_1: %f", U.Aa_mult_1 );
-		ImGui::Text("  core U.Aa_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Aa_mult_1)/(1<<FRAC_BITS) );
+		//ImGui::Text("  core U.Aa_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Aa_mult_1)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("          sim U.Aa: %f", U.Aa );
-		ImGui::Text("         core U Aa: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Aa)/(1<<FRAC_BITS) );
+		//ImGui::Text("         core U Aa: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Aa)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("   sim U.Ba_mult_1: %f", U.Ba_mult_1 );
-		ImGui::Text("  core U.Ba_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Ba_mult_1)/(1<<FRAC_BITS) );
+		//ImGui::Text("  core U.Ba_mult_1: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Ba_mult_1)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("          sim U.Ba: %f", U.Ba );
-		ImGui::Text("         core U.Ba: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Ba)/(1<<FRAC_BITS) );
+		//ImGui::Text("         core U.Ba: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Ba)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("           sim U.C: %f", U.C);
 		ImGui::Text("          core U.C: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__C)/(1<<FRAC_BITS) );
 		ImGui::Separator();
 		ImGui::Text("           sim U.c: %f", U.c);
-		ImGui::Text("          core U.c: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__c)/(1<<FRAC_BITS));
+		ImGui::Text("          core U.c: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__c)/(1<<FRAC_BITS) );
 		//ImGui::Separator();
 		//ImGui::Text("  U.Aa_shifted raw: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Aa_shifted);
 		//ImGui::Text("  U.Ba_shifted raw: 0x%016llX", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__Ba_shifted);
@@ -2237,20 +2245,35 @@ int main(int argc, char** argv, char** env) {
 		
 		//ImGui::Text("        sim 1/invW: %f", 1/invW);
 		ImGui::Text("          sim IP_Z: %f", invW);
-		ImGui::Text("         core IP_Z: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_Z)/(1<<FRAC_BITS));
+		ImGui::Text("         core IP_Z: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_Z_INTERP)/(1<<FRAC_BITS));
 		ImGui::Separator();
 		ImGui::Text("          sim IP.U: %f", sim_ip_u);
-		ImGui::Text("         core IP_U: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_U)/(1<<FRAC_BITS));
+		ImGui::Text("         core IP_U: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_U_INTERP)/(1<<FRAC_BITS));
 		ImGui::Text("(clmp/flip) sim ui: %d", sim_ui);
 		ImGui::Text("(clmp/flip)core ui: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__u_flipped);
 		ImGui::Text("       tex addr ui: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__ui);
 		ImGui::Separator();
 		ImGui::Text("          sim IP.V: %f", sim_ip_v);
-		ImGui::Text("         core IP_V: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_V)/(1<<FRAC_BITS));
+		ImGui::Text("         core IP_V: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__IP_V_INTERP)/(1<<FRAC_BITS));
 		ImGui::Text("(clmp/flip) sim vi: %d", sim_vi);
 		ImGui::Text("(clmp/flip)core vi: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__v_flipped);
 		ImGui::Text("       tex addr vi: %d",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__texture_address_inst__DOT__vi);
 		ImGui::Separator();
+
+		ImGui::Text("     z_col_0[row0]: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_col_0[0])/(1<<FRAC_BITS));
+		ImGui::Text("     z_col_1[row0]: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_col_1[0])/(1<<FRAC_BITS));
+		ImGui::Text("     z_col_2[row0]: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_col_2[0])/(1<<FRAC_BITS));
+		ImGui::Text("     z_col_3[row0]: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_col_3[0])/(1<<FRAC_BITS));
+		ImGui::Text("     z_col_4[row0]: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_col_4[0])/(1<<FRAC_BITS));
+		ImGui::Text("     z_col_5[row0]: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_col_5[0])/(1<<FRAC_BITS));
+		ImGui::Text("     z_col_6[row0]: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_col_6[0])/(1<<FRAC_BITS));
+		ImGui::Text("     z_col_7[row0]: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_col_7[0])/(1<<FRAC_BITS));
+		ImGui::Separator();
+		ImGui::Text("allow_z_write[31:0]: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__allow_z_write);
+		ImGui::Separator();
+		ImGui::Text("        inTri[31:0]: 0x%08X", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__inTri);
+		ImGui::Text(" leading_zeros[4:0]: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__leading_zeros);
+		ImGui::Text("trailing_zeros[4:0]: %d", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__trailing_zeros);
 
 		/*
 		ImGui::Text("        test float: %f", *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__test_float);
@@ -2318,7 +2341,6 @@ int main(int argc, char** argv, char** env) {
 		ImGui::Text("          tcw_word: 0x%08X",top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__tcw_word);
 		ImGui::Separator();
 		ImGui::Text("          vert_a_x: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_x);
-		ImGui::Text("    core FX1_FIXED: %f", (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__FX1_FIXED)/(1<<FRAC_BITS));
 		ImGui::Text("          vert_a_y: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_y);
 		ImGui::Text("          vert_a_z: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_z);
 		ImGui::Text("         vert_a_u0: 0x%08X %f", top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0, *(float*)&top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__vert_a_u0);

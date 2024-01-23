@@ -40,7 +40,8 @@ module ra_parser (
 	output reg [23:0] poly_addr,
 	output reg render_poly,
 	
-	input poly_drawn
+	input poly_drawn,
+	output reg tile_prims_done
 );
 
 wire opb_mode = TA_ALLOC_CTRL[20];
@@ -83,6 +84,7 @@ if (!reset_n) begin
 	type_cnt <= 3'd0;
 	poly_addr <= 24'h000000;
 	render_poly <= 1'b0;
+	tile_prims_done <= 1'b0;
 end
 else begin
 	ra_vram_rd <= 1'b0;
@@ -90,6 +92,8 @@ else begin
 	
 	ra_entry_valid <= 1'b0;
 	render_poly <= 1'b0;
+
+	tile_prims_done <= 1'b0;
 
 	case (ra_state)
 		0: begin
@@ -242,6 +246,7 @@ else begin
 		end
 		
 		15: begin	// All prim TYPES in this Object have been processed!
+			tile_prims_done <= 1'b1;
 			if (ra_cont_last) ra_state <= 8'd0;
 			else begin
 				ra_vram_addr <= next_region;	// Check the next Region Array block.

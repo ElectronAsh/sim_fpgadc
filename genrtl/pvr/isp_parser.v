@@ -23,9 +23,12 @@ module isp_parser (
 	output reg [63:0] isp_vram_dout,
 	
 	output reg isp_entry_valid,
+
+	input ra_entry_valid,
+	input tile_prims_done,
 	
 	output reg poly_drawn,
-	
+
 	input reg [5:0] tilex,
 	input reg [5:0] tiley,
 	
@@ -420,7 +423,7 @@ else begin
 			isp_entry_valid <= 1'b1;
 			
 			// Per-tile rendering.
-			x_ps <= tilex<<5;
+			x_ps <= (tilex<<5) + leading_zeros;
 			y_ps <= tiley<<5;
 			
 			isp_state <= 8'd49;			// Draw the triangle!
@@ -499,7 +502,7 @@ else begin
 			isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
 			isp_vram_dout <= /*(tex_u_flip || tex_v_flip) ? 32'haa00ff00 :*/ final_argb;	// ABGR, for sim display.
 			if (y_ps < (tiley<<5)+32) begin
-				if (x_ps == (tilex<<5)+32) begin
+				if (x_ps == (tilex<<5)+32 || x_ps[4:0]==32-trailing_zeros) begin
 					x_ps <= (tilex<<5);
 					y_ps <= y_ps + 12'd1;
 					isp_state <= 8'd51;		// Had to add an extra clock tick, to allow the VRAM address and texture stuff to update.
@@ -517,6 +520,7 @@ else begin
 		end
 		
 		51: begin
+			x_ps <= (tilex<<5) + leading_zeros;
 			isp_state <= 8'd50;
 		end
 
@@ -639,6 +643,7 @@ reg [11:0] x_ps;
 reg [11:0] y_ps;
 
 // Half-edge constants
+// Setup phase...
 //int C1 = FDY12 * FX1 - FDX12 * FY1;
 reg signed [63:0] mult1;
 reg signed [63:0] mult2;
@@ -657,30 +662,46 @@ wire signed [63:0] C3 = (mult5 - mult6);
 //int C4 = FDY41 * FX4 - FDX41 * FY4;
 reg signed [63:0] mult7;
 reg signed [63:0] mult8;
-wire signed [63:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;
-
+wire signed [63:0] C4 = (is_quad_array) ? (mult7 - mult8) : 1;	// 1? C4 is fixed-point, no? todo: FIX! ElectronAsh.
 
 //int Xhs12 = C1 + MUL_PREC(FDX12, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY12, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs23 = C2 + MUL_PREC(FDX23, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY23, x_ps<<FRAC_BITS, FRAC_BITS);
 //int Xhs31 = C3 + MUL_PREC(FDX31, y_ps<<FRAC_BITS, FRAC_BITS) - MUL_PREC(FDY31, x_ps<<FRAC_BITS, FRAC_BITS);
 
-wire signed [63:0] mult9  = FDX12_FIXED * y_ps;		// No need to shift right after, since y_ps etc. are not fixed-point?
-wire signed [63:0] mult10 = FDY12_FIXED * x_ps;
-wire signed [47:0] Xhs12  = C1 + (mult9 - mult10);
+// "Realtime" calcs, based on x_ps and y_ps...
+//
+inTri_calc  inTri_calc_inst (
+	.C1( C1 ),	// input signed [63:0]  C1
+	.C2( C2 ),	// input signed [63:0]  C2
+	.C3( C3 ),	// input signed [63:0]  C3
+	.C4( C4 ),	// input signed [63:0]  C4
+	
+	.FDX12( FDX12_FIXED ),	// input signed [47:0]  FDX12
+	.FDX23( FDX23_FIXED ),	// input signed [47:0]  FDX23
+	.FDX31( FDX31_FIXED ),	// input signed [47:0]  FDX31
+	.FDX41( FDX41_FIXED ),	// input signed [47:0]  FDX41
+	
+	.FDY12( FDY12_FIXED ),	// input signed [47:0]  FDX12
+	.FDY23( FDY23_FIXED ),	// input signed [47:0]  FDY23
+	.FDY31( FDY31_FIXED ),	// input signed [47:0]  FDY31
+	.FDY41( FDY41_FIXED ),	// input signed [47:0]  FDY41
 
-wire signed [63:0] mult11 = FDX23_FIXED * y_ps;
-wire signed [63:0] mult12 = FDY23_FIXED * x_ps;
-wire signed [47:0] Xhs23  = C2 + (mult11 - mult12);
+	.x_ps( x_ps ),
+	.y_ps( y_ps ),
+	
+	.inTri( inTri ),	// output [31:0]  inTriangle
+	
+	.leading_zeros( leading_zeros ),	// output [4:0]  leading_zeros
+	.trailing_zeros( trailing_zeros )	// output [4:0]  trailing_zeros
+);
+wire [31:0] inTri;
 
-wire signed [63:0] mult13 = FDX31_FIXED * y_ps;
-wire signed [63:0] mult14 = FDY31_FIXED * x_ps;
-wire signed [47:0] Xhs31  = C3 + (mult13 - mult14);
+wire [4:0] leading_zeros;
+wire [4:0] trailing_zeros;
 
-wire signed [63:0] mult15 = FDX41_FIXED * y_ps;
-wire signed [63:0] mult16 = FDY41_FIXED * x_ps;
-wire signed [47:0] Xhs41  = C4 + (mult15 - mult16);
 
-wire inTriangle = !Xhs12[47] && !Xhs23[47] && !Xhs31[47] && !Xhs41[47];
+reg inTriangle;
+
 
 // Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
 //
@@ -705,19 +726,15 @@ interp  interp_inst_z (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp( IP_Z ),	// output signed [31:0]  interp
+	.interp( IP_Z_INTERP ),	// output signed [31:0]  interp
 
-	.interp0(  IP_Z0 ),  .interp1(  IP_Z1 ),  .interp2(  IP_Z2 ),  .interp3(  IP_Z3 ),  .interp4(  IP_Z4 ),  .interp5(  IP_Z5 ),  .interp6(  IP_Z6 ),  .interp7(  IP_Z7 ),
-	.interp8(  IP_Z8 ),  .interp9(  IP_Z9 ),  .interp10( IP_Z10 ), .interp11( IP_Z11 ), .interp12( IP_Z12 ), .interp13( IP_Z13 ), .interp14( IP_Z14 ), .interp15( IP_Z15 ),
-	.interp16( IP_Z16 ), .interp17( IP_Z17 ), .interp18( IP_Z18 ), .interp19( IP_Z19 ), .interp20( IP_Z20 ), .interp21( IP_Z21 ), .interp22( IP_Z22 ), .interp23( IP_Z23 ),
-	.interp24( IP_Z24 ), .interp25( IP_Z25 ), .interp26( IP_Z26 ), .interp27( IP_Z27 ), .interp28( IP_Z28 ), .interp29( IP_Z29 ), .interp30( IP_Z30 ), .interp31( IP_Z31 )
+	.interp0(  IP_Z[0] ),  .interp1(  IP_Z[1] ),  .interp2(  IP_Z[2] ),  .interp3(  IP_Z[3] ),  .interp4(  IP_Z[4] ),  .interp5(  IP_Z[5] ),  .interp6(  IP_Z[6] ),  .interp7(  IP_Z[7] ),
+	.interp8(  IP_Z[8] ),  .interp9(  IP_Z[9] ),  .interp10( IP_Z[10] ), .interp11( IP_Z[11] ), .interp12( IP_Z[12] ), .interp13( IP_Z[13] ), .interp14( IP_Z[14] ), .interp15( IP_Z[15] ),
+	.interp16( IP_Z[16] ), .interp17( IP_Z[17] ), .interp18( IP_Z[18] ), .interp19( IP_Z[19] ), .interp20( IP_Z[20] ), .interp21( IP_Z[21] ), .interp22( IP_Z[22] ), .interp23( IP_Z[23] ),
+	.interp24( IP_Z[24] ), .interp25( IP_Z[25] ), .interp26( IP_Z[26] ), .interp27( IP_Z[27] ), .interp28( IP_Z[28] ), .interp29( IP_Z[29] ), .interp30( IP_Z[30] ), .interp31( IP_Z[31] )
 );
-wire signed [31:0] IP_Z;
-
-wire signed [31:0] IP_Z0,  IP_Z1,  IP_Z2,  IP_Z3,  IP_Z4,  IP_Z5,  IP_Z6,  IP_Z7;
-wire signed [31:0] IP_Z8,  IP_Z9,  IP_Z10, IP_Z11, IP_Z12, IP_Z13, IP_Z14, IP_Z15;
-wire signed [31:0] IP_Z16, IP_Z17, IP_Z18, IP_Z19, IP_Z20, IP_Z21, IP_Z22, IP_Z23;
-wire signed [31:0] IP_Z24, IP_Z25, IP_Z26, IP_Z27, IP_Z28, IP_Z29, IP_Z30, IP_Z31;
+wire signed [31:0] IP_Z_INTERP;
+wire signed [31:0] IP_Z [0:31];	// [0:31] is the tile COLUMN.
 
 
 // int w = tex_u_size_full;
@@ -748,19 +765,15 @@ interp  interp_inst_u (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp( IP_U ),		// output signed [31:0]  interp
+	.interp( IP_U_INTERP ),	// output signed [31:0]  interp
 	
-	.interp0(  IP_U0 ),  .interp1(  IP_U1 ),  .interp2(  IP_U2 ),  .interp3(  IP_U3 ),  .interp4(  IP_U4 ),  .interp5(  IP_U5 ),  .interp6(  IP_U6 ),  .interp7(  IP_U7 ),
-	.interp8(  IP_U8 ),  .interp9(  IP_U9 ),  .interp10( IP_U10 ), .interp11( IP_U11 ), .interp12( IP_U12 ), .interp13( IP_U13 ), .interp14( IP_U14 ), .interp15( IP_U15 ),
-	.interp16( IP_U16 ), .interp17( IP_U17 ), .interp18( IP_U18 ), .interp19( IP_U19 ), .interp20( IP_U20 ), .interp21( IP_U21 ), .interp22( IP_U22 ), .interp23( IP_U23 ),
-	.interp24( IP_U24 ), .interp25( IP_U25 ), .interp26( IP_U26 ), .interp27( IP_U27 ), .interp28( IP_U28 ), .interp29( IP_U29 ), .interp30( IP_U30 ), .interp31( IP_U31 )
+	.interp0(  IP_U[0] ),  .interp1(  IP_U[1] ),  .interp2(  IP_U[2] ),  .interp3(  IP_U[3] ),  .interp4(  IP_U[4] ),  .interp5(  IP_U[5] ),  .interp6(  IP_U[6] ),  .interp7(  IP_U[7] ),
+	.interp8(  IP_U[8] ),  .interp9(  IP_U[9] ),  .interp10( IP_U[10] ), .interp11( IP_U[11] ), .interp12( IP_U[12] ), .interp13( IP_U[13] ), .interp14( IP_U[14] ), .interp15( IP_U[15] ),
+	.interp16( IP_U[16] ), .interp17( IP_U[17] ), .interp18( IP_U[18] ), .interp19( IP_U[19] ), .interp20( IP_U[20] ), .interp21( IP_U[21] ), .interp22( IP_U[22] ), .interp23( IP_U[23] ),
+	.interp24( IP_U[24] ), .interp25( IP_U[25] ), .interp26( IP_U[26] ), .interp27( IP_U[27] ), .interp28( IP_U[28] ), .interp29( IP_U[29] ), .interp30( IP_U[30] ), .interp31( IP_U[31] )
 );
-wire signed [31:0] IP_U;
-
-wire signed [31:0] IP_U0,  IP_U1,  IP_U2,  IP_U3,  IP_U4,  IP_U5,  IP_U6,  IP_U7;
-wire signed [31:0] IP_U8,  IP_U9,  IP_U10, IP_U11, IP_U12, IP_U13, IP_U14, IP_U15;
-wire signed [31:0] IP_U16, IP_U17, IP_U18, IP_U19, IP_U20, IP_U21, IP_U22, IP_U23;
-wire signed [31:0] IP_U24, IP_U25, IP_U26, IP_U27, IP_U28, IP_U29, IP_U30, IP_U31;
+wire signed [31:0] IP_U_INTERP;
+wire signed [31:0] IP_U [0:31];	// [0:31] is the tile COLUMN.
 
 
 // int h = tex_v_size_full;
@@ -791,88 +804,120 @@ interp  interp_inst_v (
 	.x_ps( x_ps ),		// input signed [11:0] x_ps
 	.y_ps( y_ps ),		// input signed [11:0] y_ps
 	
-	.interp0(  IP_V0 ),  .interp1(  IP_V1 ),  .interp2(  IP_V2 ),  .interp3(  IP_V3 ),  .interp4(  IP_V4 ),  .interp5(  IP_V5 ),  .interp6(  IP_V6 ),  .interp7(  IP_V7 ),
-	.interp8(  IP_V8 ),  .interp9(  IP_V9 ),  .interp10( IP_V10 ), .interp11( IP_V11 ), .interp12( IP_V12 ), .interp13( IP_V13 ), .interp14( IP_V14 ), .interp15( IP_V15 ),
-	.interp16( IP_V16 ), .interp17( IP_V17 ), .interp18( IP_V18 ), .interp19( IP_V19 ), .interp20( IP_V20 ), .interp21( IP_V21 ), .interp22( IP_V22 ), .interp23( IP_V23 ),
-	.interp24( IP_V24 ), .interp25( IP_V25 ), .interp26( IP_V26 ), .interp27( IP_V27 ), .interp28( IP_V28 ), .interp29( IP_V29 ), .interp30( IP_V30 ), .interp31( IP_V31 )
+	.interp( IP_V_INTERP ),	// output signed [31:0]  interp
+	
+	.interp0(  IP_V[0] ),  .interp1(  IP_V[1] ),  .interp2(  IP_V[2] ),  .interp3(  IP_V[3] ),  .interp4(  IP_V[4] ),  .interp5(  IP_V[5] ),  .interp6(  IP_V[6] ),  .interp7(  IP_V[7] ),
+	.interp8(  IP_V[8] ),  .interp9(  IP_V[9] ),  .interp10( IP_V[10] ), .interp11( IP_V[11] ), .interp12( IP_V[12] ), .interp13( IP_V[13] ), .interp14( IP_V[14] ), .interp15( IP_V[15] ),
+	.interp16( IP_V[16] ), .interp17( IP_V[17] ), .interp18( IP_V[18] ), .interp19( IP_V[19] ), .interp20( IP_V[20] ), .interp21( IP_V[21] ), .interp22( IP_V[22] ), .interp23( IP_V[23] ),
+	.interp24( IP_V[24] ), .interp25( IP_V[25] ), .interp26( IP_V[26] ), .interp27( IP_V[27] ), .interp28( IP_V[28] ), .interp29( IP_V[29] ), .interp30( IP_V[30] ), .interp31( IP_V[31] )
 );
-wire signed [31:0] IP_V;
-
-wire signed [31:0] IP_V0,  IP_V1,  IP_V2,  IP_V3,  IP_V4,  IP_V5,  IP_V6,  IP_V7;
-wire signed [31:0] IP_V8,  IP_V9,  IP_V10, IP_V11, IP_V12, IP_V13, IP_V14, IP_V15;
-wire signed [31:0] IP_V16, IP_V17, IP_V18, IP_V19, IP_V20, IP_V21, IP_V22, IP_V23;
-wire signed [31:0] IP_V24, IP_V25, IP_V26, IP_V27, IP_V28, IP_V29, IP_V30, IP_V31;
-
+wire signed [31:0] IP_V_INTERP;
+wire signed [31:0] IP_V [0:31];	// [0:31] is the tile COLUMN.
 
 always @(*) begin
 	case (x_ps[4:0])
-		 0:	u_div_z_fixed = (IP_U0 <<FRAC_BITS) / IP_Z0;
-		 1:	u_div_z_fixed = (IP_U1 <<FRAC_BITS) / IP_Z1;
-		 2:	u_div_z_fixed = (IP_U2 <<FRAC_BITS) / IP_Z2;
-		 3:	u_div_z_fixed = (IP_U3 <<FRAC_BITS) / IP_Z3;
-		 4:	u_div_z_fixed = (IP_U4 <<FRAC_BITS) / IP_Z4;
-		 5:	u_div_z_fixed = (IP_U5 <<FRAC_BITS) / IP_Z5;
-		 6:	u_div_z_fixed = (IP_U6 <<FRAC_BITS) / IP_Z6;
-		 7:	u_div_z_fixed = (IP_U7 <<FRAC_BITS) / IP_Z7;
-		 8:	u_div_z_fixed = (IP_U8 <<FRAC_BITS) / IP_Z8;
-		 9:	u_div_z_fixed = (IP_U9 <<FRAC_BITS) / IP_Z9;
-		10:	u_div_z_fixed = (IP_U10<<FRAC_BITS) / IP_Z10;
-		11:	u_div_z_fixed = (IP_U11<<FRAC_BITS) / IP_Z11;
-		12:	u_div_z_fixed = (IP_U12<<FRAC_BITS) / IP_Z12;
-		13:	u_div_z_fixed = (IP_U13<<FRAC_BITS) / IP_Z13;
-		14:	u_div_z_fixed = (IP_U14<<FRAC_BITS) / IP_Z14;
-		15:	u_div_z_fixed = (IP_U15<<FRAC_BITS) / IP_Z15;
-		16:	u_div_z_fixed = (IP_U16<<FRAC_BITS) / IP_Z16;
-		17:	u_div_z_fixed = (IP_U17<<FRAC_BITS) / IP_Z17;
-		18:	u_div_z_fixed = (IP_U18<<FRAC_BITS) / IP_Z18;
-		19:	u_div_z_fixed = (IP_U19<<FRAC_BITS) / IP_Z19;
-		20:	u_div_z_fixed = (IP_U20<<FRAC_BITS) / IP_Z20;
-		21:	u_div_z_fixed = (IP_U21<<FRAC_BITS) / IP_Z21;
-		22:	u_div_z_fixed = (IP_U22<<FRAC_BITS) / IP_Z22;
-		23:	u_div_z_fixed = (IP_U23<<FRAC_BITS) / IP_Z23;
-		24:	u_div_z_fixed = (IP_U24<<FRAC_BITS) / IP_Z24;
-		25:	u_div_z_fixed = (IP_U25<<FRAC_BITS) / IP_Z25;
-		26:	u_div_z_fixed = (IP_U26<<FRAC_BITS) / IP_Z26;
-		27:	u_div_z_fixed = (IP_U27<<FRAC_BITS) / IP_Z27;
-		28:	u_div_z_fixed = (IP_U28<<FRAC_BITS) / IP_Z28;
-		29:	u_div_z_fixed = (IP_U29<<FRAC_BITS) / IP_Z29;
-		30:	u_div_z_fixed = (IP_U30<<FRAC_BITS) / IP_Z30;
-		31:	u_div_z_fixed = (IP_U31<<FRAC_BITS) / IP_Z31;
+		 0:	u_div_z_fixed = (IP_U[0] <<FRAC_BITS) / IP_Z[0];
+		 1:	u_div_z_fixed = (IP_U[1] <<FRAC_BITS) / IP_Z[1];
+		 2:	u_div_z_fixed = (IP_U[2] <<FRAC_BITS) / IP_Z[2];
+		 3:	u_div_z_fixed = (IP_U[3] <<FRAC_BITS) / IP_Z[3];
+		 4:	u_div_z_fixed = (IP_U[4] <<FRAC_BITS) / IP_Z[4];
+		 5:	u_div_z_fixed = (IP_U[5] <<FRAC_BITS) / IP_Z[5];
+		 6:	u_div_z_fixed = (IP_U[6] <<FRAC_BITS) / IP_Z[6];
+		 7:	u_div_z_fixed = (IP_U[7] <<FRAC_BITS) / IP_Z[7];
+		 8:	u_div_z_fixed = (IP_U[8] <<FRAC_BITS) / IP_Z[8];
+		 9:	u_div_z_fixed = (IP_U[9] <<FRAC_BITS) / IP_Z[9];
+		10:	u_div_z_fixed = (IP_U[10]<<FRAC_BITS) / IP_Z[10];
+		11:	u_div_z_fixed = (IP_U[11]<<FRAC_BITS) / IP_Z[11];
+		12:	u_div_z_fixed = (IP_U[12]<<FRAC_BITS) / IP_Z[12];
+		13:	u_div_z_fixed = (IP_U[13]<<FRAC_BITS) / IP_Z[13];
+		14:	u_div_z_fixed = (IP_U[14]<<FRAC_BITS) / IP_Z[14];
+		15:	u_div_z_fixed = (IP_U[15]<<FRAC_BITS) / IP_Z[15];
+		16:	u_div_z_fixed = (IP_U[16]<<FRAC_BITS) / IP_Z[16];
+		17:	u_div_z_fixed = (IP_U[17]<<FRAC_BITS) / IP_Z[17];
+		18:	u_div_z_fixed = (IP_U[18]<<FRAC_BITS) / IP_Z[18];
+		19:	u_div_z_fixed = (IP_U[19]<<FRAC_BITS) / IP_Z[19];
+		20:	u_div_z_fixed = (IP_U[20]<<FRAC_BITS) / IP_Z[20];
+		21:	u_div_z_fixed = (IP_U[21]<<FRAC_BITS) / IP_Z[21];
+		22:	u_div_z_fixed = (IP_U[22]<<FRAC_BITS) / IP_Z[22];
+		23:	u_div_z_fixed = (IP_U[23]<<FRAC_BITS) / IP_Z[23];
+		24:	u_div_z_fixed = (IP_U[24]<<FRAC_BITS) / IP_Z[24];
+		25:	u_div_z_fixed = (IP_U[25]<<FRAC_BITS) / IP_Z[25];
+		26:	u_div_z_fixed = (IP_U[26]<<FRAC_BITS) / IP_Z[26];
+		27:	u_div_z_fixed = (IP_U[27]<<FRAC_BITS) / IP_Z[27];
+		28:	u_div_z_fixed = (IP_U[28]<<FRAC_BITS) / IP_Z[28];
+		29:	u_div_z_fixed = (IP_U[29]<<FRAC_BITS) / IP_Z[29];
+		30:	u_div_z_fixed = (IP_U[30]<<FRAC_BITS) / IP_Z[30];
+		31:	u_div_z_fixed = (IP_U[31]<<FRAC_BITS) / IP_Z[31];
 	endcase
 
 	case (x_ps[4:0])
-		 0:	v_div_z_fixed = (IP_V0 <<FRAC_BITS) / IP_Z0;
-		 1:	v_div_z_fixed = (IP_V1 <<FRAC_BITS) / IP_Z1;
-		 2:	v_div_z_fixed = (IP_V2 <<FRAC_BITS) / IP_Z2;
-		 3:	v_div_z_fixed = (IP_V3 <<FRAC_BITS) / IP_Z3;
-		 4:	v_div_z_fixed = (IP_V4 <<FRAC_BITS) / IP_Z4;
-		 5:	v_div_z_fixed = (IP_V5 <<FRAC_BITS) / IP_Z5;
-		 6:	v_div_z_fixed = (IP_V6 <<FRAC_BITS) / IP_Z6;
-		 7:	v_div_z_fixed = (IP_V7 <<FRAC_BITS) / IP_Z7;
-		 8:	v_div_z_fixed = (IP_V8 <<FRAC_BITS) / IP_Z8;
-		 9:	v_div_z_fixed = (IP_V9 <<FRAC_BITS) / IP_Z9;
-		10:	v_div_z_fixed = (IP_V10<<FRAC_BITS) / IP_Z10;
-		11:	v_div_z_fixed = (IP_V11<<FRAC_BITS) / IP_Z11;
-		12:	v_div_z_fixed = (IP_V12<<FRAC_BITS) / IP_Z12;
-		13:	v_div_z_fixed = (IP_V13<<FRAC_BITS) / IP_Z13;
-		14:	v_div_z_fixed = (IP_V14<<FRAC_BITS) / IP_Z14;
-		15:	v_div_z_fixed = (IP_V15<<FRAC_BITS) / IP_Z15;
-		16:	v_div_z_fixed = (IP_V16<<FRAC_BITS) / IP_Z16;
-		17:	v_div_z_fixed = (IP_V17<<FRAC_BITS) / IP_Z17;
-		18:	v_div_z_fixed = (IP_V18<<FRAC_BITS) / IP_Z18;
-		19:	v_div_z_fixed = (IP_V19<<FRAC_BITS) / IP_Z19;
-		20:	v_div_z_fixed = (IP_V20<<FRAC_BITS) / IP_Z20;
-		21:	v_div_z_fixed = (IP_V21<<FRAC_BITS) / IP_Z21;
-		22:	v_div_z_fixed = (IP_V22<<FRAC_BITS) / IP_Z22;
-		23:	v_div_z_fixed = (IP_V23<<FRAC_BITS) / IP_Z23;
-		24:	v_div_z_fixed = (IP_V24<<FRAC_BITS) / IP_Z24;
-		25:	v_div_z_fixed = (IP_V25<<FRAC_BITS) / IP_Z25;
-		26:	v_div_z_fixed = (IP_V26<<FRAC_BITS) / IP_Z26;
-		27:	v_div_z_fixed = (IP_V27<<FRAC_BITS) / IP_Z27;
-		28:	v_div_z_fixed = (IP_V28<<FRAC_BITS) / IP_Z28;
-		29:	v_div_z_fixed = (IP_V29<<FRAC_BITS) / IP_Z29;
-		30:	v_div_z_fixed = (IP_V30<<FRAC_BITS) / IP_Z30;
-		31:	v_div_z_fixed = (IP_V31<<FRAC_BITS) / IP_Z31;
+		 0:	v_div_z_fixed = (IP_V[0] <<FRAC_BITS) / IP_Z[0];
+		 1:	v_div_z_fixed = (IP_V[1] <<FRAC_BITS) / IP_Z[1];
+		 2:	v_div_z_fixed = (IP_V[2] <<FRAC_BITS) / IP_Z[2];
+		 3:	v_div_z_fixed = (IP_V[3] <<FRAC_BITS) / IP_Z[3];
+		 4:	v_div_z_fixed = (IP_V[4] <<FRAC_BITS) / IP_Z[4];
+		 5:	v_div_z_fixed = (IP_V[5] <<FRAC_BITS) / IP_Z[5];
+		 6:	v_div_z_fixed = (IP_V[6] <<FRAC_BITS) / IP_Z[6];
+		 7:	v_div_z_fixed = (IP_V[7] <<FRAC_BITS) / IP_Z[7];
+		 8:	v_div_z_fixed = (IP_V[8] <<FRAC_BITS) / IP_Z[8];
+		 9:	v_div_z_fixed = (IP_V[9] <<FRAC_BITS) / IP_Z[9];
+		10:	v_div_z_fixed = (IP_V[10]<<FRAC_BITS) / IP_Z[10];
+		11:	v_div_z_fixed = (IP_V[11]<<FRAC_BITS) / IP_Z[11];
+		12:	v_div_z_fixed = (IP_V[12]<<FRAC_BITS) / IP_Z[12];
+		13:	v_div_z_fixed = (IP_V[13]<<FRAC_BITS) / IP_Z[13];
+		14:	v_div_z_fixed = (IP_V[14]<<FRAC_BITS) / IP_Z[14];
+		15:	v_div_z_fixed = (IP_V[15]<<FRAC_BITS) / IP_Z[15];
+		16:	v_div_z_fixed = (IP_V[16]<<FRAC_BITS) / IP_Z[16];
+		17:	v_div_z_fixed = (IP_V[17]<<FRAC_BITS) / IP_Z[17];
+		18:	v_div_z_fixed = (IP_V[18]<<FRAC_BITS) / IP_Z[18];
+		19:	v_div_z_fixed = (IP_V[19]<<FRAC_BITS) / IP_Z[19];
+		20:	v_div_z_fixed = (IP_V[20]<<FRAC_BITS) / IP_Z[20];
+		21:	v_div_z_fixed = (IP_V[21]<<FRAC_BITS) / IP_Z[21];
+		22:	v_div_z_fixed = (IP_V[22]<<FRAC_BITS) / IP_Z[22];
+		23:	v_div_z_fixed = (IP_V[23]<<FRAC_BITS) / IP_Z[23];
+		24:	v_div_z_fixed = (IP_V[24]<<FRAC_BITS) / IP_Z[24];
+		25:	v_div_z_fixed = (IP_V[25]<<FRAC_BITS) / IP_Z[25];
+		26:	v_div_z_fixed = (IP_V[26]<<FRAC_BITS) / IP_Z[26];
+		27:	v_div_z_fixed = (IP_V[27]<<FRAC_BITS) / IP_Z[27];
+		28:	v_div_z_fixed = (IP_V[28]<<FRAC_BITS) / IP_Z[28];
+		29:	v_div_z_fixed = (IP_V[29]<<FRAC_BITS) / IP_Z[29];
+		30:	v_div_z_fixed = (IP_V[30]<<FRAC_BITS) / IP_Z[30];
+		31:	v_div_z_fixed = (IP_V[31]<<FRAC_BITS) / IP_Z[31];
+	endcase
+	
+	case (x_ps[4:0])
+		 0:	inTriangle = inTri[0];
+		 1:	inTriangle = inTri[1];
+		 2:	inTriangle = inTri[2];
+		 3:	inTriangle = inTri[3];
+		 4:	inTriangle = inTri[4];
+		 5:	inTriangle = inTri[5];
+		 6:	inTriangle = inTri[6];
+		 7:	inTriangle = inTri[7];
+		 8:	inTriangle = inTri[8];
+		 9:	inTriangle = inTri[9];
+		10:	inTriangle = inTri[10];
+		11:	inTriangle = inTri[11];
+		12:	inTriangle = inTri[12];
+		13:	inTriangle = inTri[13];
+		14:	inTriangle = inTri[14];
+		15:	inTriangle = inTri[15];
+		16:	inTriangle = inTri[16];
+		17:	inTriangle = inTri[17];
+		18:	inTriangle = inTri[18];
+		19:	inTriangle = inTri[19];
+		20:	inTriangle = inTri[20];
+		21:	inTriangle = inTri[21];
+		22:	inTriangle = inTri[22];
+		23:	inTriangle = inTri[23];
+		24:	inTriangle = inTri[24];
+		25:	inTriangle = inTri[25];
+		26:	inTriangle = inTri[26];
+		27:	inTriangle = inTri[27];
+		28:	inTriangle = inTri[28];
+		29:	inTriangle = inTri[29];
+		30:	inTriangle = inTri[30];
+		31:	inTriangle = inTri[31];
 	endcase
 end
 
@@ -885,7 +930,7 @@ reg signed [63:0] v_div_z_fixed;
 wire signed [31:0] u_div_z = u_div_z_fixed >>FRAC_BITS;
 wire signed [31:0] v_div_z = v_div_z_fixed >>FRAC_BITS;
 
-// Highest value is 1024 so we need 11 bits to store it! ElectronAsh.
+// Highest value is 1024 (8<<7) so we need 11 bits to store it! ElectronAsh.
 wire [10:0] tex_u_size_full = (8<<tex_u_size);
 wire [10:0] tex_v_size_full = (8<<tex_v_size);
 
@@ -897,8 +942,8 @@ wire [9:0] v_clamp = (tex_v_clamp && v_div_z>(tex_v_size_full-1)) ? tex_v_size_f
 					 (tex_v_clamp && (v_div_z<0)) ? 0 :
 									  v_div_z;
 										 
-wire [9:0] u_masked  = /*(tex_u_flip) ?*/ u_clamp&((tex_u_size_full/*2*/)-1) /*: u_clamp*/;
-wire [9:0] v_masked  = /*(tex_v_flip) ?*/ v_clamp&((tex_v_size_full/*2*/)-1) /*: v_clamp*/;
+wire [9:0] u_masked  = (tex_u_flip) ? u_clamp&((tex_u_size_full*2)-1) : u_clamp;
+wire [9:0] v_masked  = (tex_v_flip) ? v_clamp&((tex_v_size_full*2)-1) : v_clamp;
 										 
 wire [9:0] u_flipped = (tex_u_flip) ? u_masked^(tex_u_size_full-1) : u_masked;
 wire [9:0] v_flipped = (tex_v_flip) ? v_masked^(tex_v_size_full-1) : v_masked;
@@ -972,253 +1017,663 @@ wire [30:0] fixed_new = float_shift>>((23-FRAC_BITS));
 wire signed [31:0] test_fixed = {test_float[31], fixed_new[30:0]};
 */
 
-// A bit hard to describe how the regs below relate to the mapping of the tile pixels, but here goes...
+// The registers below make up our 32x32 internal Z buffer.
+//
+// It's a bit hard to describe how the regs below relate to the mapping of the tile pixels, but here goes...
 // 
 // z_col_0[0] is the Z value for the top-left tile pixel.
 // z_col_0[1] is the Z value for the tile pixel just below the top-left pixel, and so-on.
 //
 // z_col_1[0] is the top pixel for the next COLUMN along the tile.
 //
-// The [0:31] number relates to the tile ROW.
+// The [0:31] number basically selects the tile ROW.
 //
-reg [22:0] z_col_0  [0:31];
-reg [22:0] z_col_1  [0:31];
-reg [22:0] z_col_2  [0:31];
-reg [22:0] z_col_3  [0:31];
-reg [22:0] z_col_4  [0:31];
-reg [22:0] z_col_5  [0:31];
-reg [22:0] z_col_6  [0:31];
-reg [22:0] z_col_7  [0:31];
+reg signed [31:0] z_col_0  [0:31];
+reg signed [31:0] z_col_1  [0:31];
+reg signed [31:0] z_col_2  [0:31];
+reg signed [31:0] z_col_3  [0:31];
+reg signed [31:0] z_col_4  [0:31];
+reg signed [31:0] z_col_5  [0:31];
+reg signed [31:0] z_col_6  [0:31];
+reg signed [31:0] z_col_7  [0:31];
 
-reg [22:0] z_col_8  [0:31];
-reg [22:0] z_col_9  [0:31];
-reg [22:0] z_col_10 [0:31];
-reg [22:0] z_col_11 [0:31];
-reg [22:0] z_col_12 [0:31];
-reg [22:0] z_col_13 [0:31];
-reg [22:0] z_col_14 [0:31];
-reg [22:0] z_col_15 [0:31];
+reg signed [31:0] z_col_8  [0:31];
+reg signed [31:0] z_col_9  [0:31];
+reg signed [31:0] z_col_10 [0:31];
+reg signed [31:0] z_col_11 [0:31];
+reg signed [31:0] z_col_12 [0:31];
+reg signed [31:0] z_col_13 [0:31];
+reg signed [31:0] z_col_14 [0:31];
+reg signed [31:0] z_col_15 [0:31];
 
-reg [22:0] z_col_16 [0:31];
-reg [22:0] z_col_17 [0:31];
-reg [22:0] z_col_18 [0:31];
-reg [22:0] z_col_19 [0:31];
-reg [22:0] z_col_20 [0:31];
-reg [22:0] z_col_21 [0:31];
-reg [22:0] z_col_22 [0:31];
-reg [22:0] z_col_23 [0:31];
+reg signed [31:0] z_col_16 [0:31];
+reg signed [31:0] z_col_17 [0:31];
+reg signed [31:0] z_col_18 [0:31];
+reg signed [31:0] z_col_19 [0:31];
+reg signed [31:0] z_col_20 [0:31];
+reg signed [31:0] z_col_21 [0:31];
+reg signed [31:0] z_col_22 [0:31];
+reg signed [31:0] z_col_23 [0:31];
 
-reg [22:0] z_col_24 [0:31];
-reg [22:0] z_col_25 [0:31];
-reg [22:0] z_col_26 [0:31];
-reg [22:0] z_col_27 [0:31];
-reg [22:0] z_col_28 [0:31];
-reg [22:0] z_col_29 [0:31];
-reg [22:0] z_col_30 [0:31];
-reg [22:0] z_col_31 [0:31];
+reg signed [31:0] z_col_24 [0:31];
+reg signed [31:0] z_col_25 [0:31];
+reg signed [31:0] z_col_26 [0:31];
+reg signed [31:0] z_col_27 [0:31];
+reg signed [31:0] z_col_28 [0:31];
+reg signed [31:0] z_col_29 [0:31];
+reg signed [31:0] z_col_30 [0:31];
+reg signed [31:0] z_col_31 [0:31];
 
-wire [4:0] tile_row = x_ps[9:5];
-//wire [4:0] tile_col = y_ps[9:5];
+//wire [4:0] tile_x = x_ps[9:5];
+//wire [4:0] tile_y = y_ps[9:5];
 
-wire [22:0] invW_0,  invW_1,  invW_2,  invW_3,  invW_4,  invW_5,  invW_6,  invW_7;
-wire [22:0] invW_8,  invW_9,  invW_10, invW_11, invW_12, invW_13, invW_14, invW_15;
-wire [22:0] invW_16, invW_17, invW_18, invW_19, invW_20, invW_21, invW_22, invW_23;
-wire [22:0] invW_24, invW_25, invW_26, invW_27, invW_28, invW_29, invW_30, invW_31;
+wire [31:0] allow_z_write;
 
-wire [31:0] allow_write;
+reg z_clear_ena;
+reg [4:0] z_clear_row;
+
+always @(posedge clock or negedge reset_n)
+if (!reset_n) begin
+	z_clear_ena <= 1'b0;
+	z_clear_row <= 5'd0;
+end
+else begin
+	if (ra_entry_valid) begin	// New tile started!...
+		z_clear_row <= 5'd0;
+		z_clear_ena <= 1'b1;
+	end
+
+	if (z_clear_ena) begin
+		if (z_clear_row==5'd31) begin
+			z_clear_ena <= 1'b0;
+		end
+		else begin
+			z_col_0[ z_clear_row ] <= 32'd0;
+			z_col_1[ z_clear_row ] <= 32'd0;
+			z_col_2[ z_clear_row ] <= 32'd0;
+			z_col_3[ z_clear_row ] <= 32'd0;
+			z_col_4[ z_clear_row ] <= 32'd0;
+			z_col_5[ z_clear_row ] <= 32'd0;
+			z_col_6[ z_clear_row ] <= 32'd0;
+			z_col_7[ z_clear_row ] <= 32'd0;
+			z_col_8[ z_clear_row ] <= 32'd0;
+			z_col_9[ z_clear_row ] <= 32'd0;
+			z_col_10[ z_clear_row ] <= 32'd0;
+			z_col_11[ z_clear_row ] <= 32'd0;
+			z_col_12[ z_clear_row ] <= 32'd0;
+			z_col_13[ z_clear_row ] <= 32'd0;
+			z_col_14[ z_clear_row ] <= 32'd0;
+			z_col_15[ z_clear_row ] <= 32'd0;
+			z_col_16[ z_clear_row ] <= 32'd0;
+			z_col_17[ z_clear_row ] <= 32'd0;
+			z_col_18[ z_clear_row ] <= 32'd0;
+			z_col_19[ z_clear_row ] <= 32'd0;
+			z_col_20[ z_clear_row ] <= 32'd0;
+			z_col_21[ z_clear_row ] <= 32'd0;
+			z_col_22[ z_clear_row ] <= 32'd0;
+			z_col_23[ z_clear_row ] <= 32'd0;
+			z_col_24[ z_clear_row ] <= 32'd0;
+			z_col_25[ z_clear_row ] <= 32'd0;
+			z_col_26[ z_clear_row ] <= 32'd0;
+			z_col_27[ z_clear_row ] <= 32'd0;
+			z_col_28[ z_clear_row ] <= 32'd0;
+			z_col_29[ z_clear_row ] <= 32'd0;
+			z_col_30[ z_clear_row ] <= 32'd0;
+			z_col_31[ z_clear_row ] <= 32'd0;
+			z_clear_row <= z_clear_row + 5'd1;
+		end
+	end
+
+	/*if (isp_state==49 || isp_state==51)*/ begin	// At the start of rendering each tile ROW...
+		// Check the allow_z_write bits, to see if we should write the Z value from the new polygon into the Z buffer.
+		// (for the whole tile ROW).
+		if (allow_z_write[0])  z_col_0 [ y_ps[4:0] ] <= IP_Z[0];
+		if (allow_z_write[1])  z_col_1 [ y_ps[4:0] ] <= IP_Z[1];
+		if (allow_z_write[2])  z_col_2 [ y_ps[4:0] ] <= IP_Z[2];
+		if (allow_z_write[3])  z_col_3 [ y_ps[4:0] ] <= IP_Z[3];
+		if (allow_z_write[4])  z_col_4 [ y_ps[4:0] ] <= IP_Z[4];
+		if (allow_z_write[5])  z_col_5 [ y_ps[4:0] ] <= IP_Z[5];
+		if (allow_z_write[6])  z_col_6 [ y_ps[4:0] ] <= IP_Z[6];
+		if (allow_z_write[7])  z_col_7 [ y_ps[4:0] ] <= IP_Z[7];
+		if (allow_z_write[8])  z_col_8 [ y_ps[4:0] ] <= IP_Z[8];
+		if (allow_z_write[9])  z_col_9 [ y_ps[4:0] ] <= IP_Z[9];
+		if (allow_z_write[10]) z_col_10[ y_ps[4:0] ] <= IP_Z[10];
+		if (allow_z_write[11]) z_col_11[ y_ps[4:0] ] <= IP_Z[11];
+		if (allow_z_write[12]) z_col_12[ y_ps[4:0] ] <= IP_Z[12];
+		if (allow_z_write[13]) z_col_13[ y_ps[4:0] ] <= IP_Z[13];
+		if (allow_z_write[14]) z_col_14[ y_ps[4:0] ] <= IP_Z[14];
+		if (allow_z_write[15]) z_col_15[ y_ps[4:0] ] <= IP_Z[15];
+		if (allow_z_write[16]) z_col_16[ y_ps[4:0] ] <= IP_Z[16];
+		if (allow_z_write[17]) z_col_17[ y_ps[4:0] ] <= IP_Z[17];
+		if (allow_z_write[18]) z_col_18[ y_ps[4:0] ] <= IP_Z[18];
+		if (allow_z_write[19]) z_col_19[ y_ps[4:0] ] <= IP_Z[19];
+		if (allow_z_write[20]) z_col_20[ y_ps[4:0] ] <= IP_Z[20];
+		if (allow_z_write[21]) z_col_21[ y_ps[4:0] ] <= IP_Z[21];
+		if (allow_z_write[22]) z_col_22[ y_ps[4:0] ] <= IP_Z[22];
+		if (allow_z_write[23]) z_col_23[ y_ps[4:0] ] <= IP_Z[23];
+		if (allow_z_write[24]) z_col_24[ y_ps[4:0] ] <= IP_Z[24];
+		if (allow_z_write[25]) z_col_25[ y_ps[4:0] ] <= IP_Z[25];
+		if (allow_z_write[26]) z_col_26[ y_ps[4:0] ] <= IP_Z[26];
+		if (allow_z_write[27]) z_col_27[ y_ps[4:0] ] <= IP_Z[27];
+		if (allow_z_write[28]) z_col_28[ y_ps[4:0] ] <= IP_Z[28];
+		if (allow_z_write[29]) z_col_29[ y_ps[4:0] ] <= IP_Z[29];
+		if (allow_z_write[30]) z_col_30[ y_ps[4:0] ] <= IP_Z[30];
+		if (allow_z_write[31]) z_col_31[ y_ps[4:0] ] <= IP_Z[31];
+	end
+end
+
 
 depth_compare depth_compare_inst0 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_0[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_0 ),				// input [22:0]  invW
-	.depth_allow( allow_write[0] )			// output depth_allow
+	.old_z( z_col_0[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[0] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[0] )	// output depth_allow
 );
 depth_compare depth_compare_inst1 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_1[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_1 ),				// input [22:0]  invW
-	.depth_allow( allow_write[1] )			// output depth_allow
+	.old_z( z_col_1[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[1] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[1] )	// output depth_allow
 );
 depth_compare depth_compare_inst2 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_2[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_2 ),				// input [22:0]  invW
-	.depth_allow( allow_write[2] )			// output depth_allow
+	.old_z( z_col_2[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[2] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[2] )	// output depth_allow
 );
 depth_compare depth_compare_inst3 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_3[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_3 ),				// input [22:0]  invW
-	.depth_allow( allow_write[3] )			// output depth_allow
+	.old_z( z_col_3[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[3] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[3] )	// output depth_allow
 );
 depth_compare depth_compare_inst4 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_4[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_4 ),				// input [22:0]  invW
-	.depth_allow( allow_write[4] )			// output depth_allow
+	.old_z( z_col_4[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[4] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[4] )	// output depth_allow
 );
 depth_compare depth_compare_inst5 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_5[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_5 ),				// input [22:0]  invW
-	.depth_allow( allow_write[5] )			// output depth_allow
+	.old_z( z_col_5[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[5] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[5] )	// output depth_allow
 );
 depth_compare depth_compare_inst6 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_6[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_6 ),				// input [22:0]  invW
-	.depth_allow( allow_write[6] )			// output depth_allow
+	.old_z( z_col_6[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[6] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[6] )	// output depth_allow
 );
 depth_compare depth_compare_inst7 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_7[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_7 ),				// input [22:0]  invW
-	.depth_allow( allow_write[7] )			// output depth_allow
+	.old_z( z_col_7[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[7] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[7] )	// output depth_allow
 );
 depth_compare depth_compare_inst8 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_8[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_8 ),				// input [22:0]  invW
-	.depth_allow( allow_write[8] )			// output depth_allow
+	.old_z( z_col_8[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[8] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[8] )	// output depth_allow
 );
 depth_compare depth_compare_inst9 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_9[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_9 ),				// input [22:0]  invW
-	.depth_allow( allow_write[9] )			// output depth_allow
+	.old_z( z_col_9[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[9] ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[9] )	// output depth_allow
 );
 depth_compare depth_compare_inst10 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_10[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_10 ),				// input [22:0]  invW
-	.depth_allow( allow_write[10] )		// output depth_allow
+	.old_z( z_col_10[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[10] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[10] )	// output depth_allow
 );
 depth_compare depth_compare_inst11 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_11[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_11 ),				// input [22:0]  invW
-	.depth_allow( allow_write[11] )		// output depth_allow
+	.old_z( z_col_11[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[11] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[11] )	// output depth_allow
 );
 depth_compare depth_compare_inst12 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_12[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_12 ),				// input [22:0]  invW
-	.depth_allow( allow_write[12] )		// output depth_allow
+	.old_z( z_col_12[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[12] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[12] )	// output depth_allow
 );
 depth_compare depth_compare_inst13 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_13[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_13 ),				// input [22:0]  invW
-	.depth_allow( allow_write[13] )		// output depth_allow
+	.old_z( z_col_13[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[13] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[13] )	// output depth_allow
 );
 depth_compare depth_compare_inst14 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_14[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_14 ),				// input [22:0]  invW
-	.depth_allow( allow_write[14] )		// output depth_allow
+	.old_z( z_col_14[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[14] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[14] )	// output depth_allow
 );
 depth_compare depth_compare_inst15 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_15[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_15 ),				// input [22:0]  invW
-	.depth_allow( allow_write[15] )		// output depth_allow
+	.old_z( z_col_15[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[15] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[15] )	// output depth_allow
 );
 depth_compare depth_compare_inst16 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_16[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_16 ),				// input [22:0]  invW
-	.depth_allow( allow_write[16] )		// output depth_allow
+	.old_z( z_col_16[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[16] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[16] )	// output depth_allow
 );
 depth_compare depth_compare_inst17 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_17[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_17 ),				// input [22:0]  invW
-	.depth_allow( allow_write[17] )			// output depth_allow
+	.old_z( z_col_17[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[17] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[17] )	// output depth_allow
 );
 depth_compare depth_compare_inst18 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_18[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_18 ),				// input [22:0]  invW
-	.depth_allow( allow_write[18] )		// output depth_allow
+	.old_z( z_col_18[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[18] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[18] )	// output depth_allow
 );
 depth_compare depth_compare_inst19 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_19[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_19 ),				// input [22:0]  invW
-	.depth_allow( allow_write[19] )		// output depth_allow
+	.old_z( z_col_19[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[19] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[19] )	// output depth_allow
 );
 depth_compare depth_compare_inst20 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_20[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_20 ),				// input [22:0]  invW
-	.depth_allow( allow_write[20] )		// output depth_allow
+	.old_z( z_col_20[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[20] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[20] )	// output depth_allow
 );
 depth_compare depth_compare_inst21 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_21[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_21 ),				// input [22:0]  invW
-	.depth_allow( allow_write[21] )		// output depth_allow
+	.old_z( z_col_21[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[21] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[21] )	// output depth_allow
 );
 depth_compare depth_compare_inst22 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_22[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_22 ),				// input [22:0]  invW
-	.depth_allow( allow_write[22] )		// output depth_allow
+	.old_z( z_col_22[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[22] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[22] )	// output depth_allow
 );
 depth_compare depth_compare_inst23 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_23[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_23 ),				// input [22:0]  invW
-	.depth_allow( allow_write[23] )		// output depth_allow
+	.old_z( z_col_23[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[23] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[23] )	// output depth_allow
 );
 depth_compare depth_compare_inst24 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_24[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_24 ),				// input [22:0]  invW
-	.depth_allow( allow_write[24] )		// output depth_allow
+	.old_z( z_col_24[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[24] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[24] )	// output depth_allow
 );
 depth_compare depth_compare_inst25 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_25[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_25 ),				// input [22:0]  invW
-	.depth_allow( allow_write[25] )		// output depth_allow
+	.old_z( z_col_25[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[25] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[25] )	// output depth_allow
 );
 depth_compare depth_compare_inst26 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_26[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_26 ),				// input [22:0]  invW
-	.depth_allow( allow_write[26] )		// output depth_allow
+	.old_z( z_col_26[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[26] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[26] )	// output depth_allow
 );
 depth_compare depth_compare_inst27 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_27[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_27 ),				// input [22:0]  invW
-	.depth_allow( allow_write[27] )		// output depth_allow
+	.old_z( z_col_27[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[27] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[27] )	// output depth_allow
 );
 depth_compare depth_compare_inst28 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_28[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_28 ),				// input [22:0]  invW
-	.depth_allow( allow_write[28] )		// output depth_allow
+	.old_z( z_col_28[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[28] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[28] )	// output depth_allow
 );
 depth_compare depth_compare_inst29 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_29[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_29 ),				// input [22:0]  invW
-	.depth_allow( allow_write[29] )		// output depth_allow
+	.old_z( z_col_29[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[29] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[29] )	// output depth_allow
 );
 depth_compare depth_compare_inst30 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_30[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_30 ),				// input [22:0]  invW
-	.depth_allow( allow_write[30] )		// output depth_allow
+	.old_z( z_col_30[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[30] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[30] )	// output depth_allow
 );
 depth_compare depth_compare_inst31 (
 	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_31[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_31 ),				// input [22:0]  invW
-	.depth_allow( allow_write[31] )		// output depth_allow
+	.old_z( z_col_31[ y_ps[4:0] ] ),	// input [22:0]  old_z
+	.invW( IP_Z[31] ),				// input [22:0]  invW
+	.depth_allow( allow_z_write[31] )	// output depth_allow
 );
+
+endmodule
+
+
+module inTri_calc (
+	input signed [63:0] C1, C2, C3, C4,
+
+	input signed [47:0] FDX12, FDY12,
+	input signed [47:0] FDX23, FDY23,
+	input signed [47:0] FDX31, FDY31,
+	input signed [47:0] FDX41, FDY41,
+
+	input [11:0] x_ps, y_ps,
+
+	output reg [31:0] inTri,
+	
+    output reg [4:0] leading_zeros,
+    output reg [4:0] trailing_zeros
+);
+
+// No need to shift right after, since y_ps etc. are not fixed-point?
+wire signed [63:0] mult9  = FDX12 * y_ps;
+wire signed [63:0] mult11 = FDX23 * y_ps;
+wire signed [63:0] mult13 = FDX31 * y_ps;
+wire signed [63:0] mult15 = FDX41 * y_ps;
+
+//wire signed [63:0] mult10 = FDY12 * x_ps;
+//wire signed [63:0] mult12 = FDY23 * x_ps;
+//wire signed [63:0] mult14 = FDY31 * x_ps;
+//wire signed [63:0] mult16 = FDY41 * x_ps;
+
+wire signed [47:0] Xhs12_0 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd0}) );
+wire signed [47:0] Xhs23_0 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd0}) );
+wire signed [47:0] Xhs31_0 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd0}) );
+wire signed [47:0] Xhs41_0 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd0}) );
+
+wire signed [47:0] Xhs12_1 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd1}) );
+wire signed [47:0] Xhs23_1 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd1}) );
+wire signed [47:0] Xhs31_1 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd1}) );
+wire signed [47:0] Xhs41_1 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd1}) );
+
+wire signed [47:0] Xhs12_2 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd2}) );
+wire signed [47:0] Xhs23_2 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd2}) );
+wire signed [47:0] Xhs31_2 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd2}) );
+wire signed [47:0] Xhs41_2 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd2}) );
+
+wire signed [47:0] Xhs12_3 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd3}) );
+wire signed [47:0] Xhs23_3 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd3}) );
+wire signed [47:0] Xhs31_3 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd3}) );
+wire signed [47:0] Xhs41_3 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd3}) );
+
+wire signed [47:0] Xhs12_4 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd4}) );
+wire signed [47:0] Xhs23_4 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd4}) );
+wire signed [47:0] Xhs31_4 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd4}) );
+wire signed [47:0] Xhs41_4 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd4}) );
+
+wire signed [47:0] Xhs12_5 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd5}) );
+wire signed [47:0] Xhs23_5 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd5}) );
+wire signed [47:0] Xhs31_5 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd5}) );
+wire signed [47:0] Xhs41_5 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd5}) );
+
+wire signed [47:0] Xhs12_6 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd6}) );
+wire signed [47:0] Xhs23_6 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd6}) );
+wire signed [47:0] Xhs31_6 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd6}) );
+wire signed [47:0] Xhs41_6 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd6}) );
+
+wire signed [47:0] Xhs12_7 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd7}) );
+wire signed [47:0] Xhs23_7 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd7}) );
+wire signed [47:0] Xhs31_7 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd7}) );
+wire signed [47:0] Xhs41_7 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd7}) );
+
+wire signed [47:0] Xhs12_8 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd8}) );
+wire signed [47:0] Xhs23_8 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd8}) );
+wire signed [47:0] Xhs31_8 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd8}) );
+wire signed [47:0] Xhs41_8 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd8}) );
+
+wire signed [47:0] Xhs12_9 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd9}) );
+wire signed [47:0] Xhs23_9 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd9}) );
+wire signed [47:0] Xhs31_9 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd9}) );
+wire signed [47:0] Xhs41_9 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd9}) );
+
+wire signed [47:0] Xhs12_10 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd10}) );
+wire signed [47:0] Xhs23_10 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd10}) );
+wire signed [47:0] Xhs31_10 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd10}) );
+wire signed [47:0] Xhs41_10 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd10}) );
+
+wire signed [47:0] Xhs12_11 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd11}) );
+wire signed [47:0] Xhs23_11 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd11}) );
+wire signed [47:0] Xhs31_11 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd11}) );
+wire signed [47:0] Xhs41_11 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd11}) );
+
+wire signed [47:0] Xhs12_12 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd12}) );
+wire signed [47:0] Xhs23_12 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd12}) );
+wire signed [47:0] Xhs31_12 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd12}) );
+wire signed [47:0] Xhs41_12 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd12}) );
+
+wire signed [47:0] Xhs12_13 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd13}) );
+wire signed [47:0] Xhs23_13 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd13}) );
+wire signed [47:0] Xhs31_13 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd13}) );
+wire signed [47:0] Xhs41_13 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd13}) );
+
+wire signed [47:0] Xhs12_14 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd14}) );
+wire signed [47:0] Xhs23_14 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd14}) );
+wire signed [47:0] Xhs31_14 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd14}) );
+wire signed [47:0] Xhs41_14 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd14}) );
+
+wire signed [47:0] Xhs12_15 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd15}) );
+wire signed [47:0] Xhs23_15 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd15}) );
+wire signed [47:0] Xhs31_15 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd15}) );
+wire signed [47:0] Xhs41_15 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd15}) );
+
+wire signed [47:0] Xhs12_16 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd16}) );
+wire signed [47:0] Xhs23_16 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd16}) );
+wire signed [47:0] Xhs31_16 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd16}) );
+wire signed [47:0] Xhs41_16 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd16}) );
+
+wire signed [47:0] Xhs12_17 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd17}) );
+wire signed [47:0] Xhs23_17 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd17}) );
+wire signed [47:0] Xhs31_17 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd17}) );
+wire signed [47:0] Xhs41_17 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd17}) );
+
+wire signed [47:0] Xhs12_18 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd18}) );
+wire signed [47:0] Xhs23_18 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd18}) );
+wire signed [47:0] Xhs31_18 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd18}) );
+wire signed [47:0] Xhs41_18 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd18}) );
+
+wire signed [47:0] Xhs12_19 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd19}) );
+wire signed [47:0] Xhs23_19 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd19}) );
+wire signed [47:0] Xhs31_19 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd19}) );
+wire signed [47:0] Xhs41_19 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd19}) );
+
+wire signed [47:0] Xhs12_20 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd20}) );
+wire signed [47:0] Xhs23_20 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd20}) );
+wire signed [47:0] Xhs31_20 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd20}) );
+wire signed [47:0] Xhs41_20 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd20}) );
+
+wire signed [47:0] Xhs12_21 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd21}) );
+wire signed [47:0] Xhs23_21 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd21}) );
+wire signed [47:0] Xhs31_21 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd21}) );
+wire signed [47:0] Xhs41_21 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd21}) );
+
+wire signed [47:0] Xhs12_22 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd22}) );
+wire signed [47:0] Xhs23_22 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd22}) );
+wire signed [47:0] Xhs31_22 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd22}) );
+wire signed [47:0] Xhs41_22 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd22}) );
+
+wire signed [47:0] Xhs12_23 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd23}) );
+wire signed [47:0] Xhs23_23 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd23}) );
+wire signed [47:0] Xhs31_23 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd23}) );
+wire signed [47:0] Xhs41_23 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd23}) );
+
+wire signed [47:0] Xhs12_24 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd24}) );
+wire signed [47:0] Xhs23_24 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd24}) );
+wire signed [47:0] Xhs31_24 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd24}) );
+wire signed [47:0] Xhs41_24 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd24}) );
+
+wire signed [47:0] Xhs12_25 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd25}) );
+wire signed [47:0] Xhs23_25 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd25}) );
+wire signed [47:0] Xhs31_25 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd25}) );
+wire signed [47:0] Xhs41_25 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd25}) );
+
+wire signed [47:0] Xhs12_26 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd26}) );
+wire signed [47:0] Xhs23_26 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd26}) );
+wire signed [47:0] Xhs31_26 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd26}) );
+wire signed [47:0] Xhs41_26 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd26}) );
+
+wire signed [47:0] Xhs12_27 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd27}) );
+wire signed [47:0] Xhs23_27 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd27}) );
+wire signed [47:0] Xhs31_27 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd27}) );
+wire signed [47:0] Xhs41_27 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd27}) );
+
+wire signed [47:0] Xhs12_28 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd28}) );
+wire signed [47:0] Xhs23_28 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd28}) );
+wire signed [47:0] Xhs31_28 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd28}) );
+wire signed [47:0] Xhs41_28 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd28}) );
+
+wire signed [47:0] Xhs12_29 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd29}) );
+wire signed [47:0] Xhs23_29 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd29}) );
+wire signed [47:0] Xhs31_29 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd29}) );
+wire signed [47:0] Xhs41_29 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd29}) );
+
+wire signed [47:0] Xhs12_30 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd30}) );
+wire signed [47:0] Xhs23_30 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd30}) );
+wire signed [47:0] Xhs31_30 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd30}) );
+wire signed [47:0] Xhs41_30 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd30}) );
+
+wire signed [47:0] Xhs12_31 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd31}) );
+wire signed [47:0] Xhs23_31 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd31}) );
+wire signed [47:0] Xhs31_31 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd31}) );
+wire signed [47:0] Xhs41_31 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd31}) );
+
+always @* begin
+	inTri[0]  = !Xhs12_0[47]  && !Xhs23_0[47]  && !Xhs31_0[47]  && !Xhs41_0[47];
+	inTri[1]  = !Xhs12_1[47]  && !Xhs23_1[47]  && !Xhs31_1[47]  && !Xhs41_1[47];
+	inTri[2]  = !Xhs12_2[47]  && !Xhs23_2[47]  && !Xhs31_2[47]  && !Xhs41_2[47];
+	inTri[3]  = !Xhs12_3[47]  && !Xhs23_3[47]  && !Xhs31_3[47]  && !Xhs41_3[47];
+	inTri[4]  = !Xhs12_4[47]  && !Xhs23_4[47]  && !Xhs31_4[47]  && !Xhs41_4[47];
+	inTri[5]  = !Xhs12_5[47]  && !Xhs23_5[47]  && !Xhs31_5[47]  && !Xhs41_5[47];
+	inTri[6]  = !Xhs12_6[47]  && !Xhs23_6[47]  && !Xhs31_6[47]  && !Xhs41_6[47];
+	inTri[7]  = !Xhs12_7[47]  && !Xhs23_7[47]  && !Xhs31_7[47]  && !Xhs41_7[47];
+	inTri[8]  = !Xhs12_8[47]  && !Xhs23_8[47]  && !Xhs31_8[47]  && !Xhs41_8[47];
+	inTri[9]  = !Xhs12_9[47]  && !Xhs23_9[47]  && !Xhs31_9[47]  && !Xhs41_9[47];
+	inTri[10] = !Xhs12_1[47]  && !Xhs23_1[47]  && !Xhs31_1[47]  && !Xhs41_1[47];
+	inTri[11] = !Xhs12_11[47] && !Xhs23_11[47] && !Xhs31_11[47] && !Xhs41_11[47];
+	inTri[12] = !Xhs12_12[47] && !Xhs23_12[47] && !Xhs31_12[47] && !Xhs41_12[47];
+	inTri[13] = !Xhs12_13[47] && !Xhs23_13[47] && !Xhs31_13[47] && !Xhs41_13[47];
+	inTri[14] = !Xhs12_14[47] && !Xhs23_14[47] && !Xhs31_14[47] && !Xhs41_14[47];
+	inTri[15] = !Xhs12_15[47] && !Xhs23_15[47] && !Xhs31_15[47] && !Xhs41_15[47];
+	inTri[16] = !Xhs12_16[47] && !Xhs23_16[47] && !Xhs31_16[47] && !Xhs41_16[47];
+	inTri[17] = !Xhs12_17[47] && !Xhs23_17[47] && !Xhs31_17[47] && !Xhs41_17[47];
+	inTri[18] = !Xhs12_18[47] && !Xhs23_18[47] && !Xhs31_18[47] && !Xhs41_18[47];
+	inTri[19] = !Xhs12_19[47] && !Xhs23_19[47] && !Xhs31_19[47] && !Xhs41_19[47];
+	inTri[20] = !Xhs12_20[47] && !Xhs23_20[47] && !Xhs31_20[47] && !Xhs41_20[47];
+	inTri[21] = !Xhs12_21[47] && !Xhs23_21[47] && !Xhs31_21[47] && !Xhs41_21[47];
+	inTri[22] = !Xhs12_22[47] && !Xhs23_22[47] && !Xhs31_22[47] && !Xhs41_22[47];
+	inTri[23] = !Xhs12_23[47] && !Xhs23_23[47] && !Xhs31_23[47] && !Xhs41_23[47];
+	inTri[24] = !Xhs12_24[47] && !Xhs23_24[47] && !Xhs31_24[47] && !Xhs41_24[47];
+	inTri[25] = !Xhs12_25[47] && !Xhs23_25[47] && !Xhs31_25[47] && !Xhs41_25[47];
+	inTri[26] = !Xhs12_26[47] && !Xhs23_26[47] && !Xhs31_26[47] && !Xhs41_26[47];
+	inTri[27] = !Xhs12_27[47] && !Xhs23_27[47] && !Xhs31_27[47] && !Xhs41_27[47];
+	inTri[28] = !Xhs12_28[47] && !Xhs23_28[47] && !Xhs31_28[47] && !Xhs41_28[47];
+	inTri[29] = !Xhs12_29[47] && !Xhs23_29[47] && !Xhs31_29[47] && !Xhs41_29[47];
+	inTri[30] = !Xhs12_30[47] && !Xhs23_30[47] && !Xhs31_30[47] && !Xhs41_30[47];
+	inTri[31] = !Xhs12_31[47] && !Xhs23_31[47] && !Xhs31_31[47] && !Xhs41_31[47];
+
+	// Leading Zero Counter (Binary Search in Parallel)
+	//leading_zeros = 0;
+	/*
+	if (inTri == 32'b0) begin
+		leading_zeros = 32;
+	end else begin
+		leading_zeros = (inTri>>1) ==0 ? leading_zeros+1 : 0;
+		leading_zeros = (inTri>>2) ==0 ? leading_zeros+2 : 0;
+		leading_zeros = (inTri>>4) ==0 ? leading_zeros+4 : 0;
+		leading_zeros = (inTri>>8) ==0 ? leading_zeros+8 : 0;
+		leading_zeros = (inTri>>16)==0 ? leading_zeros+16 : 0;
+		//leading_zeros = leading_zeros[4] + leading_zeros[3] + leading_zeros[2] + leading_zeros[1] + leading_zeros[0];
+	end
+
+	// Trailing Zero Counter (Binary Search in Parallel)
+	//trailing_zeros = 0;
+	if (inTri == 32'b0) begin
+		trailing_zeros = 32;
+	end else begin
+		trailing_zeros = (inTri & 16'hFFFF) == 0 ? 16 : 0;
+		trailing_zeros = (inTri & (trailing_zeros[4] << 8)) == 0 ? 8 : 0;
+		trailing_zeros = (inTri & (trailing_zeros[4] << trailing_zeros[3] << 4)) == 0 ? 4 : 0;
+		trailing_zeros = (inTri & (trailing_zeros[4] << trailing_zeros[3] << trailing_zeros[2] << 2)) == 0 ? 2 : 0;
+		trailing_zeros = (inTri & (trailing_zeros[4] << trailing_zeros[3] << trailing_zeros[2] << trailing_zeros[1] << 1)) == 0 ? 1 : 0;
+		//trailing_zeros = trailing_zeros[4] + trailing_zeros[3] + trailing_zeros[2] + trailing_zeros[1] + trailing_zeros[0];
+	end
+	*/
+	
+		 if (inTri[30:00]==0) leading_zeros = 31;
+	else if (inTri[29:00]==0) leading_zeros = 30;
+	else if (inTri[28:00]==0) leading_zeros = 29;
+	else if (inTri[27:00]==0) leading_zeros = 28;
+	else if (inTri[26:00]==0) leading_zeros = 27;
+	else if (inTri[25:00]==0) leading_zeros = 26;
+	else if (inTri[24:00]==0) leading_zeros = 25;
+	else if (inTri[23:00]==0) leading_zeros = 24;
+	else if (inTri[22:00]==0) leading_zeros = 23;
+	else if (inTri[21:00]==0) leading_zeros = 22;
+	else if (inTri[20:00]==0) leading_zeros = 21;
+	else if (inTri[19:00]==0) leading_zeros = 20;
+	else if (inTri[18:00]==0) leading_zeros = 19;
+	else if (inTri[17:00]==0) leading_zeros = 18;
+	else if (inTri[16:00]==0) leading_zeros = 17;
+	else if (inTri[15:00]==0) leading_zeros = 16;
+	else if (inTri[14:00]==0) leading_zeros = 15;
+	else if (inTri[13:00]==0) leading_zeros = 14;
+	else if (inTri[12:00]==0) leading_zeros = 13;
+	else if (inTri[11:00]==0) leading_zeros = 12;
+	else if (inTri[10:00]==0) leading_zeros = 11;
+	else if (inTri[09:00]==0) leading_zeros = 10;
+	else if (inTri[08:00]==0) leading_zeros = 9;
+	else if (inTri[07:00]==0) leading_zeros = 8;
+	else if (inTri[06:00]==0) leading_zeros = 7;
+	else if (inTri[05:00]==0) leading_zeros = 6;
+	else if (inTri[04:00]==0) leading_zeros = 5;
+	else if (inTri[03:00]==0) leading_zeros = 4;
+	else if (inTri[02:00]==0) leading_zeros = 3;
+	else if (inTri[01:00]==0) leading_zeros = 2;
+	else if (inTri[00:00]==0) leading_zeros = 1;
+	else leading_zeros = 0;
+	
+		 if (inTri[31:01]==0) trailing_zeros = 31;
+	else if (inTri[31:02]==0) trailing_zeros = 30;
+	else if (inTri[31:03]==0) trailing_zeros = 29;
+	else if (inTri[31:04]==0) trailing_zeros = 28;
+	else if (inTri[31:05]==0) trailing_zeros = 27;
+	else if (inTri[31:06]==0) trailing_zeros = 26;
+	else if (inTri[31:07]==0) trailing_zeros = 25;
+	else if (inTri[31:08]==0) trailing_zeros = 24;
+	else if (inTri[31:09]==0) trailing_zeros = 23;
+	else if (inTri[31:10]==0) trailing_zeros = 22;
+	else if (inTri[31:11]==0) trailing_zeros = 21;
+	else if (inTri[31:12]==0) trailing_zeros = 20;
+	else if (inTri[31:13]==0) trailing_zeros = 19;
+	else if (inTri[31:14]==0) trailing_zeros = 18;
+	else if (inTri[31:15]==0) trailing_zeros = 17;
+	else if (inTri[31:16]==0) trailing_zeros = 16;
+	else if (inTri[31:17]==0) trailing_zeros = 15;
+	else if (inTri[31:18]==0) trailing_zeros = 14;
+	else if (inTri[31:19]==0) trailing_zeros = 13;
+	else if (inTri[31:20]==0) trailing_zeros = 12;
+	else if (inTri[31:21]==0) trailing_zeros = 11;
+	else if (inTri[31:22]==0) trailing_zeros = 10;
+	else if (inTri[31:23]==0) trailing_zeros = 9;
+	else if (inTri[31:24]==0) trailing_zeros = 8;
+	else if (inTri[31:25]==0) trailing_zeros = 7;
+	else if (inTri[31:26]==0) trailing_zeros = 6;
+	else if (inTri[31:27]==0) trailing_zeros = 5;
+	else if (inTri[31:28]==0) trailing_zeros = 4;
+	else if (inTri[31:29]==0) trailing_zeros = 3;
+	else if (inTri[31:30]==0) trailing_zeros = 2;
+	else if (inTri[31:31]==0) trailing_zeros = 1;
+	else trailing_zeros = 0;
+end
 
 endmodule
 
@@ -1311,7 +1766,7 @@ wire [2:0] pix_fmt = tcw_word[29:27];
 wire scan_order = tcw_word[26];
 wire stride_flag = tcw_word[25];
 wire [5:0] pal_selector = tcw_word[26:21];		// Used for 4BPP or 8BPP palette textures.
-wire [20:0] tex_word_addr = tcw_word[20:0];		// 64-bit WORD address!
+wire [20:0] tex_word_addr = tcw_word[20:0];		// 64-bit WORD address! (but only shift <<2 when accessing 32-bit "halves" of VRAM).
 
 
 // TEXT_CONTROL PVR reg. (not to be confused with TCW above!).
