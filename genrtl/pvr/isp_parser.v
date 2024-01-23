@@ -972,6 +972,254 @@ wire [30:0] fixed_new = float_shift>>((23-FRAC_BITS));
 wire signed [31:0] test_fixed = {test_float[31], fixed_new[30:0]};
 */
 
+// A bit hard to describe how the regs below relate to the mapping of the tile pixels, but here goes...
+// 
+// z_col_0[0] is the Z value for the top-left tile pixel.
+// z_col_0[1] is the Z value for the tile pixel just below the top-left pixel, and so-on.
+//
+// z_col_1[0] is the top pixel for the next COLUMN along the tile.
+//
+// The [0:31] number relates to the tile ROW.
+//
+reg [22:0] z_col_0  [0:31];
+reg [22:0] z_col_1  [0:31];
+reg [22:0] z_col_2  [0:31];
+reg [22:0] z_col_3  [0:31];
+reg [22:0] z_col_4  [0:31];
+reg [22:0] z_col_5  [0:31];
+reg [22:0] z_col_6  [0:31];
+reg [22:0] z_col_7  [0:31];
+
+reg [22:0] z_col_8  [0:31];
+reg [22:0] z_col_9  [0:31];
+reg [22:0] z_col_10 [0:31];
+reg [22:0] z_col_11 [0:31];
+reg [22:0] z_col_12 [0:31];
+reg [22:0] z_col_13 [0:31];
+reg [22:0] z_col_14 [0:31];
+reg [22:0] z_col_15 [0:31];
+
+reg [22:0] z_col_16 [0:31];
+reg [22:0] z_col_17 [0:31];
+reg [22:0] z_col_18 [0:31];
+reg [22:0] z_col_19 [0:31];
+reg [22:0] z_col_20 [0:31];
+reg [22:0] z_col_21 [0:31];
+reg [22:0] z_col_22 [0:31];
+reg [22:0] z_col_23 [0:31];
+
+reg [22:0] z_col_24 [0:31];
+reg [22:0] z_col_25 [0:31];
+reg [22:0] z_col_26 [0:31];
+reg [22:0] z_col_27 [0:31];
+reg [22:0] z_col_28 [0:31];
+reg [22:0] z_col_29 [0:31];
+reg [22:0] z_col_30 [0:31];
+reg [22:0] z_col_31 [0:31];
+
+wire [4:0] tile_row = x_ps[9:5];
+//wire [4:0] tile_col = y_ps[9:5];
+
+wire [22:0] invW_0,  invW_1,  invW_2,  invW_3,  invW_4,  invW_5,  invW_6,  invW_7;
+wire [22:0] invW_8,  invW_9,  invW_10, invW_11, invW_12, invW_13, invW_14, invW_15;
+wire [22:0] invW_16, invW_17, invW_18, invW_19, invW_20, invW_21, invW_22, invW_23;
+wire [22:0] invW_24, invW_25, invW_26, invW_27, invW_28, invW_29, invW_30, invW_31;
+
+wire [31:0] allow_write;
+
+depth_compare depth_compare_inst0 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_0[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_0 ),				// input [22:0]  invW
+	.depth_allow( allow_write[0] )			// output depth_allow
+);
+depth_compare depth_compare_inst1 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_1[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_1 ),				// input [22:0]  invW
+	.depth_allow( allow_write[1] )			// output depth_allow
+);
+depth_compare depth_compare_inst2 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_2[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_2 ),				// input [22:0]  invW
+	.depth_allow( allow_write[2] )			// output depth_allow
+);
+depth_compare depth_compare_inst3 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_3[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_3 ),				// input [22:0]  invW
+	.depth_allow( allow_write[3] )			// output depth_allow
+);
+depth_compare depth_compare_inst4 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_4[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_4 ),				// input [22:0]  invW
+	.depth_allow( allow_write[4] )			// output depth_allow
+);
+depth_compare depth_compare_inst5 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_5[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_5 ),				// input [22:0]  invW
+	.depth_allow( allow_write[5] )			// output depth_allow
+);
+depth_compare depth_compare_inst6 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_6[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_6 ),				// input [22:0]  invW
+	.depth_allow( allow_write[6] )			// output depth_allow
+);
+depth_compare depth_compare_inst7 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_7[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_7 ),				// input [22:0]  invW
+	.depth_allow( allow_write[7] )			// output depth_allow
+);
+depth_compare depth_compare_inst8 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_8[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_8 ),				// input [22:0]  invW
+	.depth_allow( allow_write[8] )			// output depth_allow
+);
+depth_compare depth_compare_inst9 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_9[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_9 ),				// input [22:0]  invW
+	.depth_allow( allow_write[9] )			// output depth_allow
+);
+depth_compare depth_compare_inst10 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_10[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_10 ),				// input [22:0]  invW
+	.depth_allow( allow_write[10] )		// output depth_allow
+);
+depth_compare depth_compare_inst11 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_11[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_11 ),				// input [22:0]  invW
+	.depth_allow( allow_write[11] )		// output depth_allow
+);
+depth_compare depth_compare_inst12 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_12[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_12 ),				// input [22:0]  invW
+	.depth_allow( allow_write[12] )		// output depth_allow
+);
+depth_compare depth_compare_inst13 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_13[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_13 ),				// input [22:0]  invW
+	.depth_allow( allow_write[13] )		// output depth_allow
+);
+depth_compare depth_compare_inst14 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_14[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_14 ),				// input [22:0]  invW
+	.depth_allow( allow_write[14] )		// output depth_allow
+);
+depth_compare depth_compare_inst15 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_15[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_15 ),				// input [22:0]  invW
+	.depth_allow( allow_write[15] )		// output depth_allow
+);
+depth_compare depth_compare_inst16 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_16[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_16 ),				// input [22:0]  invW
+	.depth_allow( allow_write[16] )		// output depth_allow
+);
+depth_compare depth_compare_inst17 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_17[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_17 ),				// input [22:0]  invW
+	.depth_allow( allow_write[17] )			// output depth_allow
+);
+depth_compare depth_compare_inst18 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_18[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_18 ),				// input [22:0]  invW
+	.depth_allow( allow_write[18] )		// output depth_allow
+);
+depth_compare depth_compare_inst19 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_19[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_19 ),				// input [22:0]  invW
+	.depth_allow( allow_write[19] )		// output depth_allow
+);
+depth_compare depth_compare_inst20 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_20[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_20 ),				// input [22:0]  invW
+	.depth_allow( allow_write[20] )		// output depth_allow
+);
+depth_compare depth_compare_inst21 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_21[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_21 ),				// input [22:0]  invW
+	.depth_allow( allow_write[21] )		// output depth_allow
+);
+depth_compare depth_compare_inst22 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_22[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_22 ),				// input [22:0]  invW
+	.depth_allow( allow_write[22] )		// output depth_allow
+);
+depth_compare depth_compare_inst23 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_23[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_23 ),				// input [22:0]  invW
+	.depth_allow( allow_write[23] )		// output depth_allow
+);
+depth_compare depth_compare_inst24 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_24[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_24 ),				// input [22:0]  invW
+	.depth_allow( allow_write[24] )		// output depth_allow
+);
+depth_compare depth_compare_inst25 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_25[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_25 ),				// input [22:0]  invW
+	.depth_allow( allow_write[25] )		// output depth_allow
+);
+depth_compare depth_compare_inst26 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_26[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_26 ),				// input [22:0]  invW
+	.depth_allow( allow_write[26] )		// output depth_allow
+);
+depth_compare depth_compare_inst27 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_27[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_27 ),				// input [22:0]  invW
+	.depth_allow( allow_write[27] )		// output depth_allow
+);
+depth_compare depth_compare_inst28 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_28[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_28 ),				// input [22:0]  invW
+	.depth_allow( allow_write[28] )		// output depth_allow
+);
+depth_compare depth_compare_inst29 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_29[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_29 ),				// input [22:0]  invW
+	.depth_allow( allow_write[29] )		// output depth_allow
+);
+depth_compare depth_compare_inst30 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_30[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_30 ),				// input [22:0]  invW
+	.depth_allow( allow_write[30] )		// output depth_allow
+);
+depth_compare depth_compare_inst31 (
+	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
+	.old_z( z_col_31[ tile_row ] ),	// input [22:0]  old_z
+	.invW( invW_31 ),				// input [22:0]  invW
+	.depth_allow( allow_write[31] )		// output depth_allow
+);
+
 endmodule
 
 
@@ -1373,7 +1621,6 @@ end
 endmodule
 
 
-/*
 module depth_compare (
 	input [2:0] depth_comp,
 	
@@ -1397,302 +1644,4 @@ always @* begin
 end
 
 endmodule
-*/
 
-/*
-reg [22:0] z_col_0  [0:31];
-reg [22:0] z_col_1  [0:31];
-reg [22:0] z_col_2  [0:31];
-reg [22:0] z_col_3  [0:31];
-reg [22:0] z_col_4  [0:31];
-reg [22:0] z_col_5  [0:31];
-reg [22:0] z_col_6  [0:31];
-reg [22:0] z_col_7  [0:31];
-
-reg [22:0] z_col_8  [0:31];
-reg [22:0] z_col_9  [0:31];
-reg [22:0] z_col_10 [0:31];
-reg [22:0] z_col_11 [0:31];
-reg [22:0] z_col_12 [0:31];
-reg [22:0] z_col_13 [0:31];
-reg [22:0] z_col_14 [0:31];
-reg [22:0] z_col_15 [0:31];
-
-reg [22:0] z_col_16 [0:31];
-reg [22:0] z_col_17 [0:31];
-reg [22:0] z_col_18 [0:31];
-reg [22:0] z_col_19 [0:31];
-reg [22:0] z_col_20 [0:31];
-reg [22:0] z_col_21 [0:31];
-reg [22:0] z_col_22 [0:31];
-reg [22:0] z_col_23 [0:31];
-
-reg [22:0] z_col_24 [0:31];
-reg [22:0] z_col_25 [0:31];
-reg [22:0] z_col_26 [0:31];
-reg [22:0] z_col_27 [0:31];
-reg [22:0] z_col_28 [0:31];
-reg [22:0] z_col_29 [0:31];
-reg [22:0] z_col_30 [0:31];
-reg [22:0] z_col_31 [0:31];
-
-wire [4:0] tile_row;
-wire [4:0] tile_col;
-
-wire [22:0] invW_0;
-wire allow_0;
-depth_compare depth_compare_inst0 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_0[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_0 ),				// input [22:0]  invW
-	.depth_allow( allow_0 )			// output depth_allow
-);
-wire [22:0] invW_1;
-wire allow_1;
-depth_compare depth_compare_inst1 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_1[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_1 ),				// input [22:0]  invW
-	.depth_allow( allow_1 )			// output depth_allow
-);
-wire [22:0] invW_2;
-wire allow_2;
-depth_compare depth_compare_inst2 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_2[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_2 ),				// input [22:0]  invW
-	.depth_allow( allow_2 )			// output depth_allow
-);
-wire [22:0] invW_3;
-wire allow_3;
-depth_compare depth_compare_inst3 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_3[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_3 ),				// input [22:0]  invW
-	.depth_allow( allow_3 )			// output depth_allow
-);
-wire [22:0] invW_4;
-wire allow_4;
-depth_compare depth_compare_inst4 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_4[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_4 ),				// input [22:0]  invW
-	.depth_allow( allow_4 )			// output depth_allow
-);
-wire [22:0] invW_5;
-wire allow_5;
-depth_compare depth_compare_inst5 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_5[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_5 ),				// input [22:0]  invW
-	.depth_allow( allow_5 )			// output depth_allow
-);
-wire [22:0] invW_6;
-wire allow_6;
-depth_compare depth_compare_inst6 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_6[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_6 ),				// input [22:0]  invW
-	.depth_allow( allow_6 )			// output depth_allow
-);
-wire [22:0] invW_7;
-wire allow_7;
-depth_compare depth_compare_inst7 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_7[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_7 ),				// input [22:0]  invW
-	.depth_allow( allow_7 )			// output depth_allow
-);
-wire [22:0] invW_8;
-wire allow_8;
-depth_compare depth_compare_inst8 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_8[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_8 ),				// input [22:0]  invW
-	.depth_allow( allow_8 )			// output depth_allow
-);
-wire [22:0] invW_9;
-wire allow_9;
-depth_compare depth_compare_inst9 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_9[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_9 ),				// input [22:0]  invW
-	.depth_allow( allow_9 )			// output depth_allow
-);
-wire [22:0] invW_10;
-wire allow_10;
-depth_compare depth_compare_inst10 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_10[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_10 ),				// input [22:0]  invW
-	.depth_allow( allow_10 )		// output depth_allow
-);
-wire [22:0] invW_11;
-wire allow_11;
-depth_compare depth_compare_inst11 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_11[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_11 ),				// input [22:0]  invW
-	.depth_allow( allow_11 )		// output depth_allow
-);
-wire [22:0] invW_12;
-wire allow_12;
-depth_compare depth_compare_inst12 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_12[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_12 ),				// input [22:0]  invW
-	.depth_allow( allow_12 )		// output depth_allow
-);
-wire [22:0] invW_13;
-wire allow_13;
-depth_compare depth_compare_inst13 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_13[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_13 ),				// input [22:0]  invW
-	.depth_allow( allow_13 )		// output depth_allow
-);
-wire [22:0] invW_14;
-wire allow_14;
-depth_compare depth_compare_inst14 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_14[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_14 ),				// input [22:0]  invW
-	.depth_allow( allow_14 )		// output depth_allow
-);
-wire [22:0] invW_15;
-wire allow_15;
-depth_compare depth_compare_inst15 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_15[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_15 ),				// input [22:0]  invW
-	.depth_allow( allow_15 )		// output depth_allow
-);
-wire [22:0] invW_16;
-wire allow_16;
-depth_compare depth_compare_inst16 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_16[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_16 ),				// input [22:0]  invW
-	.depth_allow( allow_16 )		// output depth_allow
-);
-wire [22:0] invW_17;
-wire allow_17;
-depth_compare depth_compare_inst17 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_17[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_17 ),				// input [22:0]  invW
-	.depth_allow( allow_0 )			// output depth_allow
-);
-wire [22:0] invW_18;
-wire allow_18;
-depth_compare depth_compare_inst18 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_18[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_18 ),				// input [22:0]  invW
-	.depth_allow( allow_18 )		// output depth_allow
-);
-wire [22:0] invW_19;
-wire allow_19;
-depth_compare depth_compare_inst19 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_19[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_19 ),				// input [22:0]  invW
-	.depth_allow( allow_19 )		// output depth_allow
-);
-wire [22:0] invW_20;
-wire allow_20;
-depth_compare depth_compare_inst20 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_20[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_20 ),				// input [22:0]  invW
-	.depth_allow( allow_20 )		// output depth_allow
-);
-wire [22:0] invW_21;
-wire allow_21;
-depth_compare depth_compare_inst21 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_21[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_21 ),				// input [22:0]  invW
-	.depth_allow( allow_21 )		// output depth_allow
-);
-wire [22:0] invW_22;
-wire allow_22;
-depth_compare depth_compare_inst22 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_22[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_22 ),				// input [22:0]  invW
-	.depth_allow( allow_22 )		// output depth_allow
-);
-wire [22:0] invW_23;
-wire allow_23;
-depth_compare depth_compare_inst23 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_23[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_23 ),				// input [22:0]  invW
-	.depth_allow( allow_23 )		// output depth_allow
-);
-wire [22:0] invW_24;
-wire allow_24;
-depth_compare depth_compare_inst24 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_24[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_24 ),				// input [22:0]  invW
-	.depth_allow( allow_24 )		// output depth_allow
-);
-wire [22:0] invW_25;
-wire allow_25;
-depth_compare depth_compare_inst25 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_25[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_25 ),				// input [22:0]  invW
-	.depth_allow( allow_25 )		// output depth_allow
-);
-wire [22:0] invW_26;
-wire allow_26;
-depth_compare depth_compare_inst26 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_26[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_26 ),				// input [22:0]  invW
-	.depth_allow( allow_26 )		// output depth_allow
-);
-wire [22:0] invW_27;
-wire allow_27;
-depth_compare depth_compare_inst27 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_27[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_27 ),				// input [22:0]  invW
-	.depth_allow( allow_27 )		// output depth_allow
-);
-wire [22:0] invW_28;
-wire allow_28;
-depth_compare depth_compare_inst28 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_28[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_28 ),				// input [22:0]  invW
-	.depth_allow( allow_28 )		// output depth_allow
-);
-wire [22:0] invW_29;
-wire allow_29;
-depth_compare depth_compare_inst29 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_29[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_29 ),				// input [22:0]  invW
-	.depth_allow( allow_29 )		// output depth_allow
-);
-wire [22:0] invW_30;
-wire allow_30;
-depth_compare depth_compare_inst30 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_30[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_30 ),				// input [22:0]  invW
-	.depth_allow( allow_30 )		// output depth_allow
-);
-wire [22:0] invW_31;
-wire allow_31;
-depth_compare depth_compare_inst31 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_31[ tile_row ] ),	// input [22:0]  old_z
-	.invW( invW_31 ),				// input [22:0]  invW
-	.depth_allow( allow_31 )		// output depth_allow
-);
-*/
