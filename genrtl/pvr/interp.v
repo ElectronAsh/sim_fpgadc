@@ -113,8 +113,8 @@ always @(posedge clock) if (setup) begin
 
 	// ddx = Aa / C;
 	// ddy = Ba / C;
-	FDDX = (Aa<<FRAC_BITS) / C;
-	FDDY = (Ba<<FRAC_BITS) / C;
+	//FDDX = (Aa<<FRAC_BITS) / C;
+	//FDDY = (Ba<<FRAC_BITS) / C;
 	
 	// c = (FZ1 - ddx * FX1 - ddy * FY1);
 	FDDX_mult_FX1 = (FDDX * FX1) >>FRAC_BITS;

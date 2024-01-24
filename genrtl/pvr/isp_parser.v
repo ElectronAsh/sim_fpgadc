@@ -2,7 +2,7 @@
 `default_nettype none
 
 
-parameter FRAC_BITS = 8'd12;
+parameter FRAC_BITS = 8'd13;
 
 
 module isp_parser (
@@ -210,7 +210,7 @@ else begin
 		
 		1: begin
 			if (is_tri_strip) begin		// TriangleStrip.
-				if (strip_mask==6'b000000) begin	// Nothing to draw for this strip.
+				if (strip_mask==6'b000000 || strip_cnt==6'd6) begin	// Nothing to draw for this strip.
 					poly_drawn <= 1'b1;				// Tell the RA we're done.
 					isp_state <= 8'd0;				// Go back to idle state.
 				end
@@ -224,10 +224,6 @@ else begin
 						strip_cnt <= strip_cnt + 6'd1;	// Increment to the next bit.
 						//isp_state <= 8'd1;			// (Stay in the current state, to check the next bit.)
 					end
-				end
-				else begin					// All strip_mask bits checked.
-					poly_drawn <= 1'b1;		// Tell the RA we're done.
-					isp_state <= 8'd0;		// Go back to idle state.
 				end
 			end
 			else if (is_tri_array || is_quad_array) begin	// Triangle Array or Quad Array.
@@ -423,7 +419,10 @@ else begin
 			isp_entry_valid <= 1'b1;
 			
 			// Per-tile rendering.
-			x_ps <= (tilex<<5) + leading_zeros;
+			// leading_zeros was often causing it to skip the first tile row, due to processing delay maybe?...
+			// (leading_zeros often starting as 31, which was skipping x_ps to the end of the first tile row.
+			//  this would causing horizontal lines across the whole image. ElectronAsh.)
+			x_ps <= (tilex<<5) /*+ leading_zeros*/;
 			y_ps <= tiley<<5;
 			
 			isp_state <= 8'd49;			// Draw the triangle!
@@ -503,7 +502,7 @@ else begin
 			isp_vram_dout <= /*(tex_u_flip || tex_v_flip) ? 32'haa00ff00 :*/ final_argb;	// ABGR, for sim display.
 			if (y_ps < (tiley<<5)+32) begin
 				if (x_ps == (tilex<<5)+32 || x_ps[4:0]==32-trailing_zeros) begin
-					x_ps <= (tilex<<5);
+					x_ps <= (tilex<<5) + leading_zeros;
 					y_ps <= y_ps + 12'd1;
 					isp_state <= 8'd51;		// Had to add an extra clock tick, to allow the VRAM address and texture stuff to update.
 											// (fixed the thin vertical lines on the renders. ElectronAsh).
@@ -922,10 +921,10 @@ always @(*) begin
 end
 
 //wire signed [63:0] u_div_z_fixed = (IP_U<<FRAC_BITS) / IP_Z;
-reg signed [63:0] u_div_z_fixed;
+reg signed [31:0] u_div_z_fixed;
 
 //wire signed [63:0] v_div_z_fixed = (IP_V<<FRAC_BITS) / IP_Z;
-reg signed [63:0] v_div_z_fixed;
+reg signed [31:0] v_div_z_fixed;
 
 wire signed [31:0] u_div_z = u_div_z_fixed >>FRAC_BITS;
 wire signed [31:0] v_div_z = v_div_z_fixed >>FRAC_BITS;
@@ -934,19 +933,64 @@ wire signed [31:0] v_div_z = v_div_z_fixed >>FRAC_BITS;
 wire [10:0] tex_u_size_full = (8<<tex_u_size);
 wire [10:0] tex_v_size_full = (8<<tex_v_size);
 
-wire [9:0] u_clamp = (tex_u_clamp && u_div_z>(tex_u_size_full-1)) ? tex_u_size_full-1 :
-					 (tex_u_clamp && (u_div_z<0)) ? 0 :
-									  u_div_z;
+/*
+	if (pp_Clamp) {			// clamp
+		if (coord < 0) coord = 0;
+		else if (coord >= size) coord = size-1;
+	}
+	else if (pp_Flip) {		// flip
+		coord &= size*2-1;
+		if (coord & size) coord ^= size*2-1;
+	}
+	else coord &= size-1;
+*/
 
-wire [9:0] v_clamp = (tex_v_clamp && v_div_z>(tex_v_size_full-1)) ? tex_v_size_full-1 :
-					 (tex_v_clamp && (v_div_z<0)) ? 0 :
-									  v_div_z;
-										 
-wire [9:0] u_masked  = (tex_u_flip) ? u_clamp&((tex_u_size_full*2)-1) : u_clamp;
-wire [9:0] v_masked  = (tex_v_flip) ? v_clamp&((tex_v_size_full*2)-1) : v_clamp;
-										 
-wire [9:0] u_flipped = (tex_u_flip) ? u_masked^(tex_u_size_full-1) : u_masked;
-wire [9:0] v_flipped = (tex_v_flip) ? v_masked^(tex_v_size_full-1) : v_masked;
+/* verilator lint_off LATCH */
+/*
+always @* begin
+	if (tex_u_clamp) begin			// clamp
+		if (u_div_z < 0) u_flipped = 0;
+		else if (u_div_z >= tex_u_size_full) u_flipped = tex_u_size_full-1;
+	end
+	else if (tex_u_flip) begin		// flip
+		u_flipped = u_div_z & ((tex_u_size_full*2)-1);
+		if (u_div_z & tex_u_size_full) u_flipped ^= ((tex_u_size_full*2)-1);
+	end
+	else u_flipped = u_div_z & (tex_u_size_full-1);
+	
+	if (tex_v_clamp) begin			// clamp
+		if (v_div_z < 0) v_flipped = 0;
+		else if (v_div_z >= tex_v_size_full) v_flipped = tex_v_size_full-1;
+	end
+	else if (tex_v_flip) begin		// flip
+		v_flipped = v_div_z & ((tex_v_size_full*2)-1);
+		if (v_div_z & tex_v_size_full) v_flipped ^= ((tex_v_size_full*2)-1);
+	end
+	else v_flipped = v_div_z & (tex_v_size_full-1);
+end
+reg [9:0] u_flipped;
+reg [9:0] v_flipped;
+*/
+/* verilator lint_on LATCH */
+
+
+wire [9:0] u_clamp = (tex_u_clamp && u_div_z>=tex_u_size_full) ? tex_u_size_full-1 :
+					 (tex_u_clamp && u_div_z[31]) ? 10'd0 :
+									 u_div_z;
+
+wire [9:0] v_clamp = (tex_v_clamp && v_div_z>=tex_v_size_full) ? tex_v_size_full-1 :
+					 (tex_v_clamp && v_div_z[31]) ? 10'd0 :
+									 v_div_z;
+
+wire [9:0] u_masked  = u_clamp&((tex_u_size_full*2)-1);
+wire [9:0] v_masked  = v_clamp&((tex_v_size_full*2)-1);
+
+wire [9:0] u_mask_flip = (u_masked&tex_u_size_full) ? u_div_z^((tex_u_size_full*2)-1) : u_masked;
+wire [9:0] v_mask_flip = (v_masked&tex_v_size_full) ? v_div_z^((tex_u_size_full*2)-1) : v_masked;
+
+wire [9:0] u_flipped = (tex_u_flip) ? u_mask_flip : u_div_z&(tex_u_size_full-1);
+wire [9:0] v_flipped = (tex_v_flip) ? v_mask_flip : v_div_z&(tex_v_size_full-1);
+
 
 texture_address  texture_address_inst (
 	.clock( clock ),
@@ -1070,21 +1114,21 @@ reg signed [31:0] z_col_31 [0:31];
 wire [31:0] allow_z_write;
 
 reg z_clear_ena;
-reg [4:0] z_clear_row;
+reg [5:0] z_clear_row;
 
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
 	z_clear_ena <= 1'b0;
-	z_clear_row <= 5'd0;
+	z_clear_row <= 6'd0;
 end
 else begin
 	if (ra_entry_valid) begin	// New tile started!...
-		z_clear_row <= 5'd0;
+		z_clear_row <= 6'd0;
 		z_clear_ena <= 1'b1;
 	end
 
 	if (z_clear_ena) begin
-		if (z_clear_row==5'd31) begin
+		if (z_clear_row==6'd32) begin
 			z_clear_ena <= 1'b0;
 		end
 		else begin
@@ -2079,8 +2123,8 @@ endmodule
 module depth_compare (
 	input [2:0] depth_comp,
 	
-	input [22:0] old_z,
-	input [22:0] invW,
+	input signed [31:0] old_z,
+	input signed [31:0] invW,
 	
 	output reg depth_allow
 );
