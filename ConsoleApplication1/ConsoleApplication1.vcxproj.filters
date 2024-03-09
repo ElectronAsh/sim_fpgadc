@@ -74,9 +74,6 @@
     <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__0__Slow.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>
-    <ClCompile Include="..\out\Vsimtop___024root__DepSet_h305f3046__1.cpp">
-      <Filter>Source Files\Vsimtop</Filter>
-    </ClCompile>
     <ClCompile Include="..\out\Vsimtop___024root__Slow.cpp">
       <Filter>Source Files\Vsimtop</Filter>
     </ClCompile>

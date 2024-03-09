@@ -20,11 +20,17 @@ module pvr (
 	input ta_fifo_wr,
 
 	// To VRAM. Duh...
-	output [23:0] vram_addr,
-	input [63:0] vram_din,
-	output vram_rd,
-	output vram_wr,
-	output [63:0] vram_dout
+	input wire vram_wait,
+	input wire vram_valid,
+	output wire vram_rd,
+	output wire vram_wr,
+	output wire [23:0] vram_addr,
+	input wire [63:0] vram_din,
+	output wire [63:0] vram_dout,
+	
+	output [22:0] fb_addr,
+	output [31:0] fb_writedata,
+	output fb_we
 );
 
 
@@ -431,6 +437,31 @@ end
 /* verilator lint_on LATCH */
 
 
+/*
+wire [21:0] param_req_addr = (vram_addr>>2);
+wire param_read = 1'b0;
+
+wire [31:0] param_dout;
+wire param_data_ready;
+
+param_cache  param_cache_inst (
+	.reset_n( reset_n ),
+	.clock( clock ),
+
+	.param_req_addr( param_req_addr ),			// input [21:0]  param_req_addr
+	.param_read( param_read ),					// input  param_read
+	
+	.ddram_waitrequest( ddram_waitrequest ),	// input  ddram_waitrequest
+	.ddram_addr( ddram_addr ),					// output [21:0]  ddram_addr
+	.ddram_read_burst( ddram_read_burst ),		// output  ddram_read_burst
+	.ddram_readdata( ddram_readdata ),			// input [31:0]  ddram_readdata
+	.ddram_readdata_valid( ddram_readdata_valid ),	// input  ddram_readdata_valid
+	
+	.param_dout( param_dout ),					// output [31:0]  param_dout
+	.param_data_ready( param_data_ready )		// output  param_data_ready
+);
+*/
+
 wire ra_trig;
 
 wire ra_vram_rd;
@@ -474,6 +505,8 @@ ra_parser ra_parser_inst (
 	.FPU_PARAM_CFG( 32'h0027DF77 ),		// input [31:0]  FPU_PARAM_CFG. (always the same value, so far).
 	.TA_ALLOC_CTRL( TA_ALLOC_CTRL ),	// input [31:0]  TA_ALLOC_CTRL	
 
+	.vram_wait( vram_wait ),			// input  vram_wait
+	.vram_valid( vram_valid ),			// input  vram_valid
 	.ra_vram_rd( ra_vram_rd ),			// output  ra_vram_rd
 	.ra_vram_wr( ra_vram_wr ),			// output  ra_vram_wr
 	.ra_vram_addr( ra_vram_addr ),		// output [23:0]  ra_vram_addr
@@ -532,7 +565,8 @@ wire [23:0] isp_vram_addr_out;
 
 assign vram_addr = (isp_switch) ? isp_vram_addr_out : ra_vram_addr;
 assign vram_dout = isp_vram_dout;
-assign vram_wr = isp_vram_wr;
+assign vram_rd = (isp_switch) ? isp_vram_rd : ra_vram_rd;
+assign vram_wr = (isp_switch) ? isp_vram_wr : ra_vram_wr;
 
 
 isp_parser isp_parser_inst (
@@ -546,11 +580,17 @@ isp_parser isp_parser_inst (
 	.poly_addr( poly_addr ),			// input [23:0]  poly_addr
 	.render_poly( render_poly ),		// input  render_poly
 	
+	.vram_wait( vram_wait ),			// input  vram_wait
+	.vram_valid( vram_valid ),			// input  vram_valid
 	.isp_vram_rd( isp_vram_rd ),		// output  isp_vram_rd
 	.isp_vram_wr( isp_vram_wr ),		// output  isp_vram_wr
 	.isp_vram_addr_out( isp_vram_addr_out ),	// output [23:0]  isp_vram_word_addr BYTE address!
 	.isp_vram_din( isp_vram_din ),		// input  [63:0]  isp_vram_din
 	.isp_vram_dout( isp_vram_dout ),	// output  [63:0]  isp_vram_dout
+	
+	.fb_addr( fb_addr ),				// output [22:0]  fb_addr
+	.fb_writedata( fb_writedata ),		// output [31:0]  fb_writedata
+	.fb_we( fb_we ),					// output  fb_we
 	
 	.isp_entry_valid( isp_entry_valid ),// output  isp_entry_valid
 	

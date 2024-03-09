@@ -60,11 +60,25 @@ module simtop (
     output wire [3:0] trace_wdst1,
     output wire [31:0] trace_wdata1,
 	
+	input wire vram_wait,
+	input wire vram_valid,
 	output wire vram_rd,
 	output wire vram_wr,
 	output wire [23:0] vram_addr,
 	input wire [63:0] vram_din,
-	output wire [63:0] vram_dout
+	output wire [63:0] vram_dout,
+	
+	output [22:0] fb_addr,
+	output [31:0] fb_writedata,
+	output fb_we
+	
+	/*
+	input ddram_waitrequest,
+	output [21:0] ddram_addr,
+	output ddram_read_burst,
+	input [31:0] ddram_readdata,
+	input ddram_readdata_valid
+	*/
 );
 
 // Reset synchronizer
@@ -194,11 +208,17 @@ pvr pvr (
 	.pvr_wr( pvr_wr ),			// input  pvr_wr
 	.pvr_dout( pvr_dout ),		// output [31:0]  pvr_dout
 
-	.vram_addr( vram_addr ),	// input [23:0]  vram_addr
-	.vram_din( vram_din ),		// input [63:0]  vram_din
+	.vram_wait( vram_wait ),	// input  vram_wait
 	.vram_rd( vram_rd ),		// output  vram_rd
 	.vram_wr( vram_wr ),		// output  vram_wr
-	.vram_dout( vram_dout )		// output [63:0]  vram_dout
+	.vram_addr( vram_addr ),	// input [23:0]  vram_addr
+	.vram_din( vram_din ),		// input [63:0]  vram_din
+	.vram_valid( vram_valid ),	// input  vram_valid
+	.vram_dout( vram_dout ),	// output [63:0]  vram_dout,
+	
+	.fb_addr( fb_addr ),			// output [22:0]  fb_addr
+	.fb_writedata( fb_writedata ),	// output [31:0]  fb_writedata
+	.fb_we( fb_we )					// output  fb_we
 );
 
 

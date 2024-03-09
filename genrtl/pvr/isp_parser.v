@@ -1,9 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-
 parameter FRAC_BITS = 8'd13;
-
 
 module isp_parser (
 	input clock,
@@ -16,6 +14,8 @@ module isp_parser (
 	input [23:0] poly_addr,
 	input render_poly,
 	
+	input vram_wait,
+	input vram_valid,
 	output reg isp_vram_rd,
 	output reg isp_vram_wr,
 	output reg [23:0] isp_vram_addr_out,
@@ -23,6 +23,10 @@ module isp_parser (
 	output reg [63:0] isp_vram_dout,
 	
 	output reg isp_entry_valid,
+	
+	output reg [22:0] fb_addr,
+	output reg [31:0] fb_writedata,
+	output reg fb_we,
 
 	input ra_entry_valid,
 	input tile_prims_done,
@@ -43,9 +47,10 @@ module isp_parser (
 );
 
 reg [23:0] isp_vram_addr;
-
-assign isp_vram_addr_out = (tex_wait || isp_state==8'd49 || isp_state==8'd50) ? (vram_word_addr<<2) :	// Output texture WORD address as a BYTE address.
-																				isp_vram_addr;			// Output ISP Parser BYTE address.
+reg tex_other;
+																										// Output thingy addr, when reading Texture or VQ codebook.
+assign isp_vram_addr_out = ((isp_state>=8'd49 && isp_state<=8'd54) || isp_state==5 || isp_state==6) ? {tex_other, vram_word_addr[19:0]}<<2 :	
+																									   isp_vram_addr;	// Output ISP Parser BYTE address.
 
 // OL Word bit decodes...
 wire [5:0] strip_mask = {opb_word[25], opb_word[26], opb_word[27], opb_word[28], opb_word[29], opb_word[30]};	// For Triangle Strips only.
@@ -56,7 +61,7 @@ wire eol = opb_word[28];
 
 
 // ISP/TSP Instruction Word. Bit decode, for Opaque or Translucent prims...
-reg [31:0] isp_inst;
+(*noprune*)reg [31:0] isp_inst;
 wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
 wire [1:0] culling_mode = isp_inst[28:27];	// 0=No culling, 1=Cull if Small, 2= Cull if Neg, 3=Cull if Pos.
 wire z_write_disable    = isp_inst[26];
@@ -75,7 +80,7 @@ wire [2:0] volume_inst = isp_inst[31:29];
 
 
 // TSP Instruction Word...
-reg [31:0] tsp_inst;
+(*noprune*)reg [31:0] tsp_inst;
 wire tex_u_flip = tsp_inst[18];
 wire tex_v_flip = tsp_inst[17];
 wire tex_u_clamp = tsp_inst[16];
@@ -85,12 +90,15 @@ wire [2:0] tex_v_size = tsp_inst[2:0];
 
 
 // Texture Control Word...
-reg [31:0] tcw_word;
+(*noprune*)reg [31:0] tcw_word;
 wire mip_map = tcw_word[31];
 wire vq_comp = tcw_word[30];
 wire [2:0] pix_fmt = tcw_word[29:27];
 wire scan_order = tcw_word[26];
 wire stride_flag = tcw_word[25];
+wire [20:0] tex_word_addr = tcw_word[20:0];		// 64-bit WORD address! (but only shift <<2 when accessing 32-bit "halves" of VRAM).
+
+reg [20:0] prev_tex_word_addr;
 
 reg [31:0] tsp2_inst;
 reg [31:0] tex2_cont;
@@ -99,60 +107,60 @@ reg [31:0] tex2_cont;
 //
 // XY verts are declared as signed here, but it doesn't seem to help with rendering, when neg_xy culling is disabled.
 //
-reg signed [31:0] vert_a_x;
-reg signed [31:0] vert_a_y;
-reg [31:0] vert_a_z;
-reg [31:0] vert_a_u0;
-reg [31:0] vert_a_v0;
-reg [31:0] vert_a_u1;
-reg [31:0] vert_a_v1;
-reg [31:0] vert_a_base_col_0;
-reg [31:0] vert_a_base_col_1;
-reg [31:0] vert_a_off_col;
+(*noprune*)reg signed [31:0] vert_a_x;
+(*noprune*)reg signed [31:0] vert_a_y;
+(*noprune*)reg [31:0] vert_a_z;
+(*noprune*)reg [31:0] vert_a_u0;
+(*noprune*)reg [31:0] vert_a_v0;
+(*noprune*)reg [31:0] vert_a_u1;
+(*noprune*)reg [31:0] vert_a_v1;
+(*noprune*)reg [31:0] vert_a_base_col_0;
+(*noprune*)reg [31:0] vert_a_base_col_1;
+(*noprune*)reg [31:0] vert_a_off_col;
 
-reg signed [31:0] vert_b_x;
-reg signed [31:0] vert_b_y;
-reg [31:0] vert_b_z;
-reg [31:0] vert_b_u0;
-reg [31:0] vert_b_v0;
-reg [31:0] vert_b_u1;
-reg [31:0] vert_b_v1;
-reg [31:0] vert_b_base_col_0;
-reg [31:0] vert_b_base_col_1;
-reg [31:0] vert_b_off_col;
+(*noprune*)reg signed [31:0] vert_b_x;
+(*noprune*)reg signed [31:0] vert_b_y;
+(*noprune*)reg [31:0] vert_b_z;
+(*noprune*)reg [31:0] vert_b_u0;
+(*noprune*)reg [31:0] vert_b_v0;
+(*noprune*)reg [31:0] vert_b_u1;
+(*noprune*)reg [31:0] vert_b_v1;
+(*noprune*)reg [31:0] vert_b_base_col_0;
+(*noprune*)reg [31:0] vert_b_base_col_1;
+(*noprune*)reg [31:0] vert_b_off_col;
 
-reg signed [31:0] vert_c_x;
-reg signed [31:0] vert_c_y;
-reg [31:0] vert_c_z;
-reg [31:0] vert_c_u0;
-reg [31:0] vert_c_v0;
-reg [31:0] vert_c_u1;
-reg [31:0] vert_c_v1;
-reg [31:0] vert_c_base_col_0;
-reg [31:0] vert_c_base_col_1;
-reg [31:0] vert_c_off_col;
+(*noprune*)reg signed [31:0] vert_c_x;
+(*noprune*)reg signed [31:0] vert_c_y;
+(*noprune*)reg [31:0] vert_c_z;
+(*noprune*)reg [31:0] vert_c_u0;
+(*noprune*)reg [31:0] vert_c_v0;
+(*noprune*)reg [31:0] vert_c_u1;
+(*noprune*)reg [31:0] vert_c_v1;
+(*noprune*)reg [31:0] vert_c_base_col_0;
+(*noprune*)reg [31:0] vert_c_base_col_1;
+(*noprune*)reg [31:0] vert_c_off_col;
 
-reg signed [31:0] vert_d_x;
-reg signed [31:0] vert_d_y;
-reg [31:0] vert_d_z;
-reg [31:0] vert_d_u0;
-reg [31:0] vert_d_v0;
-reg [31:0] vert_d_u1;
-reg [31:0] vert_d_v1;
-reg [31:0] vert_d_base_col_0;
-reg [31:0] vert_d_base_col_1;
-reg [31:0] vert_d_off_col;
+(*noprune*)reg signed [31:0] vert_d_x;
+(*noprune*)reg signed [31:0] vert_d_y;
+(*noprune*)reg [31:0] vert_d_z;
+(*noprune*)reg [31:0] vert_d_u0;
+(*noprune*)reg [31:0] vert_d_v0;
+(*noprune*)reg [31:0] vert_d_u1;
+(*noprune*)reg [31:0] vert_d_v1;
+(*noprune*)reg [31:0] vert_d_base_col_0;
+(*noprune*)reg [31:0] vert_d_base_col_1;
+(*noprune*)reg [31:0] vert_d_off_col;
 
 wire two_volume = 1'b0;	// TODO.
 
-reg signed [31:0] vert_temp_x;
-reg signed [31:0] vert_temp_y;
-reg [31:0] vert_temp_z;
-reg [31:0] vert_temp_u0;
-reg [31:0] vert_temp_v0;
-reg [31:0] vert_temp_base_col_0;
-reg [31:0] vert_temp_base_col_1;
-reg [31:0] vert_temp_off_col;
+(*noprune*)reg signed [31:0] vert_temp_x;
+(*noprune*)reg signed [31:0] vert_temp_y;
+(*noprune*)reg [31:0] vert_temp_z;
+(*noprune*)reg [31:0] vert_temp_u0;
+(*noprune*)reg [31:0] vert_temp_v0;
+(*noprune*)reg [31:0] vert_temp_base_col_0;
+(*noprune*)reg [31:0] vert_temp_base_col_1;
+(*noprune*)reg [31:0] vert_temp_off_col;
 
 
 // Object List read state machine...
@@ -173,26 +181,24 @@ if (!reset_n) begin
 	isp_state <= 8'd0;
 	isp_vram_rd <= 1'b0;
 	isp_vram_wr <= 1'b0;
+	fb_we <= 1'b0;
 	isp_entry_valid <= 1'b0;
 	quad_done <= 1'b1;
 	poly_drawn <= 1'b0;
 	read_codebook <= 1'b0;
+	prev_tex_word_addr <= 21'h1FFFFF;	// "Random" arbitrary address to start with.
 end
 else begin
-	//isp_vram_rd <= 1'b0;
-	isp_vram_wr <= 1'b0;
+	fb_we <= 1'b0;
 	
 	isp_entry_valid <= 1'b0;
 	poly_drawn <= 1'b0;
 	
 	read_codebook <= 1'b0;
 
-	if (isp_state > 1) begin
-		//if (isp_state != 8'd45 || isp_state != 8'd46 || isp_state != 8'd47 || isp_state != 8'd48 || isp_state != 8'd49 || isp_state != 8'd50) isp_state <= isp_state + 8'd1;
-		if (!tex_wait && isp_state < 8'd47 && isp_state!=8'd4 && isp_state!=8'd5) isp_state <= isp_state + 8'd1;
-		if (!tex_wait && isp_state > 8'd1  && isp_state!=8'd4 && isp_state!=8'd5 && isp_state < 8'd48) isp_vram_addr <= isp_vram_addr + 4;
-	end
-
+	if (isp_vram_rd & !vram_wait) isp_vram_rd <= 1'b0;
+	if (isp_vram_wr & !vram_wait) isp_vram_wr <= 1'b0;
+	
 	case (isp_state)
 		0: begin
 			if (render_poly) begin
@@ -204,25 +210,25 @@ else begin
 				vert_d_z <= 32'd0;
 				vert_d_u0 <= 32'd0;
 				vert_d_v0 <= 32'd0;
-				isp_state <= 8'd1;
+				isp_state <= isp_state + 8'd1;
 			end
 		end
 		
 		1: begin
 			if (is_tri_strip) begin		// TriangleStrip.
-				if (strip_mask==6'b000000 || strip_cnt==6'd6) begin	// Nothing to draw for this strip.
+				if (strip_mask==6'b000000 || strip_cnt==3'd6) begin	// Nothing to draw for this strip.
 					poly_drawn <= 1'b1;				// Tell the RA we're done.
 					isp_state <= 8'd0;				// Go back to idle state.
 				end
 				else if (strip_cnt < 6) begin	// Check strip_mask bits 0 through 5...
 					if (strip_mask[strip_cnt]) begin
-						isp_vram_rd <= 1'b1;
 						isp_vram_addr <= poly_addr;	// Always use the absolute start address of the poly. Will fetch ISP/TSP/TCW again, but then skip verts.
-						isp_state <= 8'd2;	// Go to the next state if the current strip_mask bit is set.
+						isp_vram_rd <= 1'b1;
+						isp_state <= 8'd2;				// Go to the next state if the current strip_mask bit is set.
 					end
-					else begin							// Current strip_mask bit was NOT set...
-						strip_cnt <= strip_cnt + 6'd1;	// Increment to the next bit.
-						//isp_state <= 8'd1;			// (Stay in the current state, to check the next bit.)
+					else begin									// Current strip_mask bit was NOT set...
+						strip_cnt <= strip_cnt + 3'd1;	// Increment to the next bit.
+						//isp_state <= 8'd1;					// (Stay in the current state, to check the next bit.)
 					end
 				end
 			end
@@ -238,27 +244,52 @@ else begin
 			end
 		end
 		
-		2: isp_inst <= isp_vram_din;
-		3: tsp_inst <= isp_vram_din;
-		4: begin
+		2: if (vram_valid) begin isp_inst <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1;  isp_state <= isp_state + 8'd1; end
+		3: if (vram_valid) begin tsp_inst <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1;  isp_state <= isp_state + 8'd1; end
+		4: if (vram_valid) begin
 			tcw_word <= isp_vram_din;
-			if (isp_vram_din[30]) begin
+			if (isp_vram_din[30] && prev_tex_word_addr != isp_vram_din[20:0]) begin	// Quite a big speed-up, just by checking if the texture addr has changed.
+				prev_tex_word_addr <= isp_vram_din[20:0];							// No point reading the codebook again, if the texture addr is the same as the last poly.
 				read_codebook <= 1'b1;	// Read VQ Code Book if TCW bit 30 is set.
-				isp_state <= 8'd5;
+				tex_other <= 1'b0;
+				isp_state <= 8'd80;
 			end
 			else begin
-				if (is_tri_strip) isp_vram_addr <= poly_addr + (3<<2) + ((vert_words*strip_cnt) << 2);	// Skip a vert, based on strip_cnt.
-				else isp_vram_addr <= isp_vram_addr + 4;
-				isp_state <= 8'd7;
+				prev_tex_word_addr <= isp_vram_din[20:0];
+				isp_state <= 8'd6;
 			end
 		end
 		
+		80: begin
+			isp_vram_rd <= 1'b1;	// Read first codebook word. TODO. First word might not work, 'cos the codebook address isn't output until read_codebook goes high.
+			isp_state <= 8'd5;
+		end
+		
 		5: begin
-			if (!read_codebook && !tex_wait) begin
-				if (is_tri_strip) isp_vram_addr <= poly_addr + (3<<2) + ((vert_words*strip_cnt) << 2);	// Skip a vert, based on strip_cnt.
-				else isp_vram_addr <= isp_vram_addr + 4;
-				isp_state <= 8'd7;
+			if (vram_valid) begin
+				tex_vram_word[31:0] <= isp_vram_din[31:0];
+				tex_other <= 1'b1;
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd6;
 			end
+			if (!codebook_wait) isp_state <= 8'd60;
+		end
+
+		6: begin
+			if (vram_valid) begin
+				tex_vram_word[63:32] <= isp_vram_din[31:0];
+				tex_other <= 1'b0;
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd5;
+			end
+			if (!codebook_wait) isp_state <= 8'd60;
+		end
+		
+		60: begin
+			if (is_tri_strip) isp_vram_addr <= poly_addr + (3<<2) + ((vert_words*strip_cnt) << 2);	// Skip a vert, based on strip_cnt.
+			else isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
+			isp_state <= 8'd7;
 		end
 		
 		// if (shadow)...
@@ -266,137 +297,221 @@ else begin
 		//5:  tsp2_inst <= isp_vram_din;
 		//6:  tex2_cont <= isp_vram_din;
 		
-		7:  vert_a_x <= isp_vram_din;
-		8:  vert_a_y <= isp_vram_din;
-		9:  begin
+		7: if (vram_valid) begin vert_a_x <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		8: if (vram_valid) begin vert_a_y <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		9: if (vram_valid) begin
 			vert_a_z <= isp_vram_din;
 			if (skip==0) isp_state <= 8'd17;
 			else if (!texture) isp_state <= 8'd12;	// Triangle Strip (probably).
+			else isp_state <= isp_state + 8'd1;		// TESTING !!
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
-		10:  begin
+		10: if (vram_valid) begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
 				vert_a_u0 <= {isp_vram_din[31:16],16'h0000};
 				vert_a_v0 <= {isp_vram_din[15:00],16'h0000};
 				isp_state <= 8'd12;	// Skip reading v0 from VRAM.
 			end
-			else vert_a_u0 <= isp_vram_din;
+			else begin
+				vert_a_u0 <= isp_vram_din;
+				isp_state <= isp_state + 8'd1;
+			end
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
-		11: vert_a_v0 <= isp_vram_din;
-		12: begin
+		11: if (vram_valid) begin vert_a_v0 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		12: if (vram_valid) begin
 			vert_a_base_col_0 <= isp_vram_din;
 			if (two_volume) isp_state <= 8'd13;
 			else if (offset) isp_state <= 8'd16;
 			else isp_state <= 8'd17;
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
 		
 		// if Two-volume...
-		13: vert_a_u1 <= isp_vram_din;
-		14: vert_a_v1 <= isp_vram_din;
-		15: begin vert_a_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd17; end
+		13: if (vram_valid) begin vert_a_u1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		14: if (vram_valid) begin vert_a_v1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		15: if (vram_valid) begin vert_a_base_col_1 <= isp_vram_din;
+			if (!offset) isp_state <= 8'd17;
+			else isp_state <= isp_state + 8'd1;
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
+		end
 		
 		// if Offset colour.
-		16: vert_a_off_col <= isp_vram_din;
+		16: if (vram_valid) begin vert_a_off_col <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
 		
-		17: vert_b_x <= isp_vram_din;
-		18: vert_b_y <= isp_vram_din;
-		19: begin
+		17: if (vram_valid) begin vert_b_x <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		18: if (vram_valid) begin vert_b_y <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		19: if (vram_valid) begin
 			vert_b_z <= isp_vram_din;
 			if (skip==0) isp_state <= 8'd27;
 			else if (!texture) isp_state <= 8'd22;	// Triangle Strip (probably).
+			else isp_state <= isp_state + 8'd1;		// TESTING !!
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
-		20: begin
+		20: if (vram_valid) begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
 				vert_b_u0 <= {isp_vram_din[31:16],16'h0000};
 				vert_b_v0 <= {isp_vram_din[15:00],16'h0000};
 				isp_state <= 8'd22;	// Skip reading v0 from VRAM.
 			end
-			else vert_b_u0 <= isp_vram_din;
+			else begin
+				vert_b_u0 <= isp_vram_din;
+				isp_state <= isp_state + 8'd1;
+			end
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
-		21: vert_b_v0 <= isp_vram_din;
-		22: begin
+		21: if (vram_valid) begin vert_b_v0 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		22: if (vram_valid) begin
 			vert_b_base_col_0 <= isp_vram_din;
 			if (two_volume) isp_state <= 8'd23;
 			else if (offset) isp_state <= 8'd26;
 			else isp_state <= 8'd27;
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
 		
 		// if Two-volume...
-		23: vert_b_u1 <= isp_vram_din;
-		24: vert_b_v1 <= isp_vram_din;
-		25: begin vert_b_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd27; end
+		23: if (vram_valid) begin vert_b_u1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		24: if (vram_valid) begin vert_b_v1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		25: if (vram_valid) begin
+			vert_b_base_col_1 <= isp_vram_din;
+			if (!offset) isp_state <= 8'd27;
+			else isp_state <= isp_state + 8'd1;
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
+		end
 		
 		// if Offset colour...
-		26: vert_b_off_col <= isp_vram_din;			// if Offset colour.
+		26: if (vram_valid) begin vert_b_off_col <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end	// if Offset colour.
 		
-		27: vert_c_x <= isp_vram_din;
-		28: vert_c_y <= isp_vram_din;
-		29: begin
+		27: if (vram_valid) begin vert_c_x <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		28: if (vram_valid) begin vert_c_y <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		29: if (vram_valid) begin
 			vert_c_z <= isp_vram_din;
 			if (skip==0) begin
 				if (is_quad_array) isp_state <= 8'd37;
 				else isp_state <= 8'd47;
 			end
 			else if (!texture) isp_state <= 8'd32;	// Triangle Strip (probably).
+			else isp_state <= isp_state + 8'd1;
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
-		30: begin
+		30: if (vram_valid) begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
 				vert_c_u0 <= {isp_vram_din[31:16],16'h0000};
 				vert_c_v0 <= {isp_vram_din[15:00],16'h0000};
 				isp_state <= 8'd32;	// Skip reading v0 from VRAM.
 			end
-			else vert_c_u0 <= isp_vram_din;
+			else begin
+				vert_c_u0 <= isp_vram_din;
+				isp_state <= isp_state + 8'd1;
+			end
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
-		31: vert_c_v0 <= isp_vram_din;
-		32: begin
+		31: if (vram_valid) begin vert_c_v0 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		32: if (vram_valid) begin
 			vert_c_base_col_0 <= isp_vram_din;
 			if (two_volume) isp_state <= 8'd33;
 			else if (offset) isp_state <= 8'd36;
 			else if (is_quad_array) isp_state <= 8'd37;	// If a Quad.
 				else isp_state <= 8'd47;
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
 		
 		// if Two-volume...
-		33: vert_c_u1 <= isp_vram_din;
-		34: vert_c_v1 <= isp_vram_din;
-		35: begin vert_c_base_col_1 <= isp_vram_din;
+		33: if (vram_valid) begin vert_c_u1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		34: if (vram_valid) begin vert_c_v1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		35: if (vram_valid) begin vert_c_base_col_1 <= isp_vram_din;
 			if (offset) isp_state <= 8'd36;
 			else isp_state <= 8'd47;
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
 		
 		// if Offset colour...
-		36: begin vert_c_off_col <= isp_vram_din;	// if Offset colour.
-			if (is_quad_array) isp_state <= 8'd37;		// If a Quad
-			else begin
-				isp_state <= 8'd47;
+		36: if (vram_valid) begin
+			vert_c_off_col <= isp_vram_din;	// if Offset colour.
+			if (is_quad_array) begin
+				isp_state <= 8'd37;		// If a Quad
+				isp_vram_rd <= 1'b1;
 			end
+			else isp_state <= 8'd47;
+			isp_vram_addr <= isp_vram_addr + 4;
 		end
 		
-		37: vert_d_x <= isp_vram_din;
-		38: vert_d_y <= isp_vram_din;
-		39: begin vert_d_z <= isp_vram_din;  if (!texture) isp_state <= 8'd42; end
-		40: begin
+		// Quad Array stuff...
+		37: if (vram_valid) begin vert_d_x <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		38: if (vram_valid) begin vert_d_y <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		39: if (vram_valid) begin
+			vert_d_z <= isp_vram_din;
+			if (!texture) isp_state <= 8'd42;
+			else isp_state <= isp_state + 8'd1;
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
+		end
+		40: if (vram_valid) begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
 				vert_d_u0 <= {isp_vram_din[31:16],16'h0000};
 				vert_d_v0 <= {isp_vram_din[15:00],16'h0000};
 				isp_state <= 8'd42;	// Skip reading v0 from VRAM.
 			end
-			else vert_d_u0 <= isp_vram_din;
+			else begin
+				vert_d_u0 <= isp_vram_din;
+				isp_state <= isp_state + 8'd1;
+			end
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b1;
 		end
-		41: vert_d_v0 <= isp_vram_din;
-		42: begin
+		41:if (vram_valid)  begin vert_d_v0 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		42: if (vram_valid) begin
 			vert_d_base_col_0 <= isp_vram_din;
-			if (two_volume) isp_state <= 8'd43;
-			else if (offset) isp_state <= 8'd46;
-			else isp_state <= 8'd47;
+			if (two_volume) begin
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd43;
+			end
+			else if (offset) begin
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd46;
+			end
+			else begin
+				isp_vram_rd <= 1'b0;	// Clear isp_vram_rd here.
+				isp_state <= 8'd47;
+			end
+			isp_vram_addr <= isp_vram_addr + 4;
 		end
 		
 		// if Two-volume...
-		43: vert_d_u1 <= isp_vram_din;
-		44: vert_d_v1 <= isp_vram_din;
-		45: begin vert_d_base_col_1 <= isp_vram_din; if (!offset) isp_state <= 8'd47; end
+		43: if (vram_valid) begin vert_d_u1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		44: if (vram_valid) begin vert_d_v1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
+		45: if (vram_valid) begin
+			vert_d_base_col_1 <= isp_vram_din;
+			if (!offset) begin
+				isp_vram_rd <= 1'b0;	// Clear isp_vram_rd here.
+				isp_state <= 8'd47;
+			end
+			else begin
+				isp_state <= isp_state + 8'd1;
+				isp_vram_rd <= 1'b1;
+			end
+			isp_vram_addr <= isp_vram_addr + 4;
+		end
 		
 		// if Offset colour...
-		46: vert_d_off_col <= isp_vram_din;				// if Offset colour.
+		46: if (vram_valid) begin
+			vert_d_off_col <= isp_vram_din;				// if Offset colour.
+			isp_vram_addr <= isp_vram_addr + 4;
+			isp_vram_rd <= 1'b0;	// Clear isp_vram_rd here.
+			isp_state <= isp_state + 8'd1;
+		end
 		
 		47: begin
 			if (is_tri_strip && strip_cnt[0]) begin		// Swap verts A and B, for all ODD strip segments.
@@ -422,15 +537,16 @@ else begin
 			// leading_zeros was often causing it to skip the first tile row, due to processing delay maybe?...
 			// (leading_zeros often starting as 31, which was skipping x_ps to the end of the first tile row.
 			//  this would causing horizontal lines across the whole image. ElectronAsh.)
-			x_ps <= (tilex<<5) /*+ leading_zeros*/;
+			x_ps <= (tilex<<5) /*+ leading_zeros*/;	// Disabled for now.
 			y_ps <= tiley<<5;
 			
+			isp_vram_addr <= isp_vram_addr + 4;	// I think this is needed, to make isp_vram_addr_last correct in isp_state 49!
 			isp_state <= 8'd49;			// Draw the triangle!
 		end
 		
 		48: begin
 			if (is_tri_strip) begin			// Triangle Strip.
-				strip_cnt <= strip_cnt + 6'd1;	// Increment to the next strip_mask bit.
+				strip_cnt <= strip_cnt + 3'd1;	// Increment to the next strip_mask bit.
 				isp_state <= 8'd1;
 			end
 			else if (is_tri_array || is_quad_array) begin		// Triangle Array or Quad Array.
@@ -443,10 +559,10 @@ else begin
 							//vert_b_z <= vert_d_z;
 							vert_b_u0 <= vert_a_u0;
 							vert_b_v0 <= vert_c_v0;
-							isp_state <= 8'd47;			// Draw the second half of the Quad.
+							isp_state <= 8'd47;	// Draw the second half of the Quad.
 														// isp_entry_valid will tell the C code to latch the
 														// params again, and convert to fixed-point.
-							quad_done <= 1'b1;			// <- The next time we get to this state, we know the full Quad is drawn.
+							quad_done <= 1'b1;	// <- The next time we get to this state, we know the full Quad is drawn.
 						end
 						else begin
 							poly_drawn <= 1'b1;	// Quad is done.
@@ -461,6 +577,7 @@ else begin
 				else begin	// Triangle Array or Quad Array not done yet...
 					array_cnt <= array_cnt - 3'd1;
 					isp_vram_addr <= isp_vram_addr - 4;
+					isp_vram_rd <= 1'b1;
 					isp_state <= 8'd2;	// Jump back, to grab the next PRIM (including ISP/TSP/TCW).
 				end
 			end
@@ -489,37 +606,57 @@ else begin
 			//int C4 = FDY41 * FX4 - FDX41 * FY4;
 			mult7 <= (is_quad_array) ? (FDY41_FIXED*FX4_FIXED)>>FRAC_BITS : 1<<FRAC_BITS;
 			mult8 <= (is_quad_array) ? (FDX41_FIXED*FY4_FIXED)>>FRAC_BITS : 1<<FRAC_BITS;
-			
-			isp_vram_addr <= (tilex<<5) + ((tiley<<5) * 640);	// Framebuffer write address.
-			isp_vram_dout <= final_argb;						// ABGR, for sim display.
-			if (inTriangle) isp_vram_wr <= 1'b1;
-		
+
 			isp_state <= isp_state + 8'd1;
 		end
 
 		50: begin
-			isp_vram_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
-			isp_vram_dout <= /*(tex_u_flip || tex_v_flip) ? 32'haa00ff00 :*/ final_argb;	// ABGR, for sim display.
 			if (y_ps < (tiley<<5)+32) begin
-				if (x_ps == (tilex<<5)+32 || x_ps[4:0]==32-trailing_zeros) begin
-					x_ps <= (tilex<<5) + leading_zeros;
+				if (x_ps == (tilex<<5)+32 /*|| x_ps[4:0]==32-trailing_zeros || inTri==32'b0*/) begin	// inTri check, gives us roughly 2 FPS speedup, by skipping lines with no span. ;)
+					x_ps <= (tilex<<5) /*+ leading_zeros*/;
 					y_ps <= y_ps + 12'd1;
 					isp_state <= 8'd51;		// Had to add an extra clock tick, to allow the VRAM address and texture stuff to update.
 											// (fixed the thin vertical lines on the renders. ElectronAsh).
 				end
-				else begin
-					if (inTriangle) isp_vram_wr <= 1'b1;
+				else begin	// Inc x_ps. Write pixel to Framebuffer if inTri bit is set.
+					//if (inTri[x_ps[4:0]] /*&& allow_z_write[x_ps[4:0]]*/) fb_we <= 1'b1;
 					x_ps <= x_ps + 12'd1;
+					tex_other <= 1'b0;
+					isp_vram_rd <= 1'b1;
+					isp_state <= 8'd52;
 				end
 			end
-			else begin
+			else begin	// End of tile, for this poly.
 				isp_vram_addr <= isp_vram_addr_last;
 				isp_state <= 8'd48;
 			end
 		end
 		
 		51: begin
-			x_ps <= (tilex<<5) + leading_zeros;
+			x_ps <= (tilex<<5) /*+ leading_zeros*/;
+			isp_state <= 8'd50;
+		end			
+		
+		52: if (vram_valid) begin
+			tex_vram_word[31:0] <= isp_vram_din[31:0];
+			tex_other <= 1'b1;
+			isp_vram_rd <= 1'b1;
+			isp_state <= 8'd53;
+		end
+		
+		53: if (vram_valid) begin
+			tex_vram_word[63:32] <= isp_vram_din[31:0];
+			tex_other <= 1'b0;
+			isp_state <= 8'd54;
+		end
+		
+		54: begin
+			//if ( inTri[ x_ps[4:0] ] ) begin
+			if ( inTriangle ) begin
+				fb_addr <= x_ps + (y_ps * 640);	// Framebuffer write address.
+				fb_writedata <= final_argb;
+				fb_we <= 1'b1;							// The (current) SDRAM controller does a Write on the Rising edge of fb_we, so need to pulse it.
+			end											// ie. Can't just hold it high through multiple pixels.
 			isp_state <= 8'd50;
 		end
 
@@ -529,117 +666,117 @@ end
 
 wire [7:0] vert_words = (two_volume&shadow) ? ((skip*2)+3) : (skip+3);
 
+reg [63:0] tex_vram_word;
 
-wire signed [63:0] f_area = ((FX1_FIXED-FX3_FIXED) * (FY2_FIXED-FY3_FIXED)) - ((FY1_FIXED-FY3_FIXED) * (FX2_FIXED-FX3_FIXED));
-wire sgn = (f_area<=0);
+
+(*keep*)wire signed [63:0] f_area = ((FX1_FIXED-FX3_FIXED) * (FY2_FIXED-FY3_FIXED)) - ((FY1_FIXED-FY3_FIXED) * (FX2_FIXED-FX3_FIXED));
+(*keep*)wire sgn = f_area[63];
 
 // Vertex deltas...
-wire signed [47:0] FDX12_FIXED = (sgn) ? (FX1_FIXED - FX2_FIXED) : (FX2_FIXED - FX1_FIXED);
-wire signed [47:0] FDX23_FIXED = (sgn) ? (FX2_FIXED - FX3_FIXED) : (FX3_FIXED - FX2_FIXED);
-wire signed [47:0] FDX31_FIXED = (is_quad_array) ? sgn ? (FX3_FIXED - FX4_FIXED) : (FX4_FIXED - FX3_FIXED) : sgn ? (FX3_FIXED - FX1_FIXED) : (FX1_FIXED - FX3_FIXED);
-wire signed [47:0] FDX41_FIXED = (is_quad_array) ? sgn ? (FX4_FIXED - FX1_FIXED) : (FX1_FIXED - FX4_FIXED) : 0;
+(*keep*)wire signed [47:0] FDX12_FIXED = (sgn) ? (FX1_FIXED - FX2_FIXED) : (FX2_FIXED - FX1_FIXED);
+(*keep*)wire signed [47:0] FDX23_FIXED = (sgn) ? (FX2_FIXED - FX3_FIXED) : (FX3_FIXED - FX2_FIXED);
+(*keep*)wire signed [47:0] FDX31_FIXED = (is_quad_array) ? sgn ? (FX3_FIXED - FX4_FIXED) : (FX4_FIXED - FX3_FIXED) : sgn ? (FX3_FIXED - FX1_FIXED) : (FX1_FIXED - FX3_FIXED);
+(*keep*)wire signed [47:0] FDX41_FIXED = (is_quad_array) ? sgn ? (FX4_FIXED - FX1_FIXED) : (FX1_FIXED - FX4_FIXED) : 0;
 
-wire signed [47:0] FDY12_FIXED = sgn ? (FY1_FIXED - FY2_FIXED) : (FY2_FIXED - FY1_FIXED);
-wire signed [47:0] FDY23_FIXED = sgn ? (FY2_FIXED - FY3_FIXED) : (FY3_FIXED - FY2_FIXED);
-wire signed [47:0] FDY31_FIXED = (is_quad_array) ? sgn ? (FY3_FIXED - FY4_FIXED) : (FY4_FIXED - FY3_FIXED) : sgn ? (FY3_FIXED - FY1_FIXED) : (FY1_FIXED - FY3_FIXED);
-wire signed [47:0] FDY41_FIXED = (is_quad_array) ? sgn ? (FY4_FIXED - FY1_FIXED) : (FY1_FIXED - FY4_FIXED) : 0;
+(*keep*)wire signed [47:0] FDY12_FIXED = sgn ? (FY1_FIXED - FY2_FIXED) : (FY2_FIXED - FY1_FIXED);
+(*keep*)wire signed [47:0] FDY23_FIXED = sgn ? (FY2_FIXED - FY3_FIXED) : (FY3_FIXED - FY2_FIXED);
+(*keep*)wire signed [47:0] FDY31_FIXED = (is_quad_array) ? sgn ? (FY3_FIXED - FY4_FIXED) : (FY4_FIXED - FY3_FIXED) : sgn ? (FY3_FIXED - FY1_FIXED) : (FY1_FIXED - FY3_FIXED);
+(*keep*)wire signed [47:0] FDY41_FIXED = (is_quad_array) ? sgn ? (FY4_FIXED - FY1_FIXED) : (FY1_FIXED - FY4_FIXED) : 0;
 
 
 // Vertex float-to-fixed conversion...
-wire signed [47:0] FX1_FIXED;
+(*keep*)wire signed [47:0] FX1_FIXED;
 float_to_fixed  float_x1 (
 	.float_in( vert_a_x ),	// input [31:0]  float_in
 	.fixed( FX1_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FY1_FIXED;
+(*keep*)wire signed [47:0] FY1_FIXED;
 float_to_fixed  float_y1 (
 	.float_in( vert_a_y ),	// input [31:0]  float_in
 	.fixed( FY1_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FZ1_FIXED;
+(*keep*)wire signed [47:0] FZ1_FIXED;
 float_to_fixed  float_z1 (
 	.float_in( vert_a_z ),	// input [31:0]  float_in
 	.fixed( FZ1_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FU1_FIXED;
+(*keep*)wire signed [47:0] FU1_FIXED;
 float_to_fixed  float_u1 (
 	.float_in( vert_a_u0 ),	// input [31:0]  float_in
 	.fixed( FU1_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FV1_FIXED;
+(*keep*)wire signed [47:0] FV1_FIXED;
 float_to_fixed  float_v1 (
 	.float_in( vert_a_v0 ),	// input [31:0]  float_in
 	.fixed( FV1_FIXED )		// output [31:0]  fixed
 );
 
-wire signed [47:0] FX2_FIXED;
+(*keep*)wire signed [47:0] FX2_FIXED;
 float_to_fixed  float_x2 (
 	.float_in( vert_b_x ),	// input [31:0]  float_in
 	.fixed( FX2_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FY2_FIXED;
+(*keep*)wire signed [47:0] FY2_FIXED;
 float_to_fixed  float_y2 (
 	.float_in( vert_b_y ),	// input [31:0]  float_in
 	.fixed( FY2_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FZ2_FIXED;
+(*keep*)wire signed [47:0] FZ2_FIXED;
 float_to_fixed  float_z2 (
 	.float_in( vert_b_z ),	// input [31:0]  float_in
 	.fixed( FZ2_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FU2_FIXED;
+(*keep*)wire signed [47:0] FU2_FIXED;
 float_to_fixed  float_u2 (
 	.float_in( vert_b_u0 ),	// input [31:0]  float_in
 	.fixed( FU2_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FV2_FIXED;
+(*keep*)wire signed [47:0] FV2_FIXED;
 float_to_fixed  float_v2 (
 	.float_in( vert_b_v0 ),	// input [31:0]  float_in
 	.fixed( FV2_FIXED )		// output [31:0]  fixed
 );
 
-wire signed [47:0] FX3_FIXED;
+(*keep*)wire signed [47:0] FX3_FIXED;
 float_to_fixed  float_x3 (
 	.float_in( vert_c_x ),	// input [31:0]  float_in
 	.fixed( FX3_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FY3_FIXED;
+(*keep*)wire signed [47:0] FY3_FIXED;
 float_to_fixed  float_y3 (
 	.float_in( vert_c_y ),	// input [31:0]  float_in
 	.fixed( FY3_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FZ3_FIXED;
+(*keep*)wire signed [47:0] FZ3_FIXED;
 float_to_fixed  float_z3 (
 	.float_in( vert_c_z ),	// input [31:0]  float_in
 	.fixed( FZ3_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FU3_FIXED;
+(*keep*)wire signed [47:0] FU3_FIXED;
 float_to_fixed  float_u3 (
 	.float_in( vert_c_u0 ),	// input [31:0]  float_in
 	.fixed( FU3_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FV3_FIXED;
+(*keep*)wire signed [47:0] FV3_FIXED;
 float_to_fixed  float_v3 (
 	.float_in( vert_c_v0 ),	// input [31:0]  float_in
 	.fixed( FV3_FIXED )		// output [31:0]  fixed
 );
 
-wire signed [47:0] FX4_FIXED;
+(*keep*)wire signed [47:0] FX4_FIXED;
 float_to_fixed  float_x4 (
 	.float_in( vert_d_x ),	// input [31:0]  float_in
 	.fixed( FX4_FIXED )		// output [31:0]  fixed
 );
-wire signed [47:0] FY4_FIXED;
+(*keep*)wire signed [47:0] FY4_FIXED;
 float_to_fixed  float_y4 (
 	.float_in( vert_d_y ),	// input [31:0]  float_in
 	.fixed( FY4_FIXED )		// output [31:0]  fixed
 );
 
 
-//reg signed [11:0] x_ps;
-//reg signed [11:0] y_ps;
-reg [11:0] x_ps;
-reg [11:0] y_ps;
+reg [10:0] x_ps;
+reg [10:0] y_ps;
 
 // Half-edge constants
 // Setup phase...
@@ -685,25 +822,26 @@ inTri_calc  inTri_calc_inst (
 	.FDY31( FDY31_FIXED ),	// input signed [47:0]  FDY31
 	.FDY41( FDY41_FIXED ),	// input signed [47:0]  FDY41
 
-	.x_ps( x_ps ),
-	.y_ps( y_ps ),
+	.x_ps( {1'b0, x_ps[9:0]} ),
+	.y_ps( {1'b0, y_ps[9:0]} ),
 	
-	.inTri( inTri ),	// output [31:0]  inTriangle
+	.inTriangle( inTriangle ),	// output inTriangle
+	
+	.inTri( inTri ),	// output [31:0]  inTri
 	
 	.leading_zeros( leading_zeros ),	// output [4:0]  leading_zeros
 	.trailing_zeros( trailing_zeros )	// output [4:0]  trailing_zeros
 );
-wire [31:0] inTri;
+
+(*keep*)wire inTriangle;
+(*keep*)wire [31:0] inTri;
 
 wire [4:0] leading_zeros;
 wire [4:0] trailing_zeros;
 
 
-reg inTriangle;
-
-
 // Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
-//
+/*
 interp  interp_inst_z (
 	.clock( clock ),			// input  clock
 	.setup( isp_entry_valid ),	// input  setup
@@ -722,18 +860,19 @@ interp  interp_inst_z (
 	.FZ2( FZ2_FIXED ),		// input signed [31:0] z2
 	.FZ3( FZ3_FIXED ),		// input signed [31:0] z3
 	
-	.x_ps( x_ps ),		// input signed [11:0] x_ps
-	.y_ps( y_ps ),		// input signed [11:0] y_ps
+	.x_ps( {1'b0, x_ps[9:0]} ),		// input signed [10:0] x_ps
+	.y_ps( {1'b0, y_ps[9:0]} ),		// input signed [10:0] y_ps
 	
-	.interp( IP_Z_INTERP ),	// output signed [31:0]  interp
+	.interp( IP_Z_INTERP )//,	// output signed [31:0]  interp
 
-	.interp0(  IP_Z[0] ),  .interp1(  IP_Z[1] ),  .interp2(  IP_Z[2] ),  .interp3(  IP_Z[3] ),  .interp4(  IP_Z[4] ),  .interp5(  IP_Z[5] ),  .interp6(  IP_Z[6] ),  .interp7(  IP_Z[7] ),
-	.interp8(  IP_Z[8] ),  .interp9(  IP_Z[9] ),  .interp10( IP_Z[10] ), .interp11( IP_Z[11] ), .interp12( IP_Z[12] ), .interp13( IP_Z[13] ), .interp14( IP_Z[14] ), .interp15( IP_Z[15] ),
-	.interp16( IP_Z[16] ), .interp17( IP_Z[17] ), .interp18( IP_Z[18] ), .interp19( IP_Z[19] ), .interp20( IP_Z[20] ), .interp21( IP_Z[21] ), .interp22( IP_Z[22] ), .interp23( IP_Z[23] ),
-	.interp24( IP_Z[24] ), .interp25( IP_Z[25] ), .interp26( IP_Z[26] ), .interp27( IP_Z[27] ), .interp28( IP_Z[28] ), .interp29( IP_Z[29] ), .interp30( IP_Z[30] ), .interp31( IP_Z[31] )
+	//.interp0(  IP_Z[0] ),  .interp1(  IP_Z[1] ),  .interp2(  IP_Z[2] ),  .interp3(  IP_Z[3] ),  .interp4(  IP_Z[4] ),  .interp5(  IP_Z[5] ),  .interp6(  IP_Z[6] ),  .interp7(  IP_Z[7] ),
+	//.interp8(  IP_Z[8] ),  .interp9(  IP_Z[9] ),  .interp10( IP_Z[10] ), .interp11( IP_Z[11] ), .interp12( IP_Z[12] ), .interp13( IP_Z[13] ), .interp14( IP_Z[14] ), .interp15( IP_Z[15] ),
+	//.interp16( IP_Z[16] ), .interp17( IP_Z[17] ), .interp18( IP_Z[18] ), .interp19( IP_Z[19] ), .interp20( IP_Z[20] ), .interp21( IP_Z[21] ), .interp22( IP_Z[22] ), .interp23( IP_Z[23] ),
+	//.interp24( IP_Z[24] ), .interp25( IP_Z[25] ), .interp26( IP_Z[26] ), .interp27( IP_Z[27] ), .interp28( IP_Z[28] ), .interp29( IP_Z[29] ), .interp30( IP_Z[30] ), .interp31( IP_Z[31] )
 );
-wire signed [31:0] IP_Z_INTERP;
-wire signed [31:0] IP_Z [0:31];	// [0:31] is the tile COLUMN.
+*/
+wire signed [31:0] IP_Z_INTERP = FZ2_FIXED;
+//wire signed [31:0] IP_Z [0:31];	// [0:31] is the tile COLUMN.
 
 
 // int w = tex_u_size_full;
@@ -761,18 +900,19 @@ interp  interp_inst_u (
 	.FZ2( (u2_mult_width * FZ2_FIXED) >>FRAC_BITS ),	// input signed [31:0] z2
 	.FZ3( (u3_mult_width * FZ3_FIXED) >>FRAC_BITS ),	// input signed [31:0] z3
 	
-	.x_ps( x_ps ),		// input signed [11:0] x_ps
-	.y_ps( y_ps ),		// input signed [11:0] y_ps
+	.x_ps( {1'b0, x_ps[9:0]} ),		// input signed [11:0] x_ps
+	.y_ps( {1'b0, y_ps[9:0]} ),		// input signed [11:0] y_ps
 	
-	.interp( IP_U_INTERP ),	// output signed [31:0]  interp
-	
-	.interp0(  IP_U[0] ),  .interp1(  IP_U[1] ),  .interp2(  IP_U[2] ),  .interp3(  IP_U[3] ),  .interp4(  IP_U[4] ),  .interp5(  IP_U[5] ),  .interp6(  IP_U[6] ),  .interp7(  IP_U[7] ),
-	.interp8(  IP_U[8] ),  .interp9(  IP_U[9] ),  .interp10( IP_U[10] ), .interp11( IP_U[11] ), .interp12( IP_U[12] ), .interp13( IP_U[13] ), .interp14( IP_U[14] ), .interp15( IP_U[15] ),
-	.interp16( IP_U[16] ), .interp17( IP_U[17] ), .interp18( IP_U[18] ), .interp19( IP_U[19] ), .interp20( IP_U[20] ), .interp21( IP_U[21] ), .interp22( IP_U[22] ), .interp23( IP_U[23] ),
-	.interp24( IP_U[24] ), .interp25( IP_U[25] ), .interp26( IP_U[26] ), .interp27( IP_U[27] ), .interp28( IP_U[28] ), .interp29( IP_U[29] ), .interp30( IP_U[30] ), .interp31( IP_U[31] )
+	.interp( IP_U_INTERP )//,	// output signed [31:0]  interp
+
+	//.interp0(  IP_U[0] ),  .interp1(  IP_U[1] ),  .interp2(  IP_U[2] ),  .interp3(  IP_U[3] ),  .interp4(  IP_U[4] ),  .interp5(  IP_U[5] ),  .interp6(  IP_U[6] ),  .interp7(  IP_U[7] ),
+	//.interp8(  IP_U[8] ),  .interp9(  IP_U[9] ),  .interp10( IP_U[10] ), .interp11( IP_U[11] ), .interp12( IP_U[12] ), .interp13( IP_U[13] ), .interp14( IP_U[14] ), .interp15( IP_U[15] ),
+	//.interp16( IP_U[16] ), .interp17( IP_U[17] ), .interp18( IP_U[18] ), .interp19( IP_U[19] ), .interp20( IP_U[20] ), .interp21( IP_U[21] ), .interp22( IP_U[22] ), .interp23( IP_U[23] ),
+	//.interp24( IP_U[24] ), .interp25( IP_U[25] ), .interp26( IP_U[26] ), .interp27( IP_U[27] ), .interp28( IP_U[28] ), .interp29( IP_U[29] ), .interp30( IP_U[30] ), .interp31( IP_U[31] )
 );
-wire signed [31:0] IP_U_INTERP;
-wire signed [31:0] IP_U [0:31];	// [0:31] is the tile COLUMN.
+
+wire signed [31:0] IP_U_INTERP /*= FU2_FIXED * tex_u_size_full*/;
+//wire signed [31:0] IP_U [0:31];	// [0:31] is the tile COLUMN.
 
 
 // int h = tex_v_size_full;
@@ -800,19 +940,21 @@ interp  interp_inst_v (
 	.FZ2( (v2_mult_height * FZ2_FIXED) >>FRAC_BITS ),	// input signed [31:0] z2
 	.FZ3( (v3_mult_height * FZ3_FIXED) >>FRAC_BITS ),	// input signed [31:0] z3
 	
-	.x_ps( x_ps ),		// input signed [11:0] x_ps
-	.y_ps( y_ps ),		// input signed [11:0] y_ps
+	.x_ps( {1'b0, x_ps[9:0]} ),		// input signed [11:0] x_ps
+	.y_ps( {1'b0, y_ps[9:0]} ),		// input signed [11:0] y_ps
 	
-	.interp( IP_V_INTERP ),	// output signed [31:0]  interp
-	
-	.interp0(  IP_V[0] ),  .interp1(  IP_V[1] ),  .interp2(  IP_V[2] ),  .interp3(  IP_V[3] ),  .interp4(  IP_V[4] ),  .interp5(  IP_V[5] ),  .interp6(  IP_V[6] ),  .interp7(  IP_V[7] ),
-	.interp8(  IP_V[8] ),  .interp9(  IP_V[9] ),  .interp10( IP_V[10] ), .interp11( IP_V[11] ), .interp12( IP_V[12] ), .interp13( IP_V[13] ), .interp14( IP_V[14] ), .interp15( IP_V[15] ),
-	.interp16( IP_V[16] ), .interp17( IP_V[17] ), .interp18( IP_V[18] ), .interp19( IP_V[19] ), .interp20( IP_V[20] ), .interp21( IP_V[21] ), .interp22( IP_V[22] ), .interp23( IP_V[23] ),
-	.interp24( IP_V[24] ), .interp25( IP_V[25] ), .interp26( IP_V[26] ), .interp27( IP_V[27] ), .interp28( IP_V[28] ), .interp29( IP_V[29] ), .interp30( IP_V[30] ), .interp31( IP_V[31] )
-);
-wire signed [31:0] IP_V_INTERP;
-wire signed [31:0] IP_V [0:31];	// [0:31] is the tile COLUMN.
+	.interp( IP_V_INTERP )//,	// output signed [31:0]  interp
 
+	//.interp0(  IP_V[0] ),  .interp1(  IP_V[1] ),  .interp2(  IP_V[2] ),  .interp3(  IP_V[3] ),  .interp4(  IP_V[4] ),  .interp5(  IP_V[5] ),  .interp6(  IP_V[6] ),  .interp7(  IP_V[7] ),
+	//.interp8(  IP_V[8] ),  .interp9(  IP_V[9] ),  .interp10( IP_V[10] ), .interp11( IP_V[11] ), .interp12( IP_V[12] ), .interp13( IP_V[13] ), .interp14( IP_V[14] ), .interp15( IP_V[15] ),
+	//.interp16( IP_V[16] ), .interp17( IP_V[17] ), .interp18( IP_V[18] ), .interp19( IP_V[19] ), .interp20( IP_V[20] ), .interp21( IP_V[21] ), .interp22( IP_V[22] ), .interp23( IP_V[23] ),
+	//.interp24( IP_V[24] ), .interp25( IP_V[25] ), .interp26( IP_V[26] ), .interp27( IP_V[27] ), .interp28( IP_V[28] ), .interp29( IP_V[29] ), .interp30( IP_V[30] ), .interp31( IP_V[31] )
+);
+
+wire signed [31:0] IP_V_INTERP /*= FV2_FIXED * tex_v_size_full*/;
+//wire signed [31:0] IP_V [0:31];	// [0:31] is the tile COLUMN.
+
+/*
 always @(*) begin
 	case (x_ps[4:0])
 		 0:	u_div_z_fixed = (IP_U[0] <<FRAC_BITS) / IP_Z[0];
@@ -883,48 +1025,14 @@ always @(*) begin
 		30:	v_div_z_fixed = (IP_V[30]<<FRAC_BITS) / IP_Z[30];
 		31:	v_div_z_fixed = (IP_V[31]<<FRAC_BITS) / IP_Z[31];
 	endcase
-	
-	case (x_ps[4:0])
-		 0:	inTriangle = inTri[0];
-		 1:	inTriangle = inTri[1];
-		 2:	inTriangle = inTri[2];
-		 3:	inTriangle = inTri[3];
-		 4:	inTriangle = inTri[4];
-		 5:	inTriangle = inTri[5];
-		 6:	inTriangle = inTri[6];
-		 7:	inTriangle = inTri[7];
-		 8:	inTriangle = inTri[8];
-		 9:	inTriangle = inTri[9];
-		10:	inTriangle = inTri[10];
-		11:	inTriangle = inTri[11];
-		12:	inTriangle = inTri[12];
-		13:	inTriangle = inTri[13];
-		14:	inTriangle = inTri[14];
-		15:	inTriangle = inTri[15];
-		16:	inTriangle = inTri[16];
-		17:	inTriangle = inTri[17];
-		18:	inTriangle = inTri[18];
-		19:	inTriangle = inTri[19];
-		20:	inTriangle = inTri[20];
-		21:	inTriangle = inTri[21];
-		22:	inTriangle = inTri[22];
-		23:	inTriangle = inTri[23];
-		24:	inTriangle = inTri[24];
-		25:	inTriangle = inTri[25];
-		26:	inTriangle = inTri[26];
-		27:	inTriangle = inTri[27];
-		28:	inTriangle = inTri[28];
-		29:	inTriangle = inTri[29];
-		30:	inTriangle = inTri[30];
-		31:	inTriangle = inTri[31];
-	endcase
 end
+*/
 
-//wire signed [63:0] u_div_z_fixed = (IP_U<<FRAC_BITS) / IP_Z;
-reg signed [31:0] u_div_z_fixed;
+wire signed [63:0] u_div_z_fixed = (IP_U_INTERP<<FRAC_BITS) / IP_Z_INTERP;
+//reg signed [31:0] u_div_z_fixed;
 
-//wire signed [63:0] v_div_z_fixed = (IP_V<<FRAC_BITS) / IP_Z;
-reg signed [31:0] v_div_z_fixed;
+wire signed [63:0] v_div_z_fixed = (IP_V_INTERP<<FRAC_BITS) / IP_Z_INTERP;
+//reg signed [31:0] v_div_z_fixed;
 
 wire signed [31:0] u_div_z = u_div_z_fixed >>FRAC_BITS;
 wire signed [31:0] v_div_z = v_div_z_fixed >>FRAC_BITS;
@@ -973,23 +1081,25 @@ reg [9:0] v_flipped;
 */
 /* verilator lint_on LATCH */
 
+wire [9:0] u_clamp = (u_div_z<0) ? 10'd0 : 
+		(u_div_z>=tex_u_size_full) ? tex_u_size_full-1 :
+											  u_div_z;
 
-wire [9:0] u_clamp = (tex_u_clamp && u_div_z>=tex_u_size_full) ? tex_u_size_full-1 :
-					 (tex_u_clamp && u_div_z[31]) ? 10'd0 :
-									 u_div_z;
+wire [9:0] v_clamp = (v_div_z<0) ? 10'd0 :
+		(v_div_z>=tex_v_size_full) ? tex_v_size_full-1 :
+											  v_div_z;
 
-wire [9:0] v_clamp = (tex_v_clamp && v_div_z>=tex_v_size_full) ? tex_v_size_full-1 :
-					 (tex_v_clamp && v_div_z[31]) ? 10'd0 :
-									 v_div_z;
+wire [9:0] u_masked  = u_div_z&((tex_u_size_full*2)-1);
+wire [9:0] v_masked  = v_div_z&((tex_v_size_full*2)-1);
 
-wire [9:0] u_masked  = u_clamp&((tex_u_size_full*2)-1);
-wire [9:0] v_masked  = v_clamp&((tex_v_size_full*2)-1);
+wire [9:0] u_mask_flip = (u_masked&tex_u_size_full) ? u_masked^((tex_u_size_full*2)-1) : u_masked;
+wire [9:0] v_mask_flip = (v_masked&tex_v_size_full) ? v_masked^((tex_u_size_full*2)-1) : v_masked;
 
-wire [9:0] u_mask_flip = (u_masked&tex_u_size_full) ? u_div_z^((tex_u_size_full*2)-1) : u_masked;
-wire [9:0] v_mask_flip = (v_masked&tex_v_size_full) ? v_div_z^((tex_u_size_full*2)-1) : v_masked;
+wire [9:0] u_flipped = (tex_u_clamp) ? u_clamp :
+							  (tex_u_flip)  ? u_mask_flip : u_div_z&(tex_u_size_full-1);
 
-wire [9:0] u_flipped = (tex_u_flip) ? u_mask_flip : u_div_z&(tex_u_size_full-1);
-wire [9:0] v_flipped = (tex_v_flip) ? v_mask_flip : v_div_z&(tex_v_size_full-1);
+wire [9:0] v_flipped = (tex_v_clamp) ? v_clamp :
+								(tex_v_flip) ? v_mask_flip : v_div_z&(tex_v_size_full-1);
 
 
 texture_address  texture_address_inst (
@@ -1003,23 +1113,23 @@ texture_address  texture_address_inst (
 	.TEXT_CONTROL( TEXT_CONTROL ),	// input [31:0]  TEXT_CONTROL.
 
 	.PAL_RAM_CTRL( PAL_RAM_CTRL ),	// input from PAL_RAM_CTRL, bits [1:0].		
-	.pal_addr( pal_addr ),		// input [15:0]  pal_addr
-	.pal_din( pal_din ),		// input [31:0]  pal_din
-	.pal_rd( pal_rd ),			// input  pal_rd
-	.pal_wr( pal_wr ),			// input  pal_wr
-	.pal_dout( pal_dout ),		// output [31:0]  pal_dout
+	.pal_addr( pal_addr ),				// input [15:0]  pal_addr
+	.pal_din( pal_din ),					// input [31:0]  pal_din
+	.pal_rd( pal_rd ),					// input  pal_rd
+	.pal_wr( pal_wr ),					// input  pal_wr
+	.pal_dout( pal_dout ),				// output [31:0]  pal_dout
 	
 	.read_codebook( read_codebook ),	// input  read_codebook
-	.tex_wait( tex_wait ),				// output  tex_wait
-		
-	//.ui( sim_ui ),					// input [9:0]  ui. From rasterizer/interp...
-	//.vi( sim_vi ),					// input [9:0]  ui.
+	.codebook_wait( codebook_wait ),	// output  codebook_wait
+	.tex_other( tex_other ),			// input  tex_other
 	
 	.ui( u_flipped ),
 	.vi( v_flipped ),
 	
+	.vram_wait( vram_wait ),
+	.vram_valid( vram_valid ),
 	.vram_word_addr( vram_word_addr ),	// output [20:0]  vram_word_addr. 64-bit WORD address!
-	.vram_din( isp_vram_din ),			// input [63:0]  vram_din. Full 64-bit data for texture reads.
+	.vram_din( tex_vram_word ),			// input [63:0]  vram_din. Full 64-bit data for texture reads.
 	
 	.base_argb( vert_c_base_col_0 ),	// input [31:0]  base_argb.  Flat-shading colour input. (will also do Gouraud eventually).
 	.offs_argb( vert_c_off_col ),		// input [31:0]  offs_argb.  Offset colour input.
@@ -1029,7 +1139,7 @@ texture_address  texture_address_inst (
 );
 
 reg read_codebook;
-wire tex_wait;
+wire codebook_wait;
 
 reg [9:0] sim_ui;
 reg [9:0] sim_vi;
@@ -1038,28 +1148,8 @@ wire [20:0] vram_word_addr;
 
 wire [31:0] texel_argb;
 wire [31:0] final_argb;
+//wire [31:0] final_argb = {8'hff, vert_b_base_col_0[23:0]};
 
-/*
-//wire signed [31:0] test_float = 32'h4212C0E0;    // 36.6883544921875
-//wire signed [31:0] test_float = 32'hC212C0E0;    // -36.6883544921875
-//wire [31:0] test_float = 32'h458dc582;	// 4536.6884765625
-//wire [31:0] test_float = 32'h486ece2c;	// 244536.6875
-//wire [31:0] test_float = 32'hc86ece2c;	// -244536.6875
-//wire [31:0] test_float = 32'h3f5d9c58;	// 0.8656668663
-//wire [31:0] test_float = 32'h00000000;	// 00000000
-//wire [31:0] test_float = 32'h80000000;	// -0
-//wire signed [31:0] test_float = fp_x1;
-wire signed [31:0] test_float = vert_a_x;
-wire [7:0]  exp = test_float[30:23];
-wire [22:0] man = test_float[22:00];
-
-wire [63:0] float_shift = (exp>127) ? {1'b1, man}<<( (exp-127)) :	// Exponent is positive.
-									  {1'b1, man}>>( (127-exp));	// Exponent is negative.
-
-wire [30:0] fixed_new = float_shift>>((23-FRAC_BITS));
-
-wire signed [31:0] test_fixed = {test_float[31], fixed_new[30:0]};
-*/
 
 // The registers below make up our 32x32 internal Z buffer.
 //
@@ -1072,6 +1162,7 @@ wire signed [31:0] test_fixed = {test_float[31], fixed_new[30:0]};
 //
 // The [0:31] number basically selects the tile ROW.
 //
+/*
 reg signed [31:0] z_col_0  [0:31];
 reg signed [31:0] z_col_1  [0:31];
 reg signed [31:0] z_col_2  [0:31];
@@ -1108,8 +1199,6 @@ reg signed [31:0] z_col_29 [0:31];
 reg signed [31:0] z_col_30 [0:31];
 reg signed [31:0] z_col_31 [0:31];
 
-//wire [4:0] tile_x = x_ps[9:5];
-//wire [4:0] tile_y = y_ps[9:5];
 
 wire [31:0] allow_z_write;
 
@@ -1132,16 +1221,16 @@ else begin
 			z_clear_ena <= 1'b0;
 		end
 		else begin
-			z_col_0[ z_clear_row ] <= 32'd0;
-			z_col_1[ z_clear_row ] <= 32'd0;
-			z_col_2[ z_clear_row ] <= 32'd0;
-			z_col_3[ z_clear_row ] <= 32'd0;
-			z_col_4[ z_clear_row ] <= 32'd0;
-			z_col_5[ z_clear_row ] <= 32'd0;
-			z_col_6[ z_clear_row ] <= 32'd0;
-			z_col_7[ z_clear_row ] <= 32'd0;
-			z_col_8[ z_clear_row ] <= 32'd0;
-			z_col_9[ z_clear_row ] <= 32'd0;
+			z_col_0[  z_clear_row ] <= 32'd0;
+			z_col_1[  z_clear_row ] <= 32'd0;
+			z_col_2[  z_clear_row ] <= 32'd0;
+			z_col_3[  z_clear_row ] <= 32'd0;
+			z_col_4[  z_clear_row ] <= 32'd0;
+			z_col_5[  z_clear_row ] <= 32'd0;
+			z_col_6[  z_clear_row ] <= 32'd0;
+			z_col_7[  z_clear_row ] <= 32'd0;
+			z_col_8[  z_clear_row ] <= 32'd0;
+			z_col_9[  z_clear_row ] <= 32'd0;
 			z_col_10[ z_clear_row ] <= 32'd0;
 			z_col_11[ z_clear_row ] <= 32'd0;
 			z_col_12[ z_clear_row ] <= 32'd0;
@@ -1168,7 +1257,8 @@ else begin
 		end
 	end
 
-	/*if (isp_state==49 || isp_state==51)*/ begin	// At the start of rendering each tile ROW...
+	//if (isp_state==49 || isp_state==51)
+	begin	// At the start of rendering each tile ROW...
 		// Check the allow_z_write bits, to see if we should write the Z value from the new polygon into the Z buffer.
 		// (for the whole tile ROW).
 		if (allow_z_write[0])  z_col_0 [ y_ps[4:0] ] <= IP_Z[0];
@@ -1205,201 +1295,212 @@ else begin
 		if (allow_z_write[31]) z_col_31[ y_ps[4:0] ] <= IP_Z[31];
 	end
 end
+*/
 
-
+/*
 depth_compare depth_compare_inst0 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_0[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[0] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[0] )	// output depth_allow
-);
-depth_compare depth_compare_inst1 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_1[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[1] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[1] )	// output depth_allow
-);
-depth_compare depth_compare_inst2 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_2[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[2] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[2] )	// output depth_allow
-);
-depth_compare depth_compare_inst3 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_3[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[3] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[3] )	// output depth_allow
-);
-depth_compare depth_compare_inst4 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_4[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[4] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[4] )	// output depth_allow
-);
-depth_compare depth_compare_inst5 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_5[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[5] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[5] )	// output depth_allow
-);
-depth_compare depth_compare_inst6 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_6[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[6] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[6] )	// output depth_allow
-);
-depth_compare depth_compare_inst7 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_7[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[7] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[7] )	// output depth_allow
-);
-depth_compare depth_compare_inst8 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_8[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[8] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[8] )	// output depth_allow
-);
-depth_compare depth_compare_inst9 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_9[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[9] ),					// input [22:0]  invW
-	.depth_allow( allow_z_write[9] )	// output depth_allow
-);
-depth_compare depth_compare_inst10 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_10[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[10] ),				// input [22:0]  invW
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( Z from buffer ),				// input [22:0]  old_z
+	.invW( IP_Z_INTERP ),					// input [22:0]  invW
+	.depth_allow( allow_z_write[0] )		// output depth_allow
+);	
+*/
+
+
+/*
+depth_compare depth_compare_inst0 (
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_0[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[0] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[0] )		// output depth_allow
+);	
+depth_compare depth_compare_inst1 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_1[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[1] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[1] )		// output depth_allow
+);	
+depth_compare depth_compare_inst2 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_2[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[2] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[2] )		// output depth_allow
+);	
+depth_compare depth_compare_inst3 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_3[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[3] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[3] )		// output depth_allow
+);	
+depth_compare depth_compare_inst4 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_4[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[4] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[4] )		// output depth_allow
+);	
+depth_compare depth_compare_inst5 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_5[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[5] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[5] )		// output depth_allow
+);	
+depth_compare depth_compare_inst6 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_6[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[6] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[6] )		// output depth_allow
+);	
+depth_compare depth_compare_inst7 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_7[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[7] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[7] )		// output depth_allow
+);	
+depth_compare depth_compare_inst8 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_8[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[8] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[8] )		// output depth_allow
+);	
+depth_compare depth_compare_inst9 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_9[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[9] ),							// input [22:0]  invW
+	.depth_allow( allow_z_write[9] )		// output depth_allow
+);	
+depth_compare depth_compare_inst10 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_10[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[10] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[10] )	// output depth_allow
-);
-depth_compare depth_compare_inst11 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_11[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[11] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst11 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_11[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[11] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[11] )	// output depth_allow
-);
-depth_compare depth_compare_inst12 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_12[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[12] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst12 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_12[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[12] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[12] )	// output depth_allow
-);
-depth_compare depth_compare_inst13 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_13[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[13] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst13 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_13[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[13] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[13] )	// output depth_allow
-);
-depth_compare depth_compare_inst14 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_14[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[14] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst14 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_14[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[14] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[14] )	// output depth_allow
-);
-depth_compare depth_compare_inst15 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_15[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[15] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst15 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_15[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[15] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[15] )	// output depth_allow
-);
-depth_compare depth_compare_inst16 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_16[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[16] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst16 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_16[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[16] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[16] )	// output depth_allow
-);
-depth_compare depth_compare_inst17 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_17[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[17] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst17 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_17[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[17] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[17] )	// output depth_allow
-);
-depth_compare depth_compare_inst18 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_18[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[18] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst18 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_18[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[18] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[18] )	// output depth_allow
-);
-depth_compare depth_compare_inst19 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_19[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[19] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst19 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_19[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[19] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[19] )	// output depth_allow
-);
-depth_compare depth_compare_inst20 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_20[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[20] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst20 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_20[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[20] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[20] )	// output depth_allow
-);
-depth_compare depth_compare_inst21 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_21[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[21] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst21 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_21[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[21] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[21] )	// output depth_allow
-);
-depth_compare depth_compare_inst22 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_22[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[22] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst22 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_22[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[22] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[22] )	// output depth_allow
-);
-depth_compare depth_compare_inst23 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_23[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[23] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst23 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_23[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[23] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[23] )	// output depth_allow
-);
-depth_compare depth_compare_inst24 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_24[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[24] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst24 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_24[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[24] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[24] )	// output depth_allow
-);
-depth_compare depth_compare_inst25 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_25[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[25] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst25 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_25[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[25] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[25] )	// output depth_allow
-);
-depth_compare depth_compare_inst26 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_26[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[26] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst26 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_26[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[26] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[26] )	// output depth_allow
-);
-depth_compare depth_compare_inst27 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_27[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[27] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst27 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_27[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[27] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[27] )	// output depth_allow
-);
-depth_compare depth_compare_inst28 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_28[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[28] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst28 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_28[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[28] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[28] )	// output depth_allow
-);
-depth_compare depth_compare_inst29 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_29[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[29] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst29 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_29[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[29] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[29] )	// output depth_allow
-);
-depth_compare depth_compare_inst30 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_30[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[30] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst30 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_30[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[30] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[30] )	// output depth_allow
-);
-depth_compare depth_compare_inst31 (
-	.depth_comp( depth_comp ),		// input [2:0]  depth_comp
-	.old_z( z_col_31[ y_ps[4:0] ] ),	// input [22:0]  old_z
-	.invW( IP_Z[31] ),				// input [22:0]  invW
+);	
+depth_compare depth_compare_inst31 (	
+	.depth_comp( depth_comp ),				// input [2:0]  depth_comp
+	.old_z( z_col_31[ y_ps[4:0] ] ),		// input [22:0]  old_z
+	.invW( IP_Z[31] ),						// input [22:0]  invW
 	.depth_allow( allow_z_write[31] )	// output depth_allow
 );
-
+*/
 endmodule
 
 
@@ -1411,8 +1512,10 @@ module inTri_calc (
 	input signed [47:0] FDX31, FDY31,
 	input signed [47:0] FDX41, FDY41,
 
-	input [11:0] x_ps, y_ps,
-
+	input signed [9:0] x_ps, y_ps,
+	
+	output reg inTriangle,
+	
 	output reg [31:0] inTri,
 	
     output reg [4:0] leading_zeros,
@@ -1420,177 +1523,185 @@ module inTri_calc (
 );
 
 // No need to shift right after, since y_ps etc. are not fixed-point?
-wire signed [63:0] mult9  = FDX12 * y_ps;
-wire signed [63:0] mult11 = FDX23 * y_ps;
-wire signed [63:0] mult13 = FDX31 * y_ps;
-wire signed [63:0] mult15 = FDX41 * y_ps;
+wire signed [63:0] mult9  = FDX12 * {1'b0, y_ps};
+wire signed [63:0] mult11 = FDX23 * {1'b0, y_ps};
+wire signed [63:0] mult13 = FDX31 * {1'b0, y_ps};
+wire signed [63:0] mult15 = FDX41 * {1'b0, y_ps};
 
-//wire signed [63:0] mult10 = FDY12 * x_ps;
-//wire signed [63:0] mult12 = FDY23 * x_ps;
-//wire signed [63:0] mult14 = FDY31 * x_ps;
-//wire signed [63:0] mult16 = FDY41 * x_ps;
+//wire signed [63:0] mult10 = FDY12 * {1'b0, x_ps};
+//wire signed [63:0] mult12 = FDY23 * {1'b0, x_ps};
+//wire signed [63:0] mult14 = FDY31 * {1'b0, x_ps};
+//wire signed [63:0] mult16 = FDY41 * {1'b0, x_ps};
 
-wire signed [47:0] Xhs12_0 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd0}) );
-wire signed [47:0] Xhs23_0 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd0}) );
-wire signed [47:0] Xhs31_0 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd0}) );
-wire signed [47:0] Xhs41_0 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd0}) );
+wire signed [47:0] Xhs12 = C1 + (mult9  - (FDY12 * {1'b0, x_ps}) );
+wire signed [47:0] Xhs23 = C2 + (mult11 - (FDY23 * {1'b0, x_ps}) );
+wire signed [47:0] Xhs31 = C3 + (mult13 - (FDY31 * {1'b0, x_ps}) );
+wire signed [47:0] Xhs41 = C4 + (mult15 - (FDY41 * {1'b0, x_ps}) );
 
-wire signed [47:0] Xhs12_1 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd1}) );
-wire signed [47:0] Xhs23_1 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd1}) );
-wire signed [47:0] Xhs31_1 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd1}) );
-wire signed [47:0] Xhs41_1 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd1}) );
+/*
+wire signed [47:0] Xhs12_0 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd0}) );
+wire signed [47:0] Xhs23_0 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd0}) );
+wire signed [47:0] Xhs31_0 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd0}) );
+wire signed [47:0] Xhs41_0 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd0}) );
 
-wire signed [47:0] Xhs12_2 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd2}) );
-wire signed [47:0] Xhs23_2 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd2}) );
-wire signed [47:0] Xhs31_2 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd2}) );
-wire signed [47:0] Xhs41_2 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd2}) );
+wire signed [47:0] Xhs12_1 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd1}) );
+wire signed [47:0] Xhs23_1 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd1}) );
+wire signed [47:0] Xhs31_1 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd1}) );
+wire signed [47:0] Xhs41_1 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd1}) );
 
-wire signed [47:0] Xhs12_3 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd3}) );
-wire signed [47:0] Xhs23_3 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd3}) );
-wire signed [47:0] Xhs31_3 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd3}) );
-wire signed [47:0] Xhs41_3 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd3}) );
+wire signed [47:0] Xhs12_2 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd2}) );
+wire signed [47:0] Xhs23_2 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd2}) );
+wire signed [47:0] Xhs31_2 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd2}) );
+wire signed [47:0] Xhs41_2 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd2}) );
 
-wire signed [47:0] Xhs12_4 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd4}) );
-wire signed [47:0] Xhs23_4 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd4}) );
-wire signed [47:0] Xhs31_4 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd4}) );
-wire signed [47:0] Xhs41_4 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd4}) );
+wire signed [47:0] Xhs12_3 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd3}) );
+wire signed [47:0] Xhs23_3 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd3}) );
+wire signed [47:0] Xhs31_3 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd3}) );
+wire signed [47:0] Xhs41_3 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd3}) );
 
-wire signed [47:0] Xhs12_5 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd5}) );
-wire signed [47:0] Xhs23_5 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd5}) );
-wire signed [47:0] Xhs31_5 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd5}) );
-wire signed [47:0] Xhs41_5 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd5}) );
+wire signed [47:0] Xhs12_4 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd4}) );
+wire signed [47:0] Xhs23_4 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd4}) );
+wire signed [47:0] Xhs31_4 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd4}) );
+wire signed [47:0] Xhs41_4 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd4}) );
 
-wire signed [47:0] Xhs12_6 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd6}) );
-wire signed [47:0] Xhs23_6 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd6}) );
-wire signed [47:0] Xhs31_6 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd6}) );
-wire signed [47:0] Xhs41_6 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd6}) );
+wire signed [47:0] Xhs12_5 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd5}) );
+wire signed [47:0] Xhs23_5 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd5}) );
+wire signed [47:0] Xhs31_5 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd5}) );
+wire signed [47:0] Xhs41_5 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd5}) );
 
-wire signed [47:0] Xhs12_7 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd7}) );
-wire signed [47:0] Xhs23_7 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd7}) );
-wire signed [47:0] Xhs31_7 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd7}) );
-wire signed [47:0] Xhs41_7 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd7}) );
+wire signed [47:0] Xhs12_6 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd6}) );
+wire signed [47:0] Xhs23_6 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd6}) );
+wire signed [47:0] Xhs31_6 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd6}) );
+wire signed [47:0] Xhs41_6 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd6}) );
 
-wire signed [47:0] Xhs12_8 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd8}) );
-wire signed [47:0] Xhs23_8 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd8}) );
-wire signed [47:0] Xhs31_8 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd8}) );
-wire signed [47:0] Xhs41_8 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd8}) );
+wire signed [47:0] Xhs12_7 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd7}) );
+wire signed [47:0] Xhs23_7 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd7}) );
+wire signed [47:0] Xhs31_7 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd7}) );
+wire signed [47:0] Xhs41_7 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd7}) );
 
-wire signed [47:0] Xhs12_9 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd9}) );
-wire signed [47:0] Xhs23_9 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd9}) );
-wire signed [47:0] Xhs31_9 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd9}) );
-wire signed [47:0] Xhs41_9 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd9}) );
+wire signed [47:0] Xhs12_8 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd8}) );
+wire signed [47:0] Xhs23_8 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd8}) );
+wire signed [47:0] Xhs31_8 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd8}) );
+wire signed [47:0] Xhs41_8 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd8}) );
 
-wire signed [47:0] Xhs12_10 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd10}) );
-wire signed [47:0] Xhs23_10 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd10}) );
-wire signed [47:0] Xhs31_10 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd10}) );
-wire signed [47:0] Xhs41_10 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd10}) );
+wire signed [47:0] Xhs12_9 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd9}) );
+wire signed [47:0] Xhs23_9 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd9}) );
+wire signed [47:0] Xhs31_9 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd9}) );
+wire signed [47:0] Xhs41_9 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd9}) );
 
-wire signed [47:0] Xhs12_11 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd11}) );
-wire signed [47:0] Xhs23_11 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd11}) );
-wire signed [47:0] Xhs31_11 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd11}) );
-wire signed [47:0] Xhs41_11 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd11}) );
+wire signed [47:0] Xhs12_10 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd10}) );
+wire signed [47:0] Xhs23_10 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd10}) );
+wire signed [47:0] Xhs31_10 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd10}) );
+wire signed [47:0] Xhs41_10 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd10}) );
 
-wire signed [47:0] Xhs12_12 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd12}) );
-wire signed [47:0] Xhs23_12 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd12}) );
-wire signed [47:0] Xhs31_12 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd12}) );
-wire signed [47:0] Xhs41_12 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd12}) );
+wire signed [47:0] Xhs12_11 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd11}) );
+wire signed [47:0] Xhs23_11 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd11}) );
+wire signed [47:0] Xhs31_11 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd11}) );
+wire signed [47:0] Xhs41_11 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd11}) );
 
-wire signed [47:0] Xhs12_13 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd13}) );
-wire signed [47:0] Xhs23_13 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd13}) );
-wire signed [47:0] Xhs31_13 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd13}) );
-wire signed [47:0] Xhs41_13 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd13}) );
+wire signed [47:0] Xhs12_12 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd12}) );
+wire signed [47:0] Xhs23_12 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd12}) );
+wire signed [47:0] Xhs31_12 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd12}) );
+wire signed [47:0] Xhs41_12 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd12}) );
 
-wire signed [47:0] Xhs12_14 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd14}) );
-wire signed [47:0] Xhs23_14 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd14}) );
-wire signed [47:0] Xhs31_14 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd14}) );
-wire signed [47:0] Xhs41_14 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd14}) );
+wire signed [47:0] Xhs12_13 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd13}) );
+wire signed [47:0] Xhs23_13 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd13}) );
+wire signed [47:0] Xhs31_13 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd13}) );
+wire signed [47:0] Xhs41_13 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd13}) );
 
-wire signed [47:0] Xhs12_15 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd15}) );
-wire signed [47:0] Xhs23_15 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd15}) );
-wire signed [47:0] Xhs31_15 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd15}) );
-wire signed [47:0] Xhs41_15 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd15}) );
+wire signed [47:0] Xhs12_14 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd14}) );
+wire signed [47:0] Xhs23_14 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd14}) );
+wire signed [47:0] Xhs31_14 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd14}) );
+wire signed [47:0] Xhs41_14 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd14}) );
 
-wire signed [47:0] Xhs12_16 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd16}) );
-wire signed [47:0] Xhs23_16 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd16}) );
-wire signed [47:0] Xhs31_16 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd16}) );
-wire signed [47:0] Xhs41_16 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd16}) );
+wire signed [47:0] Xhs12_15 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd15}) );
+wire signed [47:0] Xhs23_15 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd15}) );
+wire signed [47:0] Xhs31_15 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd15}) );
+wire signed [47:0] Xhs41_15 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd15}) );
 
-wire signed [47:0] Xhs12_17 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd17}) );
-wire signed [47:0] Xhs23_17 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd17}) );
-wire signed [47:0] Xhs31_17 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd17}) );
-wire signed [47:0] Xhs41_17 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd17}) );
+wire signed [47:0] Xhs12_16 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd16}) );
+wire signed [47:0] Xhs23_16 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd16}) );
+wire signed [47:0] Xhs31_16 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd16}) );
+wire signed [47:0] Xhs41_16 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd16}) );
 
-wire signed [47:0] Xhs12_18 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd18}) );
-wire signed [47:0] Xhs23_18 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd18}) );
-wire signed [47:0] Xhs31_18 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd18}) );
-wire signed [47:0] Xhs41_18 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd18}) );
+wire signed [47:0] Xhs12_17 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd17}) );
+wire signed [47:0] Xhs23_17 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd17}) );
+wire signed [47:0] Xhs31_17 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd17}) );
+wire signed [47:0] Xhs41_17 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd17}) );
 
-wire signed [47:0] Xhs12_19 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd19}) );
-wire signed [47:0] Xhs23_19 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd19}) );
-wire signed [47:0] Xhs31_19 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd19}) );
-wire signed [47:0] Xhs41_19 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd19}) );
+wire signed [47:0] Xhs12_18 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd18}) );
+wire signed [47:0] Xhs23_18 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd18}) );
+wire signed [47:0] Xhs31_18 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd18}) );
+wire signed [47:0] Xhs41_18 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd18}) );
 
-wire signed [47:0] Xhs12_20 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd20}) );
-wire signed [47:0] Xhs23_20 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd20}) );
-wire signed [47:0] Xhs31_20 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd20}) );
-wire signed [47:0] Xhs41_20 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd20}) );
+wire signed [47:0] Xhs12_19 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd19}) );
+wire signed [47:0] Xhs23_19 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd19}) );
+wire signed [47:0] Xhs31_19 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd19}) );
+wire signed [47:0] Xhs41_19 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd19}) );
 
-wire signed [47:0] Xhs12_21 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd21}) );
-wire signed [47:0] Xhs23_21 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd21}) );
-wire signed [47:0] Xhs31_21 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd21}) );
-wire signed [47:0] Xhs41_21 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd21}) );
+wire signed [47:0] Xhs12_20 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd20}) );
+wire signed [47:0] Xhs23_20 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd20}) );
+wire signed [47:0] Xhs31_20 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd20}) );
+wire signed [47:0] Xhs41_20 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd20}) );
 
-wire signed [47:0] Xhs12_22 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd22}) );
-wire signed [47:0] Xhs23_22 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd22}) );
-wire signed [47:0] Xhs31_22 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd22}) );
-wire signed [47:0] Xhs41_22 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd22}) );
+wire signed [47:0] Xhs12_21 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd21}) );
+wire signed [47:0] Xhs23_21 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd21}) );
+wire signed [47:0] Xhs31_21 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd21}) );
+wire signed [47:0] Xhs41_21 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd21}) );
 
-wire signed [47:0] Xhs12_23 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd23}) );
-wire signed [47:0] Xhs23_23 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd23}) );
-wire signed [47:0] Xhs31_23 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd23}) );
-wire signed [47:0] Xhs41_23 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd23}) );
+wire signed [47:0] Xhs12_22 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd22}) );
+wire signed [47:0] Xhs23_22 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd22}) );
+wire signed [47:0] Xhs31_22 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd22}) );
+wire signed [47:0] Xhs41_22 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd22}) );
 
-wire signed [47:0] Xhs12_24 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd24}) );
-wire signed [47:0] Xhs23_24 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd24}) );
-wire signed [47:0] Xhs31_24 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd24}) );
-wire signed [47:0] Xhs41_24 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd24}) );
+wire signed [47:0] Xhs12_23 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd23}) );
+wire signed [47:0] Xhs23_23 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd23}) );
+wire signed [47:0] Xhs31_23 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd23}) );
+wire signed [47:0] Xhs41_23 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd23}) );
 
-wire signed [47:0] Xhs12_25 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd25}) );
-wire signed [47:0] Xhs23_25 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd25}) );
-wire signed [47:0] Xhs31_25 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd25}) );
-wire signed [47:0] Xhs41_25 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd25}) );
+wire signed [47:0] Xhs12_24 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd24}) );
+wire signed [47:0] Xhs23_24 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd24}) );
+wire signed [47:0] Xhs31_24 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd24}) );
+wire signed [47:0] Xhs41_24 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd24}) );
 
-wire signed [47:0] Xhs12_26 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd26}) );
-wire signed [47:0] Xhs23_26 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd26}) );
-wire signed [47:0] Xhs31_26 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd26}) );
-wire signed [47:0] Xhs41_26 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd26}) );
+wire signed [47:0] Xhs12_25 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd25}) );
+wire signed [47:0] Xhs23_25 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd25}) );
+wire signed [47:0] Xhs31_25 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd25}) );
+wire signed [47:0] Xhs41_25 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd25}) );
 
-wire signed [47:0] Xhs12_27 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd27}) );
-wire signed [47:0] Xhs23_27 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd27}) );
-wire signed [47:0] Xhs31_27 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd27}) );
-wire signed [47:0] Xhs41_27 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd27}) );
+wire signed [47:0] Xhs12_26 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd26}) );
+wire signed [47:0] Xhs23_26 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd26}) );
+wire signed [47:0] Xhs31_26 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd26}) );
+wire signed [47:0] Xhs41_26 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd26}) );
 
-wire signed [47:0] Xhs12_28 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd28}) );
-wire signed [47:0] Xhs23_28 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd28}) );
-wire signed [47:0] Xhs31_28 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd28}) );
-wire signed [47:0] Xhs41_28 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd28}) );
+wire signed [47:0] Xhs12_27 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd27}) );
+wire signed [47:0] Xhs23_27 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd27}) );
+wire signed [47:0] Xhs31_27 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd27}) );
+wire signed [47:0] Xhs41_27 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd27}) );
 
-wire signed [47:0] Xhs12_29 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd29}) );
-wire signed [47:0] Xhs23_29 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd29}) );
-wire signed [47:0] Xhs31_29 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd29}) );
-wire signed [47:0] Xhs41_29 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd29}) );
+wire signed [47:0] Xhs12_28 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd28}) );
+wire signed [47:0] Xhs23_28 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd28}) );
+wire signed [47:0] Xhs31_28 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd28}) );
+wire signed [47:0] Xhs41_28 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd28}) );
 
-wire signed [47:0] Xhs12_30 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd30}) );
-wire signed [47:0] Xhs23_30 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd30}) );
-wire signed [47:0] Xhs31_30 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd30}) );
-wire signed [47:0] Xhs41_30 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd30}) );
+wire signed [47:0] Xhs12_29 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd29}) );
+wire signed [47:0] Xhs23_29 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd29}) );
+wire signed [47:0] Xhs31_29 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd29}) );
+wire signed [47:0] Xhs41_29 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd29}) );
 
-wire signed [47:0] Xhs12_31 = C1 + (mult9  - (FDY12 * {x_ps[9:5], 5'd31}) );
-wire signed [47:0] Xhs23_31 = C2 + (mult11 - (FDY23 * {x_ps[9:5], 5'd31}) );
-wire signed [47:0] Xhs31_31 = C3 + (mult13 - (FDY31 * {x_ps[9:5], 5'd31}) );
-wire signed [47:0] Xhs41_31 = C4 + (mult15 - (FDY41 * {x_ps[9:5], 5'd31}) );
+wire signed [47:0] Xhs12_30 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd30}) );
+wire signed [47:0] Xhs23_30 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd30}) );
+wire signed [47:0] Xhs31_30 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd30}) );
+wire signed [47:0] Xhs41_30 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd30}) );
 
+wire signed [47:0] Xhs12_31 = C1 + (mult9  - (FDY12 * {1'b0, x_ps[9:5], 5'd31}) );
+wire signed [47:0] Xhs23_31 = C2 + (mult11 - (FDY23 * {1'b0, x_ps[9:5], 5'd31}) );
+wire signed [47:0] Xhs31_31 = C3 + (mult13 - (FDY31 * {1'b0, x_ps[9:5], 5'd31}) );
+wire signed [47:0] Xhs41_31 = C4 + (mult15 - (FDY41 * {1'b0, x_ps[9:5], 5'd31}) );
+*/
 always @* begin
+	inTriangle = !Xhs12[47]  && !Xhs23[47]  && !Xhs31[47]  && !Xhs41[47];
+	/*
 	inTri[0]  = !Xhs12_0[47]  && !Xhs23_0[47]  && !Xhs31_0[47]  && !Xhs41_0[47];
 	inTri[1]  = !Xhs12_1[47]  && !Xhs23_1[47]  && !Xhs31_1[47]  && !Xhs41_1[47];
 	inTri[2]  = !Xhs12_2[47]  && !Xhs23_2[47]  && !Xhs31_2[47]  && !Xhs41_2[47];
@@ -1623,34 +1734,6 @@ always @* begin
 	inTri[29] = !Xhs12_29[47] && !Xhs23_29[47] && !Xhs31_29[47] && !Xhs41_29[47];
 	inTri[30] = !Xhs12_30[47] && !Xhs23_30[47] && !Xhs31_30[47] && !Xhs41_30[47];
 	inTri[31] = !Xhs12_31[47] && !Xhs23_31[47] && !Xhs31_31[47] && !Xhs41_31[47];
-
-	// Leading Zero Counter (Binary Search in Parallel)
-	//leading_zeros = 0;
-	/*
-	if (inTri == 32'b0) begin
-		leading_zeros = 32;
-	end else begin
-		leading_zeros = (inTri>>1) ==0 ? leading_zeros+1 : 0;
-		leading_zeros = (inTri>>2) ==0 ? leading_zeros+2 : 0;
-		leading_zeros = (inTri>>4) ==0 ? leading_zeros+4 : 0;
-		leading_zeros = (inTri>>8) ==0 ? leading_zeros+8 : 0;
-		leading_zeros = (inTri>>16)==0 ? leading_zeros+16 : 0;
-		//leading_zeros = leading_zeros[4] + leading_zeros[3] + leading_zeros[2] + leading_zeros[1] + leading_zeros[0];
-	end
-
-	// Trailing Zero Counter (Binary Search in Parallel)
-	//trailing_zeros = 0;
-	if (inTri == 32'b0) begin
-		trailing_zeros = 32;
-	end else begin
-		trailing_zeros = (inTri & 16'hFFFF) == 0 ? 16 : 0;
-		trailing_zeros = (inTri & (trailing_zeros[4] << 8)) == 0 ? 8 : 0;
-		trailing_zeros = (inTri & (trailing_zeros[4] << trailing_zeros[3] << 4)) == 0 ? 4 : 0;
-		trailing_zeros = (inTri & (trailing_zeros[4] << trailing_zeros[3] << trailing_zeros[2] << 2)) == 0 ? 2 : 0;
-		trailing_zeros = (inTri & (trailing_zeros[4] << trailing_zeros[3] << trailing_zeros[2] << trailing_zeros[1] << 1)) == 0 ? 1 : 0;
-		//trailing_zeros = trailing_zeros[4] + trailing_zeros[3] + trailing_zeros[2] + trailing_zeros[1] + trailing_zeros[0];
-	end
-	*/
 	
 		 if (inTri[30:00]==0) leading_zeros = 31;
 	else if (inTri[29:00]==0) leading_zeros = 30;
@@ -1717,28 +1800,28 @@ always @* begin
 	else if (inTri[31:30]==0) trailing_zeros = 2;
 	else if (inTri[31:31]==0) trailing_zeros = 1;
 	else trailing_zeros = 0;
+	*/
 end
 
 endmodule
 
 
 module float_to_fixed (
-	input wire signed [31:0] float_in,
-	output wire signed [47:0] fixed
+	input signed [31:0] float_in,
+	output wire signed [31:0] fixed
 );
+
 wire float_sign = float_in[31];
 wire [7:0]  exp = float_in[30:23];	// Sign bit not included here.
-//wire [22:0] man = float_in[22:00];
-wire [47:0] man = {1'b1, float_in[22:00], 8'h00};	// Prepend the implied 1.
-													// Shift the Mantissa left, to leave more fractional bits for the shift below. (maybe not needed?)
+wire [23:0] man = {1'b1, float_in[22:00]};	// Prepend the implied 1.
 
 wire [47:0] float_shifted = (exp>127) ? man<<(exp-127) :	// Exponent is positive.
-										man>>(127-exp);		// Exponent is negative.
+													 man>>(127-exp);	// Exponent is negative.
 										 
-wire [46:0] new_fixed = float_shifted>>((23-FRAC_BITS) + 8);	// Sign bit not included here.
+wire [30:0] new_fixed = float_shifted>>((23-FRAC_BITS));	// Sign bit not included here.
 
-assign fixed = float_in[31] ? {1'b1,-new_fixed[46:0]} : {1'b0,new_fixed[46:0]};	// Invert the lower bits when the Sign bit is set.
-																				// (tip from SKMP, because float values are essentially sign-magnitude.)
+assign fixed = float_sign ? {1'b1,-new_fixed[30:0]} : {1'b0,new_fixed[30:0]};	// Invert the lower bits when the Sign bit is set.
+																										// (tip from SKMP, because float values are essentially sign-magnitude.)
 endmodule
 
 
@@ -1760,11 +1843,14 @@ module texture_address (
 	output [31:0] pal_dout,
 	
 	input read_codebook,
-	output reg tex_wait,
+	output reg codebook_wait,
+	input tex_other,
 		
 	input wire [9:0] ui,				// From rasterizer/interp...
 	input wire [9:0] vi,
 		
+	input vram_wait,
+	input vram_valid,
 	output reg [20:0] vram_word_addr,	// 64-bit WORD address!
 	input [63:0] vram_din,				// Full 64-bit data for texture reads.
 	
@@ -1772,9 +1858,8 @@ module texture_address (
 	input [31:0] offs_argb,				// Offset colour input.
 	
 	output reg [31:0] texel_argb,		// Texel ARGB 8888 output.
-	output reg [31:0] final_argb		// Final blended ARGB 8888 output.
+	output wire [31:0] final_argb		// Final blended ARGB 8888 output.
 );
-
 
 // ISP Instruction Word.
 wire [2:0] depth_comp   = isp_inst[31:29];	// 0=Never, 1=Less, 2=Equal, 3=Less Or Equal, 4=Greater, 5=Not Equal, 6=Greater Or Equal, 7=Always.
@@ -1792,7 +1877,6 @@ wire dcalc_ctrl         = isp_inst[20];
 // (those prim types use the same culling_mode bits as above.)
 wire [2:0] volume_inst = isp_inst[31:29];
 
-
 // TSP Instruction Word...
 wire tex_u_flip = tsp_inst[18];
 wire tex_v_flip = tsp_inst[17];
@@ -1801,7 +1885,6 @@ wire tex_v_clamp = tsp_inst[15];
 wire [1:0] shade_inst = tsp_inst[7:6];
 wire [2:0] tex_u_size = tsp_inst[5:3];
 wire [2:0] tex_v_size = tsp_inst[2:0];
-
 
 // Texture Control Word...
 wire mip_map = tcw_word[31];
@@ -1812,13 +1895,11 @@ wire stride_flag = tcw_word[25];
 wire [5:0] pal_selector = tcw_word[26:21];		// Used for 4BPP or 8BPP palette textures.
 wire [20:0] tex_word_addr = tcw_word[20:0];		// 64-bit WORD address! (but only shift <<2 when accessing 32-bit "halves" of VRAM).
 
-
 // TEXT_CONTROL PVR reg. (not to be confused with TCW above!).
 wire code_book_endian = TEXT_CONTROL[17];
 wire index_endian     = TEXT_CONTROL[16];
 wire [5:0] bank_bit   = TEXT_CONTROL[12:8];
 wire [4:0] stride     = TEXT_CONTROL[4:0];
-
 
 // tex_u_size and tex_v_size (raw value vs actual)...
 // 0 = 8
@@ -1829,18 +1910,19 @@ wire [4:0] stride     = TEXT_CONTROL[4:0];
 // 5 = 256
 // 6 = 512
 // 7 = 1024
-
 // Highest (masked) value is 1023?
 wire [9:0] ui_masked = ui & ((8<<tex_u_size)-1);
 wire [9:0] vi_masked = vi & ((8<<tex_v_size)-1);
 
-reg [19:0] twop_full = {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
+wire [19:0] twop_full = {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
 reg [19:0] twop;
 
 wire [19:0] non_twid_addr = (ui_masked + (vi_masked * (8<<tex_u_size)));
 
 reg [3:0] pal4_nib;
+/* verilator lint_off UNOPTFLAT */
 reg [7:0] pal8_byte;
+/* verilator lint_on UNOPTFLAT */
 reg [7:0] vq_index;
 reg [15:0] pix16;
 
@@ -1852,9 +1934,13 @@ wire is_mipmap = mip_map && scan_order==0;
 reg [19:0] twop_or_not;
 reg [19:0] texel_word_offs;
 
-always @(*) begin
-	twop_full = {ui[9],vi[9],ui[8],vi[8],ui[7],vi[7],ui[6],vi[6],ui[5],vi[5],ui[4],vi[4],ui[3],vi[3],ui[2],vi[2],ui[1],vi[1],ui[0],vi[0]};
+/* verilator lint_off UNOPTFLAT */
+wire [2:0] pal8_sel = (is_pal4) ? twop_or_not[3:1] :	// PAL4. Drop the LSB bit, which is then used to select a the nibble from the pal8 mux result.
+					  (vq_comp) ? twop_or_not[4:2] :	// VQ. Drop two lower bits.
+								  twop_or_not[2:0];		// PAL8. Don't drop any bits. Directly select the byte from vram_din.
+/* verilator lint_on UNOPTFLAT */
 
+always @(*) begin
 	if ((tex_u_size==tex_v_size) || (is_twid && mip_map) ) begin	// Square texture. (VQ textures are always square, then tex_v_size is ignored).
 		case (tex_u_size)	// Using tex_u_size here. Doesn't really matter which one we use?
 			0: twop = {14'b0, twop_full[5:0]};	// 8x8
@@ -1864,7 +1950,7 @@ always @(*) begin
 			4: twop = {6'b0, twop_full[13:0]};	// 128x128
 			5: twop = {4'b0, twop_full[15:0]};	// 256x256
 			6: twop = {2'b0, twop_full[17:0]};	// 512x512
-			7: twop = twop_full[19:0];			// 1024x1024
+			7: twop = twop_full[19:0];				// 1024x1024
 		endcase
 	end
 	else if (tex_u_size > tex_v_size) begin		// Rectangular texture. U size greater than V size.
@@ -1891,14 +1977,13 @@ always @(*) begin
 			7: twop = twop_full[19:0];							// U size 1024
 		endcase
 	end
-
-	//$display("ui: %d  vi: %d  tex_u_size (raw): %d  tex_v_size (raw): %d  twop 0x%08X  twop_full: 0x%08X", ui, vi, tex_u_size, tex_v_size, twop, twop_full);
+	//else twop = twop_full;	// Default case, to prevent Latch warnings.
 end
 
 
 reg [19:0] mipmap_byte_offs_vq;
 reg [19:0] mipmap_byte_offs_norm;
-//reg [19:0] mipmap_byte_offs_pal;	// The palette mipmap offset table is just norm[]>>1, so I ditched the table.
+//reg [19:0] mipmap_byte_offs_pal;	// The palette mipmap offset table is just mipmap_byte_offs_norm[]>>1, so I ditched the table.
 
 reg [19:0] mipmap_byte_offs;
 
@@ -1908,36 +1993,40 @@ reg [19:0] mipmap_byte_offs;
 //
 //wire [35:0] stride_full = 16<<stride;	// stride 0==invalid (default?). stride 1=32. stride 2=64. stride 3=96. stride 4=128, and so-on.
 
-always @(*) begin
+always @(posedge clock) begin
 	// NOTE: Need to add 3 to tex_u_size in all of these LUTs, because the mipmap table starts at a 1x1 texture size, but tex_u_size==0 is the 8x8 texture size.
 	case (tex_u_size+3)
-		0:  mipmap_byte_offs_norm = 20'h6; 		// 1 texel
-		1:  mipmap_byte_offs_norm = 20'h8; 		// 2 texels
-		2:  mipmap_byte_offs_norm = 20'h10; 	// 4 texels
-		3:  mipmap_byte_offs_norm = 20'h30; 	// 8 texels
-		4:  mipmap_byte_offs_norm = 20'hb0; 	// 16 texels
-		5:  mipmap_byte_offs_norm = 20'h2b0; 	// 32 texels
-		6:  mipmap_byte_offs_norm = 20'hab0; 	// 64 texels
-		7:  mipmap_byte_offs_norm = 20'h2ab0; 	// 128 texels
-		8:  mipmap_byte_offs_norm = 20'haab0; 	// 256 texels
-		9:  mipmap_byte_offs_norm = 20'h2aab0; 	// 512 texels
-		10: mipmap_byte_offs_norm = 20'haaab0; 	// 1024 texels
+		0:  mipmap_byte_offs_norm <= 20'h6; 	// 1 texel
+		1:  mipmap_byte_offs_norm <= 20'h8; 	// 2 texels
+		2:  mipmap_byte_offs_norm <= 20'h10; 	// 4 texels
+		3:  mipmap_byte_offs_norm <= 20'h30; 	// 8 texels
+		4:  mipmap_byte_offs_norm <= 20'hb0; 	// 16 texels
+		5:  mipmap_byte_offs_norm <= 20'h2b0; 	// 32 texels
+		6:  mipmap_byte_offs_norm <= 20'hab0; 	// 64 texels
+		7:  mipmap_byte_offs_norm <= 20'h2ab0; // 128 texels
+		8:  mipmap_byte_offs_norm <= 20'haab0; // 256 texels
+		9:  mipmap_byte_offs_norm <= 20'h2aab0;// 512 texels
+		10: mipmap_byte_offs_norm <= 20'haaab0;// 1024 texels
+		default: mipmap_byte_offs_norm <= 20'haaab0;
 	endcase
 
 	case (tex_u_size+3)
-		0:  mipmap_byte_offs_vq = 20'h0; 		// 1 texel
-		1:  mipmap_byte_offs_vq = 20'h1; 		// 2 texels
-		2:  mipmap_byte_offs_vq = 20'h2; 		// 4 texels
-		3:  mipmap_byte_offs_vq = 20'h6; 		// 8 texels
-		4:  mipmap_byte_offs_vq = 20'h16; 		// 16 texels
-		5:  mipmap_byte_offs_vq = 20'h56; 		// 32 texels
-		6:  mipmap_byte_offs_vq = 20'h156; 		// 64 texels
-		7:  mipmap_byte_offs_vq = 20'h556; 		// 128 texels
-		8:  mipmap_byte_offs_vq = 20'h1556; 	// 256 texels
-		9:  mipmap_byte_offs_vq = 20'h5556; 	// 512 texels
-		10: mipmap_byte_offs_vq = 20'h15556; 	// 1024 texels
+		0:  mipmap_byte_offs_vq <= 20'h0; 		// 1 texel
+		1:  mipmap_byte_offs_vq <= 20'h1; 		// 2 texels
+		2:  mipmap_byte_offs_vq <= 20'h2; 		// 4 texels
+		3:  mipmap_byte_offs_vq <= 20'h6; 		// 8 texels
+		4:  mipmap_byte_offs_vq <= 20'h16; 		// 16 texels
+		5:  mipmap_byte_offs_vq <= 20'h56; 		// 32 texels
+		6:  mipmap_byte_offs_vq <= 20'h156; 	// 64 texels
+		7:  mipmap_byte_offs_vq <= 20'h556; 	// 128 texels
+		8:  mipmap_byte_offs_vq <= 20'h1556; 	// 256 texels
+		9:  mipmap_byte_offs_vq <= 20'h5556; 	// 512 texels
+		10: mipmap_byte_offs_vq <= 20'h15556; 	// 1024 texels
+		default: mipmap_byte_offs_vq <= 20'h15556;
 	endcase
+end
 
+always @(*) begin
 	// mipmap table mux (or zero offset, for non-mipmap)...
 	mipmap_byte_offs = (!is_mipmap) ? 0 :
 						  (vq_comp) ? mipmap_byte_offs_vq :
@@ -1946,45 +2035,23 @@ always @(*) begin
 	
 	// Twiddled or Non-Twiddled).
 	twop_or_not = (vq_comp) ? ((12'd2048 + mipmap_byte_offs)<<2) + twop :
-		(is_pal4 || is_pal8 || is_twid) ? (mipmap_byte_offs>>1) + twop :		// I haven't figured out why this needs the >>1 yet. Oh well.
-										   mipmap_byte_offs + non_twid_addr;
+		 (is_pal4 || is_pal8 || is_twid) ? (mipmap_byte_offs>>1) + twop :		// I haven't figured out why this needs the >>1 yet. Oh well.
+										mipmap_byte_offs + non_twid_addr;
 													 
 	// Shift twop_or_not, based on the number of nibbles, bytes, or words to read from each 64-bit vram_din word.
-	texel_word_offs = (vq_comp) ? (twop_or_not)>>5 : // VQ = 32 TEXELS per 64-bit VRAM word. (1 BYTE per FOUR Texels).
-					  (is_pal4) ? (twop_or_not)>>4 : // PAL4   = 16 TEXELS per 64-bit word. (4BPP).
-					  (is_pal8) ? (twop_or_not)>>3 : // PAL8   = 8  TEXELS per 64-bit word. (8BPP).
-								  (twop_or_not)>>2;	 // Uncomp = 4  TEXELS per 64-bit word (16BPP).
+	texel_word_offs = (vq_comp) ? (twop_or_not>>5) : // VQ = 32 TEXELS per 64-bit VRAM word. (1 BYTE per FOUR Texels).
+					  (is_pal4) ? (twop_or_not>>4) : // PAL4   = 16 TEXELS per 64-bit word. (4BPP).
+					  (is_pal8) ? (twop_or_not>>3) : // PAL8   = 8  TEXELS per 64-bit word. (8BPP).
+								  (twop_or_not>>2);	 // Uncomp = 4  TEXELS per 64-bit word (16BPP).
 	
 	// Generate the 64-bit VRAM WORD address using either the Code Book READ index, or texel_word_offs;
-	vram_word_addr = tex_word_addr + ((tex_wait) ? cb_word_index : texel_word_offs);
+	vram_word_addr = tex_word_addr + ((codebook_wait) ? cb_word_index : texel_word_offs);
 	
-	// Select the current texel from each part of the 64-bit word...
-	//pal4_nib  = vram_din[ (twop_or_not[3:0]<<2) +:  4];
-	//pal8_byte = vram_din[ (twop_or_not[2:0]<<3) +:  8];
-	//pix16     = vram_din[ (twop_or_not[1:0]<<4) +: 16];
-	
-	case (twop_or_not[3:0])
-		0:  pal4_nib = vram_din[03:00];
-		1:  pal4_nib = vram_din[07:04];
-		2:  pal4_nib = vram_din[11:08];
-		3:  pal4_nib = vram_din[15:12];
-		4:  pal4_nib = vram_din[19:16];
-		5:  pal4_nib = vram_din[23:20];
-		6:  pal4_nib = vram_din[27:24];
-		7:  pal4_nib = vram_din[31:28];
-		8:  pal4_nib = vram_din[35:32];
-		9:  pal4_nib = vram_din[39:36];
-		10: pal4_nib = vram_din[43:40];
-		11: pal4_nib = vram_din[47:44];
-		12: pal4_nib = vram_din[51:48];
-		13: pal4_nib = vram_din[55:52];
-		14: pal4_nib = vram_din[59:56];
-		15: pal4_nib = vram_din[63:60];
-	endcase
-
-	case (twop_or_not[2:0])
-		0:  pal8_byte = vram_din[07:00];
-		1:  pal8_byte = vram_din[15:08];
+	// VQ has FOUR TEXELS per Index Byte.
+	// 32 TEXELS per 64-bit VRAM word.
+	case (pal8_sel)							// pal8_sel is a shift of twop_or_not, depending on whether PAL4 or vq_comp are set.
+		0:  pal8_byte = vram_din[07:00];	// PAL4 will drop the LSB bit of twop_or_not, then twop_or_not[0] is used to select the nibble from the pal8_byte result.
+		1:  pal8_byte = vram_din[15:08];	// When PAL4 and vq_comp are both low, that would be a normal PAL8 vram_din byte select.
 		2:  pal8_byte = vram_din[23:16];
 		3:  pal8_byte = vram_din[31:24];
 		4:  pal8_byte = vram_din[39:32];
@@ -1993,36 +2060,25 @@ always @(*) begin
 		7:  pal8_byte = vram_din[63:56];
 	endcase
 	
-	// VQ has FOUR TEXELS per Index Byte.
-	// 32 TEXELS per 64-bit VRAM word.
-	case (twop_or_not[4:2])
-		0:  vq_index = vram_din[07:00];
-		1:  vq_index = vram_din[15:08];
-		2:  vq_index = vram_din[23:16];
-		3:  vq_index = vram_din[31:24];
-		4:  vq_index = vram_din[39:32];
-		5:  vq_index = vram_din[47:40];
-		6:  vq_index = vram_din[55:48];
-		7:  vq_index = vram_din[63:56];
-	endcase
-
-	// Read 16BPP from either the Code Book for VQ, or direct from VRAM.
+	// Read 16BPP from either the Code Book (for VQ), or direct from VRAM.
 	case (twop_or_not[1:0])
-		0: pix16 = (vq_comp) ? code_book[vq_index][15:00] : vram_din[15:00];
-		1: pix16 = (vq_comp) ? code_book[vq_index][31:16] : vram_din[31:16];
-		2: pix16 = (vq_comp) ? code_book[vq_index][47:32] : vram_din[47:32];
-		3: pix16 = (vq_comp) ? code_book[vq_index][63:48] : vram_din[63:48];
+		0: pix16 = codebook_mux[15:00];
+		1: pix16 = codebook_mux[31:16];
+		2: pix16 = codebook_mux[47:32];
+		3: pix16 = codebook_mux[63:48];
 	endcase
 	
-	if (pix_fmt==5) pal_raw = pal_ram[ {pal_selector[5:0], pal4_nib}  ];
-	if (pix_fmt==6) pal_raw = pal_ram[ {pal_selector[5:4], pal8_byte} ];	
-	
+	/*
+	pal4_nib = !twop_or_not[0] ? pal8_byte[03:00] : pal8_byte[07:04];
+	if (is_pal4) pal_raw = pal_ram[ {pal_selector[5:0], pal4_nib}  ];
+	if (is_pal8) pal_raw = pal_ram[ {pal_selector[5:4], pal8_byte} ];
 	case (PAL_RAM_CTRL)
-		0: pal_final = { {8{pal_raw[15]}},    pal_raw[14:10],pal_raw[14:12], pal_raw[09:05],pal_raw[09:07], pal_raw[04:00],pal_raw[04:02] };// ARGB 1555
-		1: pal_final = {            8'hff,    pal_raw[15:11],pal_raw[15:13], pal_raw[10:05],pal_raw[10:09], pal_raw[04:00],pal_raw[04:02] };//  RGB 565
-		2: pal_final = { {2{pal_raw[15:12]}}, {2{pal_raw[11:08]}},           {2{pal_raw[07:04]}},           {2{pal_raw[03:00]}} };			// ARGB 4444
+		0: pal_final = { {8{pal_raw[15]}},    pal_raw[14:10],pal_raw[14:12], pal_raw[09:05],pal_raw[09:07], pal_raw[04:00],pal_raw[04:02] };	// ARGB 1555
+		1: pal_final = {            8'hff,    pal_raw[15:11],pal_raw[15:13], pal_raw[10:05],pal_raw[10:09], pal_raw[04:00],pal_raw[04:02] };	//  RGB 565
+		2: pal_final = { {2{pal_raw[15:12]}}, {2{pal_raw[11:08]}},           {2{pal_raw[07:04]}},           {2{pal_raw[03:00]}} };					// ARGB 4444
 		3: pal_final = pal_raw;		// ARGB 8888. (the full 32-bit wide Palette entry is used directly).
 	endcase
+	*/
 	
 	// Convert all texture pixel formats to ARGB8888.
 	// (fill missing lower colour bits using some of the upper colour bits.)
@@ -2032,11 +2088,13 @@ always @(*) begin
 		2: texel_argb = { {2{pix16[15:12]}}, {2{pix16[11:08]}},         {2{pix16[07:04]}},         {2{pix16[03:00]}} };			// ARGB 4444
 		3: texel_argb = pix16;		// TODO. YUV422 (32-bit Y8 U8 Y8 V8).
 		4: texel_argb = pix16;		// TODO. Bump Map (16-bit S8 R8).
-		5: texel_argb = pal_final;	// PAL4 or PAL8 can be ARGB1555, RGB565, ARGB4444, or even ARGB8888.
-		6: texel_argb = pal_final;	// Palette format read from PAL_RAM_CTRL[1:0].
+		//5: texel_argb = pal_final;	// PAL4 or PAL8 can be ARGB1555, RGB565, ARGB4444, or even ARGB8888.
+		//6: texel_argb = pal_final;	// Palette format read from PAL_RAM_CTRL[1:0].
 		7: texel_argb = { {8{pix16[15]}},    pix16[14:10],pix16[14:12], pix16[09:05],pix16[09:07], pix16[04:00],pix16[04:02] };	// Reserved (considered ARGB 1555).
+		default: texel_argb = 32'hff0000aa;
 	endcase
-	
+
+	// Colour Blender...
 	case (shade_inst)
 		0: begin				// Decal.
 			blend_argb[31:24] = texel_argb[31:24];	// Blend Alpha <- Texel Alpha.  Texel_RGB + Offset_RGB.
@@ -2066,15 +2124,13 @@ always @(*) begin
 			blend_argb[07:00] = (texel_argb[07:00] * base_argb[07:00]) /256;	// Blue.
 		end
 	endcase
-
-	final_argb = (texture) ? blend_offs_argb : base_argb;
 end
 
 reg [31:0] blend_argb;
 
-wire [15:0] blend_plus_offs_r = blend_argb[23:16] + offs_argb[23:16];
-wire [15:0] blend_plus_offs_g = blend_argb[15:08] + offs_argb[15:08];
-wire [15:0] blend_plus_offs_b = blend_argb[07:00] + offs_argb[07:00];
+wire [9:0] blend_plus_offs_r = blend_argb[23:16] + offs_argb[23:16];
+wire [9:0] blend_plus_offs_g = blend_argb[15:08] + offs_argb[15:08];
+wire [9:0] blend_plus_offs_b = blend_argb[07:00] + offs_argb[07:00];
 
 wire [7:0] offs_r_clamped = (blend_plus_offs_r>255) ? 8'd255 : blend_plus_offs_r;
 wire [7:0] offs_g_clamped = (blend_plus_offs_g>255) ? 8'd255 : blend_plus_offs_g;
@@ -2083,12 +2139,19 @@ wire [7:0] offs_b_clamped = (blend_plus_offs_b>255) ? 8'd255 : blend_plus_offs_b
 wire [31:0] blend_offs_argb = {blend_argb[31:24], offs_r_clamped, offs_g_clamped, offs_b_clamped};
 
 
+assign final_argb = (texture) ? blend_offs_argb : base_argb;
+//assign final_argb = (texture) ? texel_argb : base_argb;	// TESTING. Bypass Blender for now.
+
+wire [63:0] codebook_mux = (vq_comp) ? code_book[pal8_byte] : vram_din;
+
+
 reg [31:0] pal_raw;
 reg [31:0] pal_final;
 
 // Palette RAM. 1024 32-bit Words.
 // PVR Addr 0x1000-0x1FFC.
-reg [31:0] pal_ram [0:1023];
+//reg [31:0] pal_ram [0:1023];
+
 
 // VQ Code Book. 256 64-bit Words.
 reg [63:0] code_book [0:255];
@@ -2096,26 +2159,27 @@ reg [7:0] cb_word_index;
 
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
-	tex_wait <= 1'b0;
+	codebook_wait <= 1'b0;
 end
 else begin
 	// Handle Palette RAM writes.
-	if (pal_addr[15:12]==4'b0001 && pal_wr) pal_ram[ pal_addr[11:2] ] <= pal_din;
+	//if (pal_addr[15:12]==4'b0001 && pal_wr) pal_ram[ pal_addr[11:2] ] <= pal_din;
 
 	// Handle VQ Code Book reading.
 	if (read_codebook) begin
-		tex_wait <= 1'b1;
 		cb_word_index <= 8'd0;
+		codebook_wait <= 1'b1;
 	end
-	else if (tex_wait) begin
-		code_book[ cb_word_index ] <= vram_din;
-		if (cb_word_index==8'd255) tex_wait <= 1'b0;
-		else cb_word_index <= cb_word_index + 8'd1;
+	else if (codebook_wait) begin
+		if (cb_word_index==8'd255) codebook_wait <= 1'b0;
+		else if (vram_valid && tex_other==1'b1) begin
+			code_book[ cb_word_index ] <= vram_din;
+			cb_word_index <= cb_word_index + 8'd1;
+		end
 	end
 end
 
 //assign pal_dout = pal_ram[ pal_addr[11:2] ];
-
 
 endmodule
 
@@ -2131,16 +2195,15 @@ module depth_compare (
 
 always @* begin
 	case (depth_comp)
-		0: depth_allow = 0;					// Never.
+		0: depth_allow = 0;						// Never.
 		1: depth_allow = (invW <  old_z);	// Less.
 		2: depth_allow = (invW == old_z);	// Equal.
 		3: depth_allow = (invW <= old_z);	// Less or Equal
 		4: depth_allow = (invW >  old_z);	// Greater.
 		5: depth_allow = (invW != old_z);	// Not Equal.
 		6: depth_allow = (invW >= old_z);	// Greater or Equal.
-		7: depth_allow = 1;					// Always
+		7: depth_allow = 1;						// Always
 	endcase
 end
 
 endmodule
-

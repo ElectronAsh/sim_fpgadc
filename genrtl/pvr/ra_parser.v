@@ -13,6 +13,8 @@ module ra_parser (
 	input [31:0] FPU_PARAM_CFG,
 	input [31:0] TA_ALLOC_CTRL,
 	
+	input vram_wait,
+	input vram_valid,
 	output reg ra_vram_rd,
 	output reg ra_vram_wr,
 	output reg [23:0] ra_vram_addr,
@@ -87,7 +89,7 @@ if (!reset_n) begin
 	tile_prims_done <= 1'b0;
 end
 else begin
-	ra_vram_rd <= 1'b0;
+	if (ra_vram_rd && !vram_wait) ra_vram_rd <= 1'b0;
 	ra_vram_wr <= 1'b0;
 	
 	ra_entry_valid <= 1'b0;
@@ -98,9 +100,7 @@ else begin
 	case (ra_state)
 		0: begin
 			draw_last_tile <= 1'b0;
-			if (ra_trig) begin
-				ra_state <= ra_state + 8'd1;
-			end
+			if (ra_trig) ra_state <= ra_state + 8'd1;
 		end
 		
 		1: begin
@@ -109,37 +109,36 @@ else begin
 			ra_state <= ra_state + 1;
 		end
 		
-		2: begin
+		2: if (vram_valid) begin
 			ra_control <= ra_vram_din;
 			ra_vram_addr <= ra_vram_addr + 4;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
-		
-		3: begin
+
+		3: if (vram_valid) begin
 			ra_opaque <= ra_vram_din;
 			ra_vram_addr <= ra_vram_addr + 4;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
-		4: begin
+		4: if (vram_valid) begin
 			ra_opaque_mod <= ra_vram_din;
 			ra_vram_addr <= ra_vram_addr + 4;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
-		5: begin
+		5: if (vram_valid) begin
 			ra_trans <= ra_vram_din;
 			ra_vram_addr <= ra_vram_addr + 4;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
-		6: begin
+		6: if (vram_valid) begin
 			ra_trans_mod <= ra_vram_din;
-			
 			if (FPU_PARAM_CFG[21]) begin	// fmt v2 (grab puncht value in next ra_state).
 				ra_vram_rd <= 1'b1;
 				ra_vram_addr <= ra_vram_addr + 4;
@@ -151,8 +150,7 @@ else begin
 			end
 		end
 		
-		7: begin
-			//ra_vram_rd <= 1'b1;
+		7: if (vram_valid) begin
 			ra_puncht <= ra_vram_din;	// fmt v2 (grab puncht).
 			ra_vram_addr <= ra_vram_addr + 4;
 			ra_state <= ra_state + 1;
@@ -177,23 +175,23 @@ else begin
 				//
 				// Note: No need to add PARAM_BASE to ra_opaque[23:0] etc. ra_opaque is already the Absolute VRAM address! ElectronAsh.
 				//
-				0: if (!ra_opaque[31] && o_opb>0)     begin ra_vram_addr <= ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb )*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				1: if (!ra_opaque_mod[31] && o_opb>0) begin ra_vram_addr <= ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				2: if (!ra_trans[31] && t_opb>0)      begin ra_vram_addr <= ra_trans[23:0];      ol_jump_bytes <= (4<<t_opb )*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
-				3: if (!ra_trans_mod[31] && tm_opb>0) begin ra_vram_addr <= ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_vram_rd <= 1'b1; ra_state <= 15; end // TESTING
-				4: if (!ra_puncht[31] && pt_opb>0)    begin ra_vram_addr <= ra_puncht[23:0];     ol_jump_bytes <= (4<<pt_opb)*4; ra_vram_rd <= 1'b1; ra_state <= ra_state + 1; end
+				0: if (!ra_opaque[31] && o_opb>0)     begin ra_vram_addr <= ra_opaque[23:0];     ol_jump_bytes <= (4<<o_opb )*4; ra_state <= 8'd10; end
+				1: if (!ra_opaque_mod[31] && o_opb>0) begin ra_vram_addr <= ra_opaque_mod[23:0]; ol_jump_bytes <= (4<<om_opb)*4; ra_state <= 8'd10; end
+				2: if (!ra_trans[31] && t_opb>0)      begin ra_vram_addr <= ra_trans[23:0];      ol_jump_bytes <= (4<<t_opb )*4; ra_state <= 8'd10; end
+				3: if (!ra_trans_mod[31] && tm_opb>0) begin ra_vram_addr <= ra_trans_mod[23:0];  ol_jump_bytes <= (4<<tm_opb)*4; ra_state <= 15; end // TESTING
+				4: if (!ra_puncht[31] && pt_opb>0)    begin ra_vram_addr <= ra_puncht[23:0];     ol_jump_bytes <= (4<<pt_opb)*4; ra_state <= 8'd10; end
 				5: ra_state <= 8'd15;	// All prim TYPES in this Object are done!
 				default: ;
 			endcase
 		end
 		
 		10: begin
-			//ra_vram_addr <= /*(opb_mode) ? ra_vram_addr-ol_jump_bytes :*/ ra_vram_addr+4;
+			//ra_vram_addr <= (opb_mode) ? ra_vram_addr-ol_jump_bytes : ra_vram_addr+4;
 			ra_vram_rd <= 1'b1;
 			ra_state <= ra_state + 1;
 		end
 		
-		11: begin
+		11: if (vram_valid) begin
 			opb_word <= ra_vram_din;
 			ra_state <= ra_state + 1;
 		end
@@ -235,7 +233,7 @@ else begin
 			if (poly_drawn) begin
 				if (ra_cont_last) draw_last_tile <= 1'b1;
 				ra_vram_addr <= ra_vram_addr + 4;	// Go to next WORD in OL.
-				ra_state <= 11;
+				ra_state <= 10;
 			end
 		end
 		
@@ -247,12 +245,16 @@ else begin
 		
 		15: begin	// All prim TYPES in this Object have been processed!
 			tile_prims_done <= 1'b1;
-			if (ra_cont_last) ra_state <= 8'd0;
+			if (ra_cont_last) ra_state <= 8'd16;	// TESTING. Don't repeat rendering the same frame, just stop.
 			else begin
 				ra_vram_addr <= next_region;	// Check the next Region Array block.
 				ra_vram_rd <= 1'b1;
 				ra_state <= 8'd2;
 			end
+		end
+		
+		16: begin
+		
 		end
 		
 		default: ;

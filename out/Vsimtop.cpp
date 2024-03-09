@@ -24,8 +24,11 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , trace_valid1{vlSymsp->TOP.trace_valid1}
     , trace_wen1{vlSymsp->TOP.trace_wen1}
     , trace_wdst1{vlSymsp->TOP.trace_wdst1}
+    , vram_wait{vlSymsp->TOP.vram_wait}
+    , vram_valid{vlSymsp->TOP.vram_valid}
     , vram_rd{vlSymsp->TOP.vram_rd}
     , vram_wr{vlSymsp->TOP.vram_wr}
+    , fb_we{vlSymsp->TOP.fb_we}
     , trace_instr0{vlSymsp->TOP.trace_instr0}
     , trace_instr1{vlSymsp->TOP.trace_instr1}
     , boot_vector{vlSymsp->TOP.boot_vector}
@@ -37,6 +40,8 @@ Vsimtop::Vsimtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , trace_pc1{vlSymsp->TOP.trace_pc1}
     , trace_wdata1{vlSymsp->TOP.trace_wdata1}
     , vram_addr{vlSymsp->TOP.vram_addr}
+    , fb_addr{vlSymsp->TOP.fb_addr}
+    , fb_writedata{vlSymsp->TOP.fb_writedata}
     , dm_req_wdata{vlSymsp->TOP.dm_req_wdata}
     , dm_resp_rdata{vlSymsp->TOP.dm_resp_rdata}
     , vram_din{vlSymsp->TOP.vram_din}
