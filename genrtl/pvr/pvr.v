@@ -467,9 +467,7 @@ wire ra_trig;
 wire ra_vram_rd;
 wire ra_vram_wr;
 wire [23:0] ra_vram_addr;
-
-wire [31:0] ra_vram_din;
-assign ra_vram_din = vram_din[31:0];
+wire [31:0] ra_vram_din = (!ra_vram_addr[2]) ? vram_din[31:0] : vram_din[63:32];
 
 wire [31:0] ra_control;
 wire ra_cont_last;
@@ -546,7 +544,7 @@ wire isp_vram_wr;
 wire [23:0] isp_vram_word_addr;
 
 // Keep this as 32-bit for now. Only textures are read aas 64-bit wide.
-wire [63:0] isp_vram_din = vram_din;
+wire [63:0] isp_vram_din = (!isp_vram_addr_out[2]) ? vram_din[31:0] : vram_din[63:32];	// Todo. Handle 64-bit Texture reads!
 wire [31:0] isp_vram_dout;
 
 wire isp_entry_valid;

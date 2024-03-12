@@ -49,7 +49,7 @@ module isp_parser (
 reg [23:0] isp_vram_addr;
 reg tex_other;
 																										// Output thingy addr, when reading Texture or VQ codebook.
-assign isp_vram_addr_out = ((isp_state>=8'd49 && isp_state<=8'd54) || isp_state==5 || isp_state==6) ? {tex_other, vram_word_addr[19:0]}<<2 :	
+assign isp_vram_addr_out = ((isp_state>=8'd49 && isp_state<=8'd54) || isp_state==5 || isp_state==80) ? {tex_other, vram_word_addr[19:0]}<<2 :	
 																									   isp_vram_addr;	// Output ISP Parser BYTE address.
 
 // OL Word bit decodes...
@@ -176,6 +176,8 @@ reg quad_done;
 
 reg [23:0] isp_vram_addr_last;
 
+reg latch_cb;
+
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
 	isp_state <= 8'd0;
@@ -186,6 +188,7 @@ if (!reset_n) begin
 	quad_done <= 1'b1;
 	poly_drawn <= 1'b0;
 	read_codebook <= 1'b0;
+	latch_cb <= 1'b0;
 	prev_tex_word_addr <= 21'h1FFFFF;	// "Random" arbitrary address to start with.
 end
 else begin
@@ -195,6 +198,7 @@ else begin
 	poly_drawn <= 1'b0;
 	
 	read_codebook <= 1'b0;
+	latch_cb <= 1'b0;
 
 	if (isp_vram_rd & !vram_wait) isp_vram_rd <= 1'b0;
 	if (isp_vram_wr & !vram_wait) isp_vram_wr <= 1'b0;
@@ -261,31 +265,24 @@ else begin
 		end
 		
 		80: begin
-			isp_vram_rd <= 1'b1;	// Read first codebook word. TODO. First word might not work, 'cos the codebook address isn't output until read_codebook goes high.
+			isp_vram_rd <= 1'b1;
 			isp_state <= 8'd5;
 		end
 		
 		5: begin
-			if (vram_valid) begin
-				tex_vram_word[31:0] <= isp_vram_din[31:0];
-				tex_other <= 1'b1;
-				isp_vram_rd <= 1'b1;
-				isp_state <= 8'd6;
+			if (!codebook_wait) isp_state <= 8'd6;
+			else if (vram_valid) begin
+				if (!tex_other) tex_vram_word[31:0] <= isp_vram_din[31:0];
+				else begin
+					tex_vram_word[63:32] <= isp_vram_din[31:0];
+					latch_cb <= 1'b1;
+				end
+				tex_other <= ~tex_other;
+				isp_state <= 8'd80;		// Jump back.
 			end
-			if (!codebook_wait) isp_state <= 8'd60;
-		end
-
-		6: begin
-			if (vram_valid) begin
-				tex_vram_word[63:32] <= isp_vram_din[31:0];
-				tex_other <= 1'b0;
-				isp_vram_rd <= 1'b1;
-				isp_state <= 8'd5;
-			end
-			if (!codebook_wait) isp_state <= 8'd60;
 		end
 		
-		60: begin
+		6: begin
 			if (is_tri_strip) isp_vram_addr <= poly_addr + (3<<2) + ((vert_words*strip_cnt) << 2);	// Skip a vert, based on strip_cnt.
 			else isp_vram_addr <= isp_vram_addr + 4;
 			isp_vram_rd <= 1'b1;
@@ -395,13 +392,21 @@ else begin
 		29: if (vram_valid) begin
 			vert_c_z <= isp_vram_din;
 			if (skip==0) begin
-				if (is_quad_array) isp_state <= 8'd37;
+				if (is_quad_array) begin
+					isp_vram_rd <= 1'b1;
+					isp_state <= 8'd37;
+				end
 				else isp_state <= 8'd47;
 			end
-			else if (!texture) isp_state <= 8'd32;	// Triangle Strip (probably).
-			else isp_state <= isp_state + 8'd1;
+			else if (!texture) begin
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd32;	// Triangle Strip (probably).
+			end
+			else begin
+				isp_vram_rd <= 1'b1;
+				isp_state <= isp_state + 8'd1;
+			end
 			isp_vram_addr <= isp_vram_addr + 4;
-			isp_vram_rd <= 1'b1;
 		end
 		30: if (vram_valid) begin
 			if (uv_16_bit) begin	// Read U and V from the same VRAM word.
@@ -419,22 +424,32 @@ else begin
 		31: if (vram_valid) begin vert_c_v0 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
 		32: if (vram_valid) begin
 			vert_c_base_col_0 <= isp_vram_din;
-			if (two_volume) isp_state <= 8'd33;
-			else if (offset) isp_state <= 8'd36;
-			else if (is_quad_array) isp_state <= 8'd37;	// If a Quad.
-				else isp_state <= 8'd47;
+			if (two_volume) begin
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd33;
+			end
+			else if (offset) begin
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd36;
+			end
+			else if (is_quad_array) begin
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd37;	// If a Quad.
+			end
+			else isp_state <= 8'd47;
 			isp_vram_addr <= isp_vram_addr + 4;
-			isp_vram_rd <= 1'b1;
 		end
 		
 		// if Two-volume...
 		33: if (vram_valid) begin vert_c_u1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
 		34: if (vram_valid) begin vert_c_v1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
 		35: if (vram_valid) begin vert_c_base_col_1 <= isp_vram_din;
-			if (offset) isp_state <= 8'd36;
+			if (offset) begin
+				isp_vram_rd <= 1'b1;
+				isp_state <= 8'd36;
+			end
 			else isp_state <= 8'd47;
 			isp_vram_addr <= isp_vram_addr + 4;
-			isp_vram_rd <= 1'b1;
 		end
 		
 		// if Offset colour...
@@ -482,10 +497,7 @@ else begin
 				isp_vram_rd <= 1'b1;
 				isp_state <= 8'd46;
 			end
-			else begin
-				isp_vram_rd <= 1'b0;	// Clear isp_vram_rd here.
-				isp_state <= 8'd47;
-			end
+			else isp_state <= 8'd47;
 			isp_vram_addr <= isp_vram_addr + 4;
 		end
 		
@@ -494,10 +506,7 @@ else begin
 		44: if (vram_valid) begin vert_d_v1 <= isp_vram_din; isp_vram_addr <= isp_vram_addr + 4; isp_vram_rd <= 1'b1; isp_state <= isp_state + 8'd1; end
 		45: if (vram_valid) begin
 			vert_d_base_col_1 <= isp_vram_din;
-			if (!offset) begin
-				isp_vram_rd <= 1'b0;	// Clear isp_vram_rd here.
-				isp_state <= 8'd47;
-			end
+			if (!offset) isp_state <= 8'd47;
 			else begin
 				isp_state <= isp_state + 8'd1;
 				isp_vram_rd <= 1'b1;
@@ -509,7 +518,6 @@ else begin
 		46: if (vram_valid) begin
 			vert_d_off_col <= isp_vram_din;				// if Offset colour.
 			isp_vram_addr <= isp_vram_addr + 4;
-			isp_vram_rd <= 1'b0;	// Clear isp_vram_rd here.
 			isp_state <= isp_state + 8'd1;
 		end
 		
@@ -612,7 +620,8 @@ else begin
 
 		50: begin
 			if (y_ps < (tiley<<5)+32) begin
-				if (x_ps == (tilex<<5)+32 /*|| x_ps[4:0]==32-trailing_zeros || inTri==32'b0*/) begin	// inTri check, gives us roughly 2 FPS speedup, by skipping lines with no span. ;)
+				// inTri==0 check, gives us roughly 2 FPS speedup, by skipping rows with no span. ;)
+				if (x_ps == (tilex<<5)+32 /*|| x_ps[4:0]==32-trailing_zeros || inTri==32'b0*/) begin
 					x_ps <= (tilex<<5) /*+ leading_zeros*/;
 					y_ps <= y_ps + 12'd1;
 					isp_state <= 8'd51;		// Had to add an extra clock tick, to allow the VRAM address and texture stuff to update.
@@ -634,7 +643,7 @@ else begin
 		
 		51: begin
 			x_ps <= (tilex<<5) /*+ leading_zeros*/;
-			isp_state <= 8'd50;
+			isp_state <= 8'd50;		// Jump back,
 		end			
 		
 		52: if (vram_valid) begin
@@ -841,7 +850,7 @@ wire [4:0] trailing_zeros;
 
 
 // Z.Setup(x1,x2,x3, y1,y2,y3, z1,z2,z3);
-/*
+
 interp  interp_inst_z (
 	.clock( clock ),			// input  clock
 	.setup( isp_entry_valid ),	// input  setup
@@ -863,16 +872,16 @@ interp  interp_inst_z (
 	.x_ps( {1'b0, x_ps[9:0]} ),		// input signed [10:0] x_ps
 	.y_ps( {1'b0, y_ps[9:0]} ),		// input signed [10:0] y_ps
 	
-	.interp( IP_Z_INTERP )//,	// output signed [31:0]  interp
+	.interp( IP_Z_INTERP ),	// output signed [31:0]  interp
 
-	//.interp0(  IP_Z[0] ),  .interp1(  IP_Z[1] ),  .interp2(  IP_Z[2] ),  .interp3(  IP_Z[3] ),  .interp4(  IP_Z[4] ),  .interp5(  IP_Z[5] ),  .interp6(  IP_Z[6] ),  .interp7(  IP_Z[7] ),
-	//.interp8(  IP_Z[8] ),  .interp9(  IP_Z[9] ),  .interp10( IP_Z[10] ), .interp11( IP_Z[11] ), .interp12( IP_Z[12] ), .interp13( IP_Z[13] ), .interp14( IP_Z[14] ), .interp15( IP_Z[15] ),
-	//.interp16( IP_Z[16] ), .interp17( IP_Z[17] ), .interp18( IP_Z[18] ), .interp19( IP_Z[19] ), .interp20( IP_Z[20] ), .interp21( IP_Z[21] ), .interp22( IP_Z[22] ), .interp23( IP_Z[23] ),
-	//.interp24( IP_Z[24] ), .interp25( IP_Z[25] ), .interp26( IP_Z[26] ), .interp27( IP_Z[27] ), .interp28( IP_Z[28] ), .interp29( IP_Z[29] ), .interp30( IP_Z[30] ), .interp31( IP_Z[31] )
+	.interp0(  IP_Z[0] ),  .interp1(  IP_Z[1] ),  .interp2(  IP_Z[2] ),  .interp3(  IP_Z[3] ),  .interp4(  IP_Z[4] ),  .interp5(  IP_Z[5] ),  .interp6(  IP_Z[6] ),  .interp7(  IP_Z[7] ),
+	.interp8(  IP_Z[8] ),  .interp9(  IP_Z[9] ),  .interp10( IP_Z[10] ), .interp11( IP_Z[11] ), .interp12( IP_Z[12] ), .interp13( IP_Z[13] ), .interp14( IP_Z[14] ), .interp15( IP_Z[15] ),
+	.interp16( IP_Z[16] ), .interp17( IP_Z[17] ), .interp18( IP_Z[18] ), .interp19( IP_Z[19] ), .interp20( IP_Z[20] ), .interp21( IP_Z[21] ), .interp22( IP_Z[22] ), .interp23( IP_Z[23] ),
+	.interp24( IP_Z[24] ), .interp25( IP_Z[25] ), .interp26( IP_Z[26] ), .interp27( IP_Z[27] ), .interp28( IP_Z[28] ), .interp29( IP_Z[29] ), .interp30( IP_Z[30] ), .interp31( IP_Z[31] )
 );
-*/
-wire signed [31:0] IP_Z_INTERP = FZ2_FIXED;
-//wire signed [31:0] IP_Z [0:31];	// [0:31] is the tile COLUMN.
+
+wire signed [31:0] IP_Z_INTERP /*= FZ2_FIXED*/;
+wire signed [31:0] IP_Z [0:31];	// [0:31] is the tile COLUMN.
 
 
 // int w = tex_u_size_full;
@@ -903,16 +912,16 @@ interp  interp_inst_u (
 	.x_ps( {1'b0, x_ps[9:0]} ),		// input signed [11:0] x_ps
 	.y_ps( {1'b0, y_ps[9:0]} ),		// input signed [11:0] y_ps
 	
-	.interp( IP_U_INTERP )//,	// output signed [31:0]  interp
+	.interp( IP_U_INTERP ),	// output signed [31:0]  interp
 
-	//.interp0(  IP_U[0] ),  .interp1(  IP_U[1] ),  .interp2(  IP_U[2] ),  .interp3(  IP_U[3] ),  .interp4(  IP_U[4] ),  .interp5(  IP_U[5] ),  .interp6(  IP_U[6] ),  .interp7(  IP_U[7] ),
-	//.interp8(  IP_U[8] ),  .interp9(  IP_U[9] ),  .interp10( IP_U[10] ), .interp11( IP_U[11] ), .interp12( IP_U[12] ), .interp13( IP_U[13] ), .interp14( IP_U[14] ), .interp15( IP_U[15] ),
-	//.interp16( IP_U[16] ), .interp17( IP_U[17] ), .interp18( IP_U[18] ), .interp19( IP_U[19] ), .interp20( IP_U[20] ), .interp21( IP_U[21] ), .interp22( IP_U[22] ), .interp23( IP_U[23] ),
-	//.interp24( IP_U[24] ), .interp25( IP_U[25] ), .interp26( IP_U[26] ), .interp27( IP_U[27] ), .interp28( IP_U[28] ), .interp29( IP_U[29] ), .interp30( IP_U[30] ), .interp31( IP_U[31] )
+	.interp0(  IP_U[0] ),  .interp1(  IP_U[1] ),  .interp2(  IP_U[2] ),  .interp3(  IP_U[3] ),  .interp4(  IP_U[4] ),  .interp5(  IP_U[5] ),  .interp6(  IP_U[6] ),  .interp7(  IP_U[7] ),
+	.interp8(  IP_U[8] ),  .interp9(  IP_U[9] ),  .interp10( IP_U[10] ), .interp11( IP_U[11] ), .interp12( IP_U[12] ), .interp13( IP_U[13] ), .interp14( IP_U[14] ), .interp15( IP_U[15] ),
+	.interp16( IP_U[16] ), .interp17( IP_U[17] ), .interp18( IP_U[18] ), .interp19( IP_U[19] ), .interp20( IP_U[20] ), .interp21( IP_U[21] ), .interp22( IP_U[22] ), .interp23( IP_U[23] ),
+	.interp24( IP_U[24] ), .interp25( IP_U[25] ), .interp26( IP_U[26] ), .interp27( IP_U[27] ), .interp28( IP_U[28] ), .interp29( IP_U[29] ), .interp30( IP_U[30] ), .interp31( IP_U[31] )
 );
 
 wire signed [31:0] IP_U_INTERP /*= FU2_FIXED * tex_u_size_full*/;
-//wire signed [31:0] IP_U [0:31];	// [0:31] is the tile COLUMN.
+wire signed [31:0] IP_U [0:31];	// [0:31] is the tile COLUMN.
 
 
 // int h = tex_v_size_full;
@@ -943,16 +952,16 @@ interp  interp_inst_v (
 	.x_ps( {1'b0, x_ps[9:0]} ),		// input signed [11:0] x_ps
 	.y_ps( {1'b0, y_ps[9:0]} ),		// input signed [11:0] y_ps
 	
-	.interp( IP_V_INTERP )//,	// output signed [31:0]  interp
+	.interp( IP_V_INTERP ),	// output signed [31:0]  interp
 
-	//.interp0(  IP_V[0] ),  .interp1(  IP_V[1] ),  .interp2(  IP_V[2] ),  .interp3(  IP_V[3] ),  .interp4(  IP_V[4] ),  .interp5(  IP_V[5] ),  .interp6(  IP_V[6] ),  .interp7(  IP_V[7] ),
-	//.interp8(  IP_V[8] ),  .interp9(  IP_V[9] ),  .interp10( IP_V[10] ), .interp11( IP_V[11] ), .interp12( IP_V[12] ), .interp13( IP_V[13] ), .interp14( IP_V[14] ), .interp15( IP_V[15] ),
-	//.interp16( IP_V[16] ), .interp17( IP_V[17] ), .interp18( IP_V[18] ), .interp19( IP_V[19] ), .interp20( IP_V[20] ), .interp21( IP_V[21] ), .interp22( IP_V[22] ), .interp23( IP_V[23] ),
-	//.interp24( IP_V[24] ), .interp25( IP_V[25] ), .interp26( IP_V[26] ), .interp27( IP_V[27] ), .interp28( IP_V[28] ), .interp29( IP_V[29] ), .interp30( IP_V[30] ), .interp31( IP_V[31] )
+	.interp0(  IP_V[0] ),  .interp1(  IP_V[1] ),  .interp2(  IP_V[2] ),  .interp3(  IP_V[3] ),  .interp4(  IP_V[4] ),  .interp5(  IP_V[5] ),  .interp6(  IP_V[6] ),  .interp7(  IP_V[7] ),
+	.interp8(  IP_V[8] ),  .interp9(  IP_V[9] ),  .interp10( IP_V[10] ), .interp11( IP_V[11] ), .interp12( IP_V[12] ), .interp13( IP_V[13] ), .interp14( IP_V[14] ), .interp15( IP_V[15] ),
+	.interp16( IP_V[16] ), .interp17( IP_V[17] ), .interp18( IP_V[18] ), .interp19( IP_V[19] ), .interp20( IP_V[20] ), .interp21( IP_V[21] ), .interp22( IP_V[22] ), .interp23( IP_V[23] ),
+	.interp24( IP_V[24] ), .interp25( IP_V[25] ), .interp26( IP_V[26] ), .interp27( IP_V[27] ), .interp28( IP_V[28] ), .interp29( IP_V[29] ), .interp30( IP_V[30] ), .interp31( IP_V[31] )
 );
 
 wire signed [31:0] IP_V_INTERP /*= FV2_FIXED * tex_v_size_full*/;
-//wire signed [31:0] IP_V [0:31];	// [0:31] is the tile COLUMN.
+wire signed [31:0] IP_V [0:31];	// [0:31] is the tile COLUMN.
 
 /*
 always @(*) begin
@@ -1028,10 +1037,10 @@ always @(*) begin
 end
 */
 
-wire signed [63:0] u_div_z_fixed = (IP_U_INTERP<<FRAC_BITS) / IP_Z_INTERP;
+wire signed [63:0] u_div_z_fixed = ($signed(IP_U_INTERP)<<FRAC_BITS) / $signed(IP_Z_INTERP);
 //reg signed [31:0] u_div_z_fixed;
 
-wire signed [63:0] v_div_z_fixed = (IP_V_INTERP<<FRAC_BITS) / IP_Z_INTERP;
+wire signed [63:0] v_div_z_fixed = ($signed(IP_V_INTERP)<<FRAC_BITS) / $signed(IP_Z_INTERP);
 //reg signed [31:0] v_div_z_fixed;
 
 wire signed [31:0] u_div_z = u_div_z_fixed >>FRAC_BITS;
@@ -1121,10 +1130,12 @@ texture_address  texture_address_inst (
 	
 	.read_codebook( read_codebook ),	// input  read_codebook
 	.codebook_wait( codebook_wait ),	// output  codebook_wait
-	.tex_other( tex_other ),			// input  tex_other
+	.latch_cb( latch_cb ),				// input  latch_cb
 	
 	.ui( u_flipped ),
 	.vi( v_flipped ),
+	//.ui( sim_ui ),
+	//.vi( sim_vi ),
 	
 	.vram_wait( vram_wait ),
 	.vram_valid( vram_valid ),
@@ -1844,7 +1855,7 @@ module texture_address (
 	
 	input read_codebook,
 	output reg codebook_wait,
-	input tex_other,
+	input latch_cb,
 		
 	input wire [9:0] ui,				// From rasterizer/interp...
 	input wire [9:0] vi,
@@ -2045,7 +2056,7 @@ always @(*) begin
 								  (twop_or_not>>2);	 // Uncomp = 4  TEXELS per 64-bit word (16BPP).
 	
 	// Generate the 64-bit VRAM WORD address using either the Code Book READ index, or texel_word_offs;
-	vram_word_addr = tex_word_addr + ((codebook_wait) ? cb_word_index : texel_word_offs);
+	vram_word_addr = tex_word_addr + ((read_codebook || codebook_wait) ? cb_word_index : texel_word_offs);
 	
 	// VQ has FOUR TEXELS per Index Byte.
 	// 32 TEXELS per 64-bit VRAM word.
@@ -2142,7 +2153,9 @@ wire [31:0] blend_offs_argb = {blend_argb[31:24], offs_r_clamped, offs_g_clamped
 assign final_argb = (texture) ? blend_offs_argb : base_argb;
 //assign final_argb = (texture) ? texel_argb : base_argb;	// TESTING. Bypass Blender for now.
 
-wire [63:0] codebook_mux = (vq_comp) ? code_book[pal8_byte] : vram_din;
+wire [63:0] cb_dout = code_book[pal8_byte];
+
+wire [63:0] codebook_mux = (vq_comp) ? cb_dout : vram_din;
 
 
 reg [31:0] pal_raw;
@@ -2154,8 +2167,8 @@ reg [31:0] pal_final;
 
 
 // VQ Code Book. 256 64-bit Words.
-reg [63:0] code_book [0:255];
-reg [7:0] cb_word_index;
+reg [63:0] code_book [0:256];
+reg [8:0] cb_word_index;
 
 always @(posedge clock or negedge reset_n)
 if (!reset_n) begin
@@ -2167,12 +2180,13 @@ else begin
 
 	// Handle VQ Code Book reading.
 	if (read_codebook) begin
-		cb_word_index <= 8'd0;
+		cb_word_index <= 9'd0;
 		codebook_wait <= 1'b1;
 	end
 	else if (codebook_wait) begin
-		if (cb_word_index==8'd255) codebook_wait <= 1'b0;
-		else if (vram_valid && tex_other==1'b1) begin
+		if (cb_word_index==9'd256) codebook_wait <= 1'b0;
+		//else if (vram_valid && tex_other==1'b1) begin
+		else if (latch_cb) begin
 			code_book[ cb_word_index ] <= vram_din;
 			cb_word_index <= cb_word_index + 8'd1;
 		end

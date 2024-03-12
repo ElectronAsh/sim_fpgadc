@@ -1031,17 +1031,17 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__Ba = float_to_fixed(Z.Ba, FRAC_BITS);
 
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__C = float_to_fixed(U.C, FRAC_BITS);
-	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__c    = float_to_fixed(U.c, FRAC_BITS);
+	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__c = float_to_fixed(U.c, FRAC_BITS);
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__FDDX = float_to_fixed(U.ddx, FRAC_BITS);
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_u__DOT__FDDY = float_to_fixed(U.ddy, FRAC_BITS);
 	
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_v__DOT__C = float_to_fixed(V.C, FRAC_BITS);
-	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_v__DOT__c    = float_to_fixed(V.c, FRAC_BITS);
+	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_v__DOT__c = float_to_fixed(V.c, FRAC_BITS);
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_v__DOT__FDDX = float_to_fixed(V.ddx, FRAC_BITS);
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_v__DOT__FDDY = float_to_fixed(V.ddy, FRAC_BITS);
 
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__C = float_to_fixed(Z.C, FRAC_BITS);
-	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__c    = float_to_fixed(Z.c, FRAC_BITS);
+	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__c = float_to_fixed(Z.c, FRAC_BITS);
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__FDDX = float_to_fixed(Z.ddx, FRAC_BITS);
 	//top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__FDDY = float_to_fixed(Z.ddy, FRAC_BITS);
 
@@ -1321,7 +1321,7 @@ void rasterize_triangle_fixed(float x1, float x2, float x3, float x4,
 			if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = invW;
 			
 			// Core (Verilog) Z...
-			//float core_invW = (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__interp0)/(1<<FRAC_BITS);
+			//float core_invW = (float)((int32_t)top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__interp_inst_z__DOT__interp)/(1<<FRAC_BITS);
 			//if (!top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__z_write_disable) z_ptr[ my_fb_addr&0x7fffff ] = core_invW;
 
 			//uint32_t texel_argb = top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__isp_vram_dout;
@@ -1403,13 +1403,19 @@ int verilate() {
 		top->dm_resp_valid = 1;
 		
 		// Route 64-bit data from vram_ptr to the core...
-		uint32_t vram_byte_addr = top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff;
+		uint32_t vram_byte_addr = ((top->rootp->simtop__DOT__pvr__DOT__vram_addr&0x7fffff)>>3)<<3;
 
 		uint8_t byte0 = vram_ptr[ (0x000000 + vram_byte_addr +0) & 0x7fffff ];
 		uint8_t byte1 = vram_ptr[ (0x000000 + vram_byte_addr +1) & 0x7fffff ];
 		uint8_t byte2 = vram_ptr[ (0x000000 + vram_byte_addr +2) & 0x7fffff ];
 		uint8_t byte3 = vram_ptr[ (0x000000 + vram_byte_addr +3) & 0x7fffff ];
 		uint32_t lower_word = byte0<<24 | byte1<<16 | byte2<<8 | byte3<<0;
+		
+		uint8_t byte4 = vram_ptr[ (0x000000 + vram_byte_addr +4) & 0x7fffff ];
+		uint8_t byte5 = vram_ptr[ (0x000000 + vram_byte_addr +5) & 0x7fffff ];
+		uint8_t byte6 = vram_ptr[ (0x000000 + vram_byte_addr +6) & 0x7fffff ];
+		uint8_t byte7 = vram_ptr[ (0x000000 + vram_byte_addr +7) & 0x7fffff ];
+		uint32_t upper_word = byte4<<24 | byte5<<16 | byte6<<8 | byte7<<0;
 		/*
 		uint8_t byte4 = vram_ptr[ (0x400000 + vram_byte_addr +0) & 0x7fffff ];
 		uint8_t byte5 = vram_ptr[ (0x400000 + vram_byte_addr +1) & 0x7fffff ];
@@ -1417,9 +1423,7 @@ int verilate() {
 		uint8_t byte7 = vram_ptr[ (0x400000 + vram_byte_addr +3) & 0x7fffff ];
 		uint32_t upper_word = byte4<<24 | byte5<<16 | byte6<<8 | byte7<<0;
 		*/
-		
 		top->vram_wait  = 0; // Force this, for now.
-		//top->vram_valid = 1; // Force this, for now.
 
 		if (top->vram_rd) ddr_count = 3;
 		else {
@@ -1429,7 +1433,7 @@ int verilate() {
 		}
 
 		// Route 64-bit WORD to simtop vram_din.
-		if (top->vram_valid) top->vram_din = (/*static_cast<QData>(upper_word)<<32 |*/ lower_word);
+		if (top->vram_valid) top->vram_din = (static_cast<QData>(upper_word)<<32 | lower_word);
 
 		rgb[0] = 0xff;	// Red.
 		rgb[1] = 0xff;	// Green.
@@ -1502,10 +1506,14 @@ int verilate() {
 		rasterize_triangle_fixed(x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, u1, u2, u3, u4, v1, v2, v3, v4);
 
 		if (stop_on_last && top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_cont_last &&
-							top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state==0) {
+							top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state==0 ||
+							top->rootp->simtop__DOT__pvr__DOT__ra_parser_inst__DOT__ra_state==16) {
 			run_enable = 0;
 			stop_on_last = 0;
 		}
+
+		//if (top->rootp->simtop__DOT__pvr__DOT__isp_parser_inst__DOT__poly_addr==0x99310) run_enable = 0;
+
 
 		top->clk = 1;
 		top->eval();            // Evaluate model!
@@ -1606,7 +1614,7 @@ int load_vram_dump(const char *name) {
 	FILE *pvrfile;
 	FILE *vram_file;
 
-	sprintf(my_string,"pvr_regs%s", name); pvrfile = fopen(my_string,"rb");
+	sprintf(my_string,"pvr_regs%s.bin", name); pvrfile = fopen(my_string,"rb");
 	if(pvrfile != NULL) printf("\n%s dump loaded OK.\n\n", my_string);
 	else { printf("\n%s dump file not found!\n\n", my_string); return 0; }
 	fseek(pvrfile,0L,SEEK_END);
@@ -1744,7 +1752,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_taxi3");
 	//load_vram_dump("_taxi4");
 	//load_vram_dump("_crazy_title");
-	load_vram_dump("_sonic");
+	//load_vram_dump("_sonic");
 	//load_vram_dump("_sonic_title");
 	//load_vram_dump("_hydro_title");
 	//load_vram_dump("_looney_foghorn");	// Shows some corrupted tiles, unless FRAC_BITS is set to about 14?
@@ -1761,7 +1769,7 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	//load_vram_dump("_daytona_behind");
+	load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");

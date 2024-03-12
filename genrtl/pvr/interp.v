@@ -19,8 +19,8 @@ module interp (
 	input signed [31:0] FZ2,
 	input signed [31:0] FZ3,
 	
-	input signed [10:0] x_ps,
-	input signed [10:0] y_ps,
+	input [10:0] x_ps,
+	input [10:0] y_ps,
 	
 	output reg signed [31:0] interp,
 	
@@ -71,7 +71,7 @@ reg signed [63:0] Ba;
 // C = (FX2 - FX1) * (FY3 - FY1) - (FX3 - FX1) * (FY2 - FY1);
 reg signed [63:0] C_mult_1;
 reg signed [63:0] C_mult_2;
-reg signed [31:0] C;
+reg signed [47:0] C;
 
 // ddx = -Aa / C;
 // ddy = -Ba / C;
@@ -81,11 +81,17 @@ reg signed [63:0] FDDY;
 // c = (FZ1 - ddx * FX1 - ddy * FY1);
 reg signed [63:0] FDDX_mult_FX1;
 reg signed [63:0] FDDY_mult_FY1;
-reg signed [31:0] c;
+reg signed [47:0] c;
+
+reg signed [63:0] y_mult_FDDY_plus_c;
+reg signed [63:0] interp_single;
+reg signed [63:0] interp_multi;
+
+reg signed [79:0] scaled_FDDX;
 
 //always @(posedge setup) begin
 always @(posedge clock) begin
-	if (setup) begin
+	//if (setup) begin
 		//  Aa = (FZ3 - FZ1) * (FY2 - FY1) - (FZ2 - FZ1) * (FY3 - FY1);
 		FZ3_sub_FZ1 = (FZ3 - FZ1);
 		FY2_sub_FY1 = (FY2 - FY1);
@@ -111,54 +117,60 @@ always @(posedge clock) begin
 
 		// ddx = Aa / C;
 		// ddy = Ba / C;
-		FDDX = (Aa<<FRAC_BITS) / C;
-		FDDY = (Ba<<FRAC_BITS) / C;
+		FDDX = ($signed(Aa)<<FRAC_BITS) / $signed(C);
+		FDDY = ($signed(Ba)<<FRAC_BITS) / $signed(C);
 		
 		// c = (FZ1 - ddx * FX1 - ddy * FY1);
 		FDDX_mult_FX1 = (FDDX * FX1) >>FRAC_BITS;
 		FDDY_mult_FY1 = (FDDY * FY1) >>FRAC_BITS;
 		c = FZ1 - FDDX_mult_FX1 - FDDY_mult_FY1;
-	end
+		
+		y_mult_FDDY_plus_c = ($signed({1'b0, y_ps}) * $signed(FDDY)) + $signed(c);
+		
+		interp_single = $signed({1'b0, x_ps}) * $signed(FDDX);
+		//interp_multi  = $signed({1'b0,x_ps[10:5],5'd0}) * FDDX;
+		
+		scaled_FDDX = $signed(FDDX) << FRAC_BITS;
+	//end
 end
 
 // Interp ("IP" in C PlaneStepper3)...
 // (x * ddx) + (y * ddy) + c;
 always @(*) begin
-	interp = (x_ps * FDDX) + (y_ps * FDDY) + c;	// No need to shift the mult result right, as x_ps and y_ps are not fixed-point.
-	
+	interp = $signed(x_ps) * FDDX + y_mult_FDDY_plus_c;	// No need to shift the mult result right, as x_ps and y_ps are not fixed-point.
 	/*
-	interp0  = ($signed({x_ps[10:5],5'd0} ) * FDDX) + y_mult_FDDY + c;
-	interp1  = ($signed({x_ps[10:5],5'd1} ) * FDDX) + y_mult_FDDY + c;
-	interp2  = ($signed({x_ps[10:5],5'd2} ) * FDDX) + y_mult_FDDY + c;
-	interp3  = ($signed({x_ps[10:5],5'd3} ) * FDDX) + y_mult_FDDY + c;
-	interp4  = ($signed({x_ps[10:5],5'd4} ) * FDDX) + y_mult_FDDY + c;
-	interp5  = ($signed({x_ps[10:5],5'd5} ) * FDDX) + y_mult_FDDY + c;
-	interp6  = ($signed({x_ps[10:5],5'd6} ) * FDDX) + y_mult_FDDY + c;
-	interp7  = ($signed({x_ps[10:5],5'd7} ) * FDDX) + y_mult_FDDY + c;
-	interp8  = ($signed({x_ps[10:5],5'd8} ) * FDDX) + y_mult_FDDY + c;
-	interp9  = ($signed({x_ps[10:5],5'd9} ) * FDDX) + y_mult_FDDY + c;
-	interp10 = ($signed({x_ps[10:5],5'd10}) * FDDX) + y_mult_FDDY + c;
-	interp11 = ($signed({x_ps[10:5],5'd11}) * FDDX) + y_mult_FDDY + c;
-	interp12 = ($signed({x_ps[10:5],5'd12}) * FDDX) + y_mult_FDDY + c;
-	interp13 = ($signed({x_ps[10:5],5'd13}) * FDDX) + y_mult_FDDY + c;
-	interp14 = ($signed({x_ps[10:5],5'd14}) * FDDX) + y_mult_FDDY + c;
-	interp15 = ($signed({x_ps[10:5],5'd15}) * FDDX) + y_mult_FDDY + c;
-	interp16 = ($signed({x_ps[10:5],5'd16}) * FDDX) + y_mult_FDDY + c;
-	interp17 = ($signed({x_ps[10:5],5'd17}) * FDDX) + y_mult_FDDY + c;
-	interp18 = ($signed({x_ps[10:5],5'd18}) * FDDX) + y_mult_FDDY + c;
-	interp19 = ($signed({x_ps[10:5],5'd19}) * FDDX) + y_mult_FDDY + c;
-	interp20 = ($signed({x_ps[10:5],5'd20}) * FDDX) + y_mult_FDDY + c;
-	interp21 = ($signed({x_ps[10:5],5'd21}) * FDDX) + y_mult_FDDY + c;
-	interp22 = ($signed({x_ps[10:5],5'd22}) * FDDX) + y_mult_FDDY + c;
-	interp23 = ($signed({x_ps[10:5],5'd23}) * FDDX) + y_mult_FDDY + c;
-	interp24 = ($signed({x_ps[10:5],5'd24}) * FDDX) + y_mult_FDDY + c;
-	interp25 = ($signed({x_ps[10:5],5'd25}) * FDDX) + y_mult_FDDY + c;
-	interp26 = ($signed({x_ps[10:5],5'd26}) * FDDX) + y_mult_FDDY + c;
-	interp27 = ($signed({x_ps[10:5],5'd27}) * FDDX) + y_mult_FDDY + c;
-	interp28 = ($signed({x_ps[10:5],5'd28}) * FDDX) + y_mult_FDDY + c;
-	interp29 = ($signed({x_ps[10:5],5'd29}) * FDDX) + y_mult_FDDY + c;
-	interp30 = ($signed({x_ps[10:5],5'd30}) * FDDX) + y_mult_FDDY + c;
-	interp31 = ($signed({x_ps[10:5],5'd31}) * FDDX) + y_mult_FDDY + c;
+	interp0  = ($signed({x_ps[10:5],5'd 0}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp1  = ($signed({x_ps[10:5],5'd 1}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp2  = ($signed({x_ps[10:5],5'd 2}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp3  = ($signed({x_ps[10:5],5'd 3}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp4  = ($signed({x_ps[10:5],5'd 4}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp5  = ($signed({x_ps[10:5],5'd 5}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp6  = ($signed({x_ps[10:5],5'd 6}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp7  = ($signed({x_ps[10:5],5'd 7}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp8  = ($signed({x_ps[10:5],5'd 8}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp9  = ($signed({x_ps[10:5],5'd 9}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp10 = ($signed({x_ps[10:5],5'd10}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp11 = ($signed({x_ps[10:5],5'd11}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp12 = ($signed({x_ps[10:5],5'd12}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp13 = ($signed({x_ps[10:5],5'd13}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp14 = ($signed({x_ps[10:5],5'd14}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp15 = ($signed({x_ps[10:5],5'd15}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp16 = ($signed({x_ps[10:5],5'd16}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp17 = ($signed({x_ps[10:5],5'd17}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp18 = ($signed({x_ps[10:5],5'd18}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp19 = ($signed({x_ps[10:5],5'd19}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp20 = ($signed({x_ps[10:5],5'd20}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp21 = ($signed({x_ps[10:5],5'd21}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp22 = ($signed({x_ps[10:5],5'd22}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp23 = ($signed({x_ps[10:5],5'd23}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp24 = ($signed({x_ps[10:5],5'd24}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp25 = ($signed({x_ps[10:5],5'd25}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp26 = ($signed({x_ps[10:5],5'd26}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp27 = ($signed({x_ps[10:5],5'd27}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp28 = ($signed({x_ps[10:5],5'd28}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp29 = ($signed({x_ps[10:5],5'd29}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp30 = ($signed({x_ps[10:5],5'd30}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
+	interp31 = ($signed({x_ps[10:5],5'd31}) << FRAC_BITS) + scaled_FDDX + y_mult_FDDY_plus_c;
 	*/
 end
 

@@ -89,13 +89,13 @@ if (!reset_n) begin
 	tile_prims_done <= 1'b0;
 end
 else begin
-	if (ra_vram_rd && !vram_wait) ra_vram_rd <= 1'b0;
-	ra_vram_wr <= 1'b0;
-	
 	ra_entry_valid <= 1'b0;
 	render_poly <= 1'b0;
 
 	tile_prims_done <= 1'b0;
+	
+	if (ra_vram_rd && !vram_wait) ra_vram_rd <= 1'b0;
+	if (ra_vram_wr && !vram_wait) ra_vram_wr <= 1'b0;
 
 	case (ra_state)
 		0: begin
