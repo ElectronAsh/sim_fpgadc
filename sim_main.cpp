@@ -1769,11 +1769,12 @@ int main(int argc, char** argv, char** env) {
 	//load_vram_dump("_rayman_level");
 	//load_vram_dump("_xtreme_intro");
 	//load_vram_dump("_daytona_intro");
-	load_vram_dump("_daytona_behind");
+	//load_vram_dump("_daytona_behind");
 	//load_vram_dump("_daytona_front");
 	//load_vram_dump("_daytona_sanic");
 	//load_vram_dump("_toy_front");
 	//load_vram_dump("_18wheel_select");
+	load_vram_dump("_doa2_kasumi");
 
 	//char name[20];
 	//itoa(dump_cnt, name, 10); load_vram_dump(name);
